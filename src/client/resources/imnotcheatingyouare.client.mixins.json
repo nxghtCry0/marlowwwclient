@@ -1,0 +1,20 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.eclipseware.imnotcheatingyouare.mixin.client",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+"NoJumpDelayMixin",
+"AutoSprintMixin",
+"LightTextureMixin",
+"MultiPlayerGameModeMixin",
+"ChatComponentMixin",
+"PlayerTabOverlayMixin"
+],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

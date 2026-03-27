@@ -1,0 +1,27 @@
+# Gradle
+.gradle/
+build/
+out/
+
+# Loom (Fabric/MC modding)
+.loom/
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+
+# Java
+*.class
+
+# Run directory (Minecraft)
+run/
