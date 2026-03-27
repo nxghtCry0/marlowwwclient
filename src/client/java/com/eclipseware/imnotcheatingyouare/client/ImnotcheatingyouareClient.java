@@ -108,10 +108,17 @@ settingsManager.rSetting(new Setting("Green", arrayListMod, 10.0, 0.0, 255.0, tr
 settingsManager.rSetting(new Setting("Blue", arrayListMod, 230.0, 0.0, 255.0, true));
 
     java.util.ArrayList<String> npNames = new java.util.ArrayList<>();
-    npNames.add("Marlowww");
-    npNames.add("Hidden");
-    npNames.add("You");
-    settingsManager.rSetting(new Setting("Name", nameProtect, "Marlowww", npNames));
+npNames.add("Marlowww");
+npNames.add("Hidden");
+npNames.add("You");
+settingsManager.rSetting(new Setting("Name", nameProtect, "Marlowww", npNames));
+
+    java.util.ArrayList<String> bsModes = new java.util.ArrayList<>();
+    bsModes.add("Swap");
+    bsModes.add("Silent");
+    settingsManager.rSetting(new Setting("Mode", breachSwap, "Swap", bsModes));
+    settingsManager.rSetting(new Setting("Swap Back", breachSwap, true));
+    settingsManager.rSetting(new Setting("Swap Back Delay (ms)", breachSwap, 100.0, 0.0, 1000.0, true));
 
     // 2. Register Category
         net.minecraft.client.KeyMapping.Category guiCategory = net.minecraft.client.KeyMapping.Category.register(

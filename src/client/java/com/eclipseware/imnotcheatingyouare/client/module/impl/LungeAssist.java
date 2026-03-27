@@ -14,32 +14,32 @@ public class LungeAssist extends Module {
     }
 
     @Override
-    public void onKeybind() {
-        if (mc.player == null || mc.getConnection() == null) return;
-        
-        int spearSlot = findLungeSpear(mc.player);
-        if (spearSlot == -1) {
-            // If we don't have a lunge spear, just toggle the module normally
-            super.onKeybind();
-            return;
-        }
-        
-        int oldSlot = mc.player.getInventory().getSelectedSlot();
-        if (oldSlot == spearSlot) return; // Pointless to swap if we already hold it
-        
-        // Swap to spear -> Trigger the Lunge action (Attack or Use) -> Swap back instantly
-        mc.getConnection().send(new ServerboundSetCarriedItemPacket(spearSlot));
-        
-        if (mc.hitResult != null && mc.hitResult.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY) {
-            net.minecraft.world.phys.EntityHitResult ehr = (net.minecraft.world.phys.EntityHitResult) mc.hitResult;
-            mc.getConnection().send(net.minecraft.network.protocol.game.ServerboundInteractPacket.createAttackPacket(ehr.getEntity(), mc.player.isShiftKeyDown()));
-        } else {
-            mc.getConnection().send(new ServerboundUseItemPacket(InteractionHand.MAIN_HAND, 0, mc.player.getYRot(), mc.player.getXRot()));
-        }
-        
-        mc.player.swing(InteractionHand.MAIN_HAND);
-        mc.getConnection().send(new ServerboundSetCarriedItemPacket(oldSlot));
+public void onKeybind() {
+if (mc.player == null || mc.getConnection() == null) return;
+
+    int spearSlot = findLungeSpear(mc.player);
+    if (spearSlot == -1) {
+        super.onKeybind();
+        return;
     }
+    
+    int oldSlot = mc.player.getInventory().getSelectedSlot();
+    if (oldSlot == spearSlot) {
+        mc.player.swing(InteractionHand.MAIN_HAND);
+        return;
+    }
+    
+    // Physically swap the slot to force client-side attributes to apply
+    mc.player.getInventory().setSelectedSlot(spearSlot);
+    mc.getConnection().send(new ServerboundSetCarriedItemPacket(spearSlot));
+    
+    // Punch the air
+    mc.player.swing(InteractionHand.MAIN_HAND);
+    
+    // Immediately swap back in the same tick
+    mc.player.getInventory().setSelectedSlot(oldSlot);
+    mc.getConnection().send(new ServerboundSetCarriedItemPacket(oldSlot));
+}
 
     private int findLungeSpear(Player player) {
         for (int i = 0; i < 9; i++) {

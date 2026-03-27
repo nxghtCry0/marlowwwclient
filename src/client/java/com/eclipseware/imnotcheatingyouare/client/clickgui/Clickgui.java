@@ -238,7 +238,7 @@ if (m.getName().equals("HitSelect") && currentMode.equals("Criticals")) {
 if (setting.getName().equals("Max HurtTime")) continue;
 }
 // AutoShieldBreaker: Dynamic Swap Back settings
-if (m.getName().equals("AutoShieldBreaker")) {
+if (m.getName().equals("AutoShieldBreaker") || m.getName().equals("BreachSwap")) {
 if (currentMode.equals("Silent")) {
 if (setting.getName().equals("Swap Back") || setting.getName().equals("Swap Back Delay (ms)")) continue;
 } else if (currentMode.equals("Swap")) {
