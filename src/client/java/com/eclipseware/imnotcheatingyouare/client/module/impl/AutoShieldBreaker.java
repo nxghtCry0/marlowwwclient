@@ -22,6 +22,57 @@ private int ticksWaited = 0;
 public AutoShieldBreaker() {
 super("AutoShieldBreaker", Category.Combat);
 }
+public boolean shouldCancelAttack(Entity target) {
+if (!this.isToggled() || !(target instanceof LivingEntity)) return false;
+LivingEntity livingTarget = (LivingEntity) target;
+if (!livingTarget.isBlocking()) return false;
+if (!isShieldBlockingUs(livingTarget, mc.player)) return false;
+
+Setting delaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Delay (ms)");
+long delay = delaySetting != null ? (long) delaySetting.getValDouble() : 0;
+if (System.currentTimeMillis() - lastBreakTime < delay) {
+return true;
+}
+axeSlot = findAxeInHotbar(mc.player);
+if (axeSlot == -1) return false;
+
+Setting modeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Mode");
+String mode = modeSetting != null ? modeSetting.getValString() : "Swap";
+int oldSlot = mc.player.getInventory().getSelectedSlot();
+if (oldSlot == axeSlot) {
+lastBreakTime = System.currentTimeMillis();
+return false;
+}
+if (mode.equals("Silent")) {
+if (mc.getConnection() != null) {
+mc.getConnection().send(new ServerboundSetCarriedItemPacket(axeSlot));
+mc.getConnection().send(ServerboundInteractPacket.createAttackPacket(target, mc.player.isShiftKeyDown()));
+}
+mc.player.getInventory().setSelectedSlot(axeSlot);
+mc.player.swing(InteractionHand.MAIN_HAND);
+needsSwapBack = true;
+originalSlot = oldSlot;
+ticksWaited = 0;
+swapBackTime = 0;
+lastBreakTime = System.currentTimeMillis();
+return true;
+} else {
+mc.player.getInventory().setSelectedSlot(axeSlot);
+if (mc.getConnection() != null) {
+mc.getConnection().send(new ServerboundSetCarriedItemPacket(axeSlot));
+}
+Setting swapBackSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Swap Back");
+if (swapBackSetting != null && swapBackSetting.getValBoolean()) {
+Setting swapDelaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Swap Back Delay (ms)");
+long swapDelay = swapDelaySetting != null ? (long) swapDelaySetting.getValDouble() : 150;
+needsSwapBack = true;
+swapBackTime = System.currentTimeMillis() + swapDelay;
+originalSlot = oldSlot;
+}
+lastBreakTime = System.currentTimeMillis();
+return false;
+}
+}
 public boolean handleAttack(Entity target, Player player) {
 if (!this.isToggled() || !(target instanceof LivingEntity)) return false;
 LivingEntity livingTarget = (LivingEntity) target;

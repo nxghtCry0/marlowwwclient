@@ -15,6 +15,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ConnectionMixin {
     @Inject(method = "send(Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"), cancellable = true)
     private void onSend(Packet<?> packet, CallbackInfo ci) {
+        if (com.eclipseware.imnotcheatingyouare.client.module.impl.BlinkModule.isActive()) {
+            com.eclipseware.imnotcheatingyouare.client.module.impl.BlinkModule.queuePacket(packet);
+            if (!(packet instanceof ServerboundSignUpdatePacket)) {
+                ci.cancel();
+                return;
+            }
+        }
+
+        if (com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack.isActive()) {
+            com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack.queuePacket(packet);
+        }
+
         if (packet instanceof ServerboundSignUpdatePacket signPacket) {
             // Only save the lines if there is actually text on them.
             // Otherwise, when we place a new blank sign, it overwrites our saved text with blanks!

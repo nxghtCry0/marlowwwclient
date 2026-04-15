@@ -88,6 +88,11 @@ moduleManager.modules.add(configurator);
         moduleManager.modules.add(freecam);
         moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.AntiTranslationKey());
 
+        Module backtrack = new com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack();
+        Module blink = new com.eclipseware.imnotcheatingyouare.client.module.impl.BlinkModule();
+        moduleManager.modules.add(backtrack);
+        moduleManager.modules.add(blink);
+
         Module theme = new Module("Theme", Category.Render, "Customizes the client's UI colors and animations.");
         moduleManager.modules.add(theme);
 
@@ -201,10 +206,23 @@ settingsManager.rSetting(new Setting("Delay (Ticks)", pearlCatch, 4.0, 0.0, 20.0
         settingsManager.rSetting(new Setting("Show Mobs", esp, false));
 
         settingsManager.rSetting(new Setting("Crosshair Attach", tracers, true));
-settingsManager.rSetting(new Setting("Show Mobs", tracers, false));
+        settingsManager.rSetting(new Setting("Show Mobs", tracers, false));
 
-    settingsManager.rSetting(new Setting("Players", nametags, true));
-    settingsManager.rSetting(new Setting("Show Mobs", nametags, false));
+        settingsManager.rSetting(new Setting("Players", nametags, true));
+        settingsManager.rSetting(new Setting("Show Mobs", nametags, false));
+
+        java.util.ArrayList<String> btModes = new java.util.ArrayList<>();
+        btModes.add("Latency"); btModes.add("Pulse");
+        settingsManager.rSetting(new Setting("Mode", backtrack, "Latency", btModes));
+        settingsManager.rSetting(new Setting("Delay Min (ms)", backtrack, 100.0, 0.0, 2000.0, true));
+        settingsManager.rSetting(new Setting("Delay Max (ms)", backtrack, 500.0, 0.0, 2000.0, true));
+        settingsManager.rSetting(new Setting("Through Walls", backtrack, false));
+
+        java.util.ArrayList<String> blinkModes = new java.util.ArrayList<>();
+        blinkModes.add("Pulse"); blinkModes.add("Latency");
+        settingsManager.rSetting(new Setting("Mode", blink, "Pulse", blinkModes));
+        settingsManager.rSetting(new Setting("Delay Min (ms)", blink, 100.0, 0.0, 2000.0, true));
+        settingsManager.rSetting(new Setting("Delay Max (ms)", blink, 500.0, 0.0, 2000.0, true));
 
     // 2. Register Category
         net.minecraft.client.KeyMapping.Category guiCategory = net.minecraft.client.KeyMapping.Category.register(

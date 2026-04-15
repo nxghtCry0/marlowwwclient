@@ -153,6 +153,27 @@ KeyMapping attackKey = mc.options.keyAttack;
     KeyMapping.click(attackKey.getDefaultKey());
 }
 
+    public boolean shouldBlock(Entity target) {
+        if (!this.isToggled() || mc.player == null || mc.level == null) return false;
+        if (mc.screen != null) return false;
+        if (mc.hitResult == null || mc.hitResult.getType() != HitResult.Type.ENTITY) return false;
+        if (target != ((EntityHitResult) mc.hitResult).getEntity()) return false;
+        if (!isValidTarget(target)) return false;
+
+        Setting rangeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Range");
+        double range = rangeSetting != null ? rangeSetting.getValDouble() : 4.25;
+        if (mc.player.distanceToSqr(target) > (range * range)) return false;
+
+        if (mc.player.getAttackStrengthScale(0.0f) < 1.0f) return false;
+
+        Module hitSelectMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("HitSelect");
+        if (hitSelectMod != null && hitSelectMod.isToggled() && hitSelectMod instanceof com.eclipseware.imnotcheatingyouare.client.module.impl.HitSelect hs) {
+            return !hs.canAttack(target);
+        }
+
+        return false;
+    }
+
     private boolean isValidTarget(Entity entity) {
         if (!(entity instanceof LivingEntity)) return false;
         if (!entity.isAlive() || entity == mc.player) return false;
