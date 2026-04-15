@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "imnotcheatingyouare",
+  "version": "${version}",
+  "name": "imnotcheatingyouare",
+  "description": "dont u dare steal ts",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/imnotcheatingyouare/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-datagen": [
+      "com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareDataGenerator"
+    ],
+    "client": [
+      "com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient"
+    ],
+    "main": [
+      "com.eclipseware.imnotcheatingyouare.Imnotcheatingyouare"
+    ]
+  },
+  "mixins": [
+    "imnotcheatingyouare.mixins.json",
+    {
+      "config": "imnotcheatingyouare.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
