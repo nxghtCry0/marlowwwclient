@@ -8,7 +8,6 @@ import net.minecraft.network.chat.FontDescription;
 import net.minecraft.resources.Identifier;
 
 public class FontUtils {
-    // Hooks directly into your high-res oversampled verdana.json provider
     public static final Identifier VERDANA = Identifier.parse("imnotcheatingyouare:verdana");
 
     public static Component get(String text) {

@@ -38,7 +38,6 @@ public void onInitializeClient() {
         settingsManager = new SettingsManager();
         clickGui = new Clickgui();
 
-        // 1. Register Modules
 Module autoSprint = new Module("AutoSprint", Category.Movement);
 Module noJumpDelay = new Module("NoJumpDelay", Category.Movement);
 Module aimAssist = new com.eclipseware.imnotcheatingyouare.client.module.impl.AimAssist();
@@ -131,7 +130,6 @@ moduleManager.modules.add(autosign);
 moduleManager.modules.add(freecam);
 moduleManager.modules.add(friendProtector);
 
-// KillAura Settings
 java.util.ArrayList<String> kaModes = new java.util.ArrayList<>();
 kaModes.add("Modern (1.9+)"); kaModes.add("Legacy (1.8.9)");
 settingsManager.rSetting(new Setting("Combat System", killAura, "Modern (1.9+)", kaModes));
@@ -146,12 +144,10 @@ settingsManager.rSetting(new Setting("Target Mobs", killAura, true));
 settingsManager.rSetting(new Setting("Target Animals", killAura, false));
 settingsManager.rSetting(new Setting("Movement Correction", killAura, true));
 
-// AutoWeb Settings
 settingsManager.rSetting(new Setting("Delay (ms)", autoWeb, 250.0, 0.0, 2000.0, true));
 settingsManager.rSetting(new Setting("Swap Back", autoWeb, true));
 settingsManager.rSetting(new Setting("Smooth Rotation", autoWeb, 2.0, 1.0, 5.0, true));
 settingsManager.rSetting(new Setting("Movement Correction", autoWeb, true));
-// AutoDrain Settings
 settingsManager.rSetting(new Setting("Delay (ms)", autoDrain, 150.0, 0.0, 2000.0, true));
 settingsManager.rSetting(new Setting("Swap Back", autoDrain, true));
 settingsManager.rSetting(new Setting("Smooth Rotation", autoDrain, 2.0, 1.0, 5.0, true));
@@ -161,7 +157,6 @@ settingsManager.rSetting(new Setting("Movement Correction", autoDrain, true));
         Module theme = new Module("Theme", Category.Render, "Customizes the client's UI colors and animations.");
         moduleManager.modules.add(theme);
 
-        // --- REGISTER SETTINGS ---
         settingsManager.rSetting(new Setting("Accent R", theme, 155.0, 0.0, 255.0, true));
         settingsManager.rSetting(new Setting("Accent G", theme, 60.0, 0.0, 255.0, true));
         settingsManager.rSetting(new Setting("Accent B", theme, 255.0, 0.0, 255.0, true));
@@ -183,7 +178,6 @@ settingsManager.rSetting(new Setting("FOV", aimAssist, 60.0, 10.0, 360.0, true))
 settingsManager.rSetting(new Setting("Range", aimAssist, 4.0, 1.0, 8.0, false));
 settingsManager.rSetting(new Setting("Silent Aim", aimAssist, false));
 
-        // AutoClicker Settings
         java.util.ArrayList<String> acButtons = new java.util.ArrayList<>();
         acButtons.add("Left"); acButtons.add("Right");
         settingsManager.rSetting(new Setting("Button", autoClicker, "Left", acButtons));
@@ -191,21 +185,17 @@ settingsManager.rSetting(new Setting("Silent Aim", aimAssist, false));
         settingsManager.rSetting(new Setting("Max CPS", autoClicker, 14.0, 1.0, 20.0, true));
         settingsManager.rSetting(new Setting("Require Click", autoClicker, true));
 
-        // FastPlace Settings
         settingsManager.rSetting(new Setting("Delay (Ticks)", fastPlace, 0.0, 0.0, 3.0, true));
         
-        // BridgeAssist Settings
         settingsManager.rSetting(new Setting("Edge Distance", bridgeAssist, 0.25, 0.00, 0.30, false));
 settingsManager.rSetting(new Setting("Pitch Check", bridgeAssist, true));
 
-// BlockESP Settings
 settingsManager.rSetting(new Setting("Range", blockESP, 32.0, 8.0, 64.0, true));
 settingsManager.rSetting(new Setting("FPS", blockESP, 30.0, 1.0, 60.0, true));
 settingsManager.rSetting(new Setting("Tracers", blockESP, true));
 settingsManager.rSetting(new Setting("Fill", blockESP, true));
 settingsManager.rSetting(new Setting("Outline", blockESP, true));
 
-// StorageESP Settings
 settingsManager.rSetting(new Setting("Chest", storageESP, true));
 settingsManager.rSetting(new Setting("Barrel", storageESP, true));
 settingsManager.rSetting(new Setting("Shulker Box", storageESP, true));
@@ -221,7 +211,6 @@ settingsManager.rSetting(new Setting("Tracers", storageESP, true));
 settingsManager.rSetting(new Setting("Fill", storageESP, true));
 settingsManager.rSetting(new Setting("Outline", storageESP, true));
 
-// Storage Colors
 addColorSettings(settingsManager, storageESP, "Chest Color", 255, 165, 0);
 addColorSettings(settingsManager, storageESP, "Barrel Color", 139, 90, 43);
 addColorSettings(settingsManager, storageESP, "Shulker Color", 130, 90, 130);
@@ -232,7 +221,6 @@ addColorSettings(settingsManager, storageESP, "Dispenser Color", 128, 128, 128);
 addColorSettings(settingsManager, storageESP, "Dropper Color", 169, 169, 169);
 addColorSettings(settingsManager, storageESP, "Furnace Color", 160, 160, 160);
 
-        // ElytraBoost Settings
         settingsManager.rSetting(new Setting("Firework Level", elytraBoost, 1.0, 0.0, 3.0, true));
         settingsManager.rSetting(new Setting("Play Sound", elytraBoost, true));
         settingsManager.rSetting(new Setting("Players", aimAssist, true));
@@ -338,14 +326,12 @@ settingsManager.rSetting(new Setting("Show Mobs", tracers, false));
     settingsManager.rSetting(new Setting("Players", nametags, true));
 settingsManager.rSetting(new Setting("Show Mobs", nametags, false));
 
-// SilentAim Settings
 settingsManager.rSetting(new Setting("Range", silentAim, 4.5, 1.0, 8.0, false));
 settingsManager.rSetting(new Setting("FOV", silentAim, 120.0, 10.0, 360.0, true));
 settingsManager.rSetting(new Setting("Players", silentAim, true));
 settingsManager.rSetting(new Setting("Hostile Mobs", silentAim, true));
 settingsManager.rSetting(new Setting("Passive Mobs", silentAim, false));
 
-// StorageESP Settings
 settingsManager.rSetting(new Setting("Chest", storageESP, true));
 settingsManager.rSetting(new Setting("Barrel", storageESP, true));
 settingsManager.rSetting(new Setting("Shulker Box", storageESP, true));
@@ -361,7 +347,6 @@ settingsManager.rSetting(new Setting("Tracers", storageESP, true));
 settingsManager.rSetting(new Setting("Fill", storageESP, true));
 settingsManager.rSetting(new Setting("Outline", storageESP, true));
 
-// Storage Colors
 addColorSettings(settingsManager, storageESP, "Chest Color", 255, 165, 0);
 addColorSettings(settingsManager, storageESP, "Barrel Color", 139, 90, 43);
 addColorSettings(settingsManager, storageESP, "Shulker Color", 130, 90, 130);
@@ -372,19 +357,16 @@ addColorSettings(settingsManager, storageESP, "Dispenser Color", 128, 128, 128);
 addColorSettings(settingsManager, storageESP, "Dropper Color", 169, 169, 169);
 addColorSettings(settingsManager, storageESP, "Furnace Color", 160, 160, 160);
 
-// BlockESP Settings
 settingsManager.rSetting(new Setting("Range", blockESP, 32.0, 8.0, 64.0, true));
 settingsManager.rSetting(new Setting("FPS", blockESP, 30.0, 1.0, 60.0, true));
 settingsManager.rSetting(new Setting("Tracers", blockESP, true));
 settingsManager.rSetting(new Setting("Fill", blockESP, true));
 settingsManager.rSetting(new Setting("Outline", blockESP, true));
 
-    // 2. Register Category
         net.minecraft.client.KeyMapping.Category guiCategory = net.minecraft.client.KeyMapping.Category.register(
             net.minecraft.resources.Identifier.fromNamespaceAndPath("imnotcheatingyouare", "main")
         );
 
-        // Register Right Shift Keybind
         guiBind = KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 "key.imnotcheatingyouare.clickgui",
                 InputConstants.Type.KEYSYM,
@@ -392,12 +374,10 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
                 guiCategory
         ));
 
-        // Register HUD
         net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
             com.eclipseware.imnotcheatingyouare.client.ui.ArrayListHud.INSTANCE.render(guiGraphics, tickDelta.getGameTimeDeltaTicks());
         });
 
-        // 3. Listen for Key Press and Tick Modules
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
             while (guiBind.consumeClick()) {
                 if (!(client.screen instanceof Clickgui)) {
@@ -419,17 +399,14 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
             com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.visualTick();
         });
 
-        // 4. Load Configuration
         com.eclipseware.imnotcheatingyouare.client.setting.ConfigManager.load();
 
         com.eclipseware.imnotcheatingyouare.client.utils.FriendManager.load();
 
-        // Save config if the user closes the game unexpectedly (with daemon thread patch)
         Thread saveHook = new Thread(com.eclipseware.imnotcheatingyouare.client.setting.ConfigManager::save, "ConfigSaveHook");
         saveHook.setDaemon(true);
         Runtime.getRuntime().addShutdownHook(saveHook);
 
-        // 8. Register Real Client Commands
         net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("config")
                 .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("gui")

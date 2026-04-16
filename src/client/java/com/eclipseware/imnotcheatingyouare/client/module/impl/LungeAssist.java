@@ -14,7 +14,6 @@ public class LungeAssist extends Module {
     private int originalSlot = -1;
     private int swapDelayTicks = -1;
     
-    // Tracks if we are currently mid-air waiting for gravity to pull us down
     private boolean waitingForApex = false;
 
     public LungeAssist() {
@@ -36,9 +35,8 @@ public class LungeAssist extends Module {
 
         if (doJump && mc.player.onGround()) {
             mc.player.jumpFromGround();
-            waitingForApex = true; // Enter the waiting state
+            waitingForApex = true; 
         } else {
-            // If we are already in the air, or AutoJump is off, just lunge normally
             executeLunge(spearSlot);
         }
     }
@@ -50,11 +48,9 @@ public class LungeAssist extends Module {
             return;
         }
         
-        // Physically swap the slot to force client-side attributes to apply
         mc.player.getInventory().setSelectedSlot(spearSlot);
         mc.getConnection().send(new ServerboundSetCarriedItemPacket(spearSlot));
         
-        // Execute the native left-click logic exactly like the game does
         ((MinecraftAccessor) mc).invokeStartAttack();
         
         needsSwapBack = true;
@@ -66,11 +62,7 @@ public class LungeAssist extends Module {
     public void onTick() {
         if (mc == null || mc.player == null || mc.getConnection() == null) return;
 
-        // --- APEX CALCULATION ---
         if (waitingForApex) {
-            // The peak of a jump is the exact tick where Y-velocity is no longer positive.
-            // If it's <= 0.0, we have stopped moving up and are about to fall.
-            // We also check onGround() as a failsafe in case we hit our head and landed instantly.
             if (mc.player.getDeltaMovement().y <= 0.0 || mc.player.onGround()) {
                 int spearSlot = findLungeSpear(mc.player);
                 if (spearSlot != -1) {
@@ -80,11 +72,9 @@ public class LungeAssist extends Module {
             }
         }
 
-        // --- SWAP BACK LOGIC ---
         if (needsSwapBack && !waitingForApex) {
             swapDelayTicks--;
             if (swapDelayTicks <= 0) {
-                // Revert slot and sync with server
                 mc.player.getInventory().setSelectedSlot(originalSlot);
                 mc.getConnection().send(new ServerboundSetCarriedItemPacket(originalSlot));
                 needsSwapBack = false;

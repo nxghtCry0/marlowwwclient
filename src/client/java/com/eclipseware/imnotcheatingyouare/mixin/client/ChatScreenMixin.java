@@ -18,11 +18,9 @@ private void onHandleChatInput(String message, boolean addToHistory, CallbackInf
         if (message.toLowerCase().contains("gui")) {
             Minecraft.getInstance().setScreen(new ConfigGui());
         } else if (message.toLowerCase().contains("export")) {
-            // Export all by default via command
             String exp = ConfigManager.exportSpecific(com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient.INSTANCE.moduleManager.modules);
             Minecraft.getInstance().keyboardHandler.setClipboard(exp);
         }
-        // Cancel the chat message so the server never sees the command
         ci.cancel(); 
     }
 }

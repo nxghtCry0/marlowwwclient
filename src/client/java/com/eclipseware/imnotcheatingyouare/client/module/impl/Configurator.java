@@ -11,7 +11,6 @@ public class Configurator extends Module {
 
     @Override
     public void onEnable() {
-        // Pop open the GUI, then immediately untoggle the module so it acts like a push-button
         if (mc.screen != null) mc.screen.onClose();
         mc.setScreen(new ConfigGui());
         this.toggle(); 

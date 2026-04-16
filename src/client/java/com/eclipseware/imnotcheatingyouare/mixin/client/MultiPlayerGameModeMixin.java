@@ -24,7 +24,6 @@ public class MultiPlayerGameModeMixin {
 
     @Inject(method = "attack", at = @At("HEAD"), cancellable = true)
     private void onAttack(Player player, Entity target, CallbackInfo ci) {
-        // 1. HitSelect
         Module hitSelectMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("HitSelect");
         if (hitSelectMod != null && hitSelectMod.isToggled() && hitSelectMod instanceof HitSelect hs) {
             if (!hs.canAttack(target)) {
@@ -33,7 +32,6 @@ public class MultiPlayerGameModeMixin {
             }
         }
 
-        // 2. AutoShieldBreaker
         Module shieldBreakerMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("AutoShieldBreaker");
         if (shieldBreakerMod != null && shieldBreakerMod.isToggled() && shieldBreakerMod instanceof AutoShieldBreaker asb) {
             if (asb.handleAttack(target, player)) {
@@ -42,7 +40,6 @@ public class MultiPlayerGameModeMixin {
             }
         }
 
-        // 3. BreachSwap
         Module breachSwapMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("BreachSwap");
         if (breachSwapMod != null && breachSwapMod instanceof com.eclipseware.imnotcheatingyouare.client.module.impl.BreachSwap bs) {
             if (bs.handleAttack(target, player)) {
@@ -51,7 +48,6 @@ public class MultiPlayerGameModeMixin {
             }
         }
 
-        // 4. KBDisplacement
 if (!ci.isCancelled()) {
 Module kbMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("KBDisplacement");
 if (kbMod != null && kbMod.isToggled() && kbMod instanceof KnockbackDisplacement kbd) {
@@ -64,7 +60,6 @@ kbShouldRevert = true;
 }
 }
 }
-// 5. SilentAim Integration (Guarantees hit registration by syncing rotation right before attack)
 if (!ci.isCancelled()) {
 Module silentAim = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("SilentAim");
 if (silentAim != null && silentAim.isToggled() && com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.isActive()) {

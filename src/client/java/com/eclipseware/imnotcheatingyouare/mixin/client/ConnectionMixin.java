@@ -24,8 +24,6 @@ public class ConnectionMixin {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
-        // Silent rotation spoofing — intercept movement packets and replace rotation
-        // with RotationManager's server rotation (camera stays free)
         if (packet instanceof ServerboundMovePlayerPacket movePacket && !isSpoofing) {
             boolean rotationSpoof = com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.isActive();
             boolean silentAimSpoof = SilentAimUtil.isActive();
@@ -77,7 +75,6 @@ public class ConnectionMixin {
             }
         }
 
-        // AutoSign functionality
         if (packet instanceof ServerboundSignUpdatePacket signPacket) {
             boolean hasText = false;
             for (String line : signPacket.getLines()) {
@@ -92,7 +89,6 @@ public class ConnectionMixin {
             }
         }
 
-        // Freecam movement suppression
         if (packet instanceof ServerboundMovePlayerPacket ||
             packet instanceof net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket ||
             packet instanceof net.minecraft.network.protocol.game.ServerboundSwingPacket) {
@@ -105,7 +101,6 @@ public class ConnectionMixin {
         }
 
         }
-// Anti-translation key crash protection
     @Inject(method = "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"), cancellable = true)
     private void onChannelRead(io.netty.channel.ChannelHandlerContext context, Packet<?> packet, CallbackInfo ci) {
         if (packet instanceof net.minecraft.network.protocol.game.ClientboundSystemChatPacket chatPacket) {

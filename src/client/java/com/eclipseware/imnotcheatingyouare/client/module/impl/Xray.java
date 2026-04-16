@@ -14,14 +14,14 @@ public class Xray extends Module {
     @Override
     public void onEnable() {
         if (mc.levelRenderer != null) {
-            mc.levelRenderer.allChanged(); // Force a chunk remesh
+            mc.levelRenderer.allChanged(); 
         }
     }
 
     @Override
     public void onDisable() {
         if (mc.levelRenderer != null) {
-            mc.levelRenderer.allChanged(); // Force a chunk remesh
+            mc.levelRenderer.allChanged(); 
         }
     }
 }

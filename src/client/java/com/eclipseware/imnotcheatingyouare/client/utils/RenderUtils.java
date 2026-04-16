@@ -77,16 +77,12 @@ public class RenderUtils {
         cornerLen = Math.max(cornerLen, 3.0);
         int cl = (int) cornerLen;
 
-        // Top-left
         graphics.fill((int)minX, (int)minY, (int)minX + cl, (int)minY + 1, c);
         graphics.fill((int)minX, (int)minY, (int)minX + 1, (int)minY + cl, c);
-        // Top-right
         graphics.fill((int)maxX - cl, (int)minY, (int)maxX, (int)minY + 1, c);
         graphics.fill((int)maxX - 1, (int)minY, (int)maxX, (int)minY + cl, c);
-        // Bottom-left
         graphics.fill((int)minX, (int)maxY - 1, (int)minX + cl, (int)maxY, c);
         graphics.fill((int)minX, (int)maxY - cl, (int)minX + 1, (int)maxY, c);
-        // Bottom-right
         graphics.fill((int)maxX - cl, (int)maxY - 1, (int)maxX, (int)maxY, c);
         graphics.fill((int)maxX - 1, (int)maxY - cl, (int)maxX, (int)maxY, c);
     }

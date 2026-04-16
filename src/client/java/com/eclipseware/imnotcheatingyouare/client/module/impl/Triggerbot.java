@@ -58,13 +58,11 @@ public class Triggerbot extends Module {
             return;
         }
 
-        // HitSelect integration
         Module hitSelectMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("HitSelect");
         if (hitSelectMod != null && hitSelectMod.isToggled() && hitSelectMod instanceof HitSelect hs) {
             if (!hs.canAttack(target)) return;
         }
 
-        // Full attack cooldown required before clicking
         if (mc.player.getAttackStrengthScale(1.0f) < 1.0f) {
             tickCounter = 0;
             return;

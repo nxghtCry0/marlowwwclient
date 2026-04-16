@@ -6,5 +6,5 @@ public enum Category {
     Render,
     Misc,
     World,
-    Configs // Added new cool tab for the ClickGUI
+    Configs 
 }

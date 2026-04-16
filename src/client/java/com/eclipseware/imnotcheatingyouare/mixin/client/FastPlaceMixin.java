@@ -21,7 +21,6 @@ public class FastPlaceMixin {
             Setting delaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(FastPlace.INSTANCE, "Delay (Ticks)");
             int targetDelay = delaySetting != null ? (int) delaySetting.getValDouble() : 0;
             
-            // Only lower the delay, don't increase it if the game sets it to 0 naturally
             if (this.rightClickDelay > targetDelay) {
                 this.rightClickDelay = targetDelay;
             }

@@ -13,8 +13,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(MultiPlayerGameMode.class)
 public class WTapMixin {
 
-    // RETURN only fires if no other mixin cancelled the attack at HEAD,
-    // so this exclusively catches attacks that actually reached the server.
     @Inject(method = "attack", at = @At("RETURN"))
     private void onAttackReturn(Player player, Entity target, CallbackInfo ci) {
         if (ImnotcheatingyouareClient.INSTANCE == null || ImnotcheatingyouareClient.INSTANCE.moduleManager == null) return;

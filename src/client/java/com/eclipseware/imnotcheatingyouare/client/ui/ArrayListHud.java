@@ -83,29 +83,23 @@ public class ArrayListHud {
             if (rectHeight <= 0) continue;
             
             int alpha = Math.max(0, Math.min(255, (int)(255 * anim)));
-            int bgAlpha = Math.max(0, Math.min(255, (int)(140 * anim))); // Slightly lighter transparent background
+            int bgAlpha = Math.max(0, Math.min(255, (int)(140 * anim))); 
             int currentBg = new Color(15, 15, 15, bgAlpha).getRGB();
             int currentAccent = new Color(r, g, b, alpha).getRGB();
             int textColor = new Color(255, 255, 255, alpha).getRGB();
 
-            // Calculate inner bounds to prevent overlapping alpha corners
             int bgTopY = (i == 0) ? drawY + 1 : drawY;
             int bgBottomY = (i == activeMods.size() - 1) ? drawY + rectHeight - 1 : drawY + rectHeight;
 
             if (isRight) {
-                // Background (Inside borders)
                 guiGraphics.fill(drawX + 1, bgTopY, drawX + rectWidth - 2, bgBottomY, currentBg);
                 
-                // Top Outline
                 if (i == 0) guiGraphics.fill(drawX, drawY, drawX + rectWidth, drawY + 1, currentAccent);
                 
-                // Right Accent Line
                 guiGraphics.fill(drawX + rectWidth - 2, bgTopY, drawX + rectWidth, bgBottomY, currentAccent);
                 
-                // Left Outline Line
                 guiGraphics.fill(drawX, bgTopY, drawX + 1, drawY + rectHeight - 1, currentAccent);
                 
-                // Bottom Bridge Connector
                 if (i < activeMods.size() - 1) {
                     Module nextM = activeMods.get(i + 1);
                     float nextAnim = animMap.get(nextM);
@@ -118,23 +112,17 @@ public class ArrayListHud {
                         guiGraphics.fill(minX, drawY + rectHeight - 1, maxX + 1, drawY + rectHeight, currentAccent);
                     }
                 } else {
-                    // Close bottom for last element
                     guiGraphics.fill(drawX, drawY + rectHeight - 1, drawX + rectWidth, drawY + rectHeight, currentAccent);
                 }
             } else {
-                // Background (Inside borders)
                 guiGraphics.fill(drawX + 2, bgTopY, drawX + rectWidth - 1, bgBottomY, currentBg);
                 
-                // Top Outline
                 if (i == 0) guiGraphics.fill(drawX, drawY, drawX + rectWidth, drawY + 1, currentAccent);
                 
-                // Left Accent Line
                 guiGraphics.fill(drawX, bgTopY, drawX + 2, bgBottomY, currentAccent);
                 
-                // Right Outline Line
                 guiGraphics.fill(drawX + rectWidth - 1, bgTopY, drawX + rectWidth, drawY + rectHeight - 1, currentAccent);
                 
-                // Bottom Bridge Connector
                 if (i < activeMods.size() - 1) {
                     Module nextM = activeMods.get(i + 1);
                     float nextAnim = animMap.get(nextM);
@@ -150,7 +138,6 @@ public class ArrayListHud {
                         guiGraphics.fill(minX - 1, drawY + rectHeight - 1, maxX, drawY + rectHeight, currentAccent);
                     }
                 } else {
-                    // Close bottom for last element
                     guiGraphics.fill(drawX, drawY + rectHeight - 1, drawX + rectWidth, drawY + rectHeight, currentAccent);
                 }
             }

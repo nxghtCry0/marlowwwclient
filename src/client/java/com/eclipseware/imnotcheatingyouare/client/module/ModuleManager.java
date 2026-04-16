@@ -8,7 +8,6 @@ public class ModuleManager {
 public List<Module> modules = new ArrayList<>();
 
 public ModuleManager() {
-    // Register modules here later
 }
 
 public List<Module> getModules(Category category) {

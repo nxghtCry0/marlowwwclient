@@ -71,41 +71,33 @@ public class RotationManager {
         float yawDiff = Mth.wrapDegrees(targetYaw - currentServerYaw);
         float pitchDiff = targetPitch - currentServerPitch;
 
-        // Exponential decay: eat random 15-45% of remaining distance
         float yawDesired = yawDiff * (0.15f + rand.nextFloat() * 0.30f);
         float pitchDesired = pitchDiff * (0.15f + rand.nextFloat() * 0.30f);
 
-        // Clamp to max step
         float yawMax = stepDegrees * (0.7f + rand.nextFloat() * 0.6f);
         float pitchMax = stepDegrees * 0.8f * (0.7f + rand.nextFloat() * 0.6f);
         if (Math.abs(yawDesired) > yawMax) yawDesired = Math.signum(yawDesired) * yawMax;
         if (Math.abs(pitchDesired) > pitchMax) pitchDesired = Math.signum(pitchDesired) * pitchMax;
 
-        // Path curvature: perpendicular yaw offset
         float curveAmount = Math.min(Math.abs(yawDiff), 30f) * 0.08f;
         yawDesired += (rand.nextFloat() - 0.5f) * curveAmount;
 
-        // Quantize to integer GCD steps
         int yawSteps = Math.round(yawDesired / gcd);
         int pitchSteps = Math.round(pitchDesired / gcd);
 
-        // Random ±1 step jitter on the step count
         yawSteps += rand.nextInt(3) - 1;
         pitchSteps += rand.nextInt(3) - 1;
 
-        // Don't overshoot past the target
         int maxYawSteps = Math.round(yawDiff / gcd);
         int maxPitchSteps = Math.round(pitchDiff / gcd);
         if (Math.abs(yawSteps) > Math.abs(maxYawSteps)) yawSteps = maxYawSteps;
         if (Math.abs(pitchSteps) > Math.abs(maxPitchSteps)) pitchSteps = maxPitchSteps;
 
-        // Don't reverse direction
         if (yawDiff > 0 && yawSteps < 0) yawSteps = 0;
         if (yawDiff < 0 && yawSteps > 0) yawSteps = 0;
         if (pitchDiff > 0 && pitchSteps < 0) pitchSteps = 0;
         if (pitchDiff < 0 && pitchSteps > 0) pitchSteps = 0;
 
-        // Apply exact GCD-multiple deltas
         currentServerYaw += yawSteps * gcd;
         currentServerPitch += pitchSteps * gcd;
 

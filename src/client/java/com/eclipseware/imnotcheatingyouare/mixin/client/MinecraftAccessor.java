@@ -6,7 +6,6 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 
 @Mixin(Minecraft.class)
 public interface MinecraftAccessor {
-    // "method_1536" maps to "startAttack" in Official Mojang Mappings
     @Invoker("startAttack")
     boolean invokeStartAttack();
 }

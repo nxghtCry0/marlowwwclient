@@ -17,7 +17,7 @@ import net.minecraft.world.phys.Vec3;
 public class SilentAim extends Module {
     private Entity target;
     private long lastTargetTime = 0;
-    private static final long TARGET_COOLDOWN = 100; // ms
+    private static final long TARGET_COOLDOWN = 100; 
 
     public SilentAim() {
         super("SilentAim", Category.Combat, "Silently aims at targets when attacking without moving your camera.");
@@ -29,27 +29,22 @@ if (mc == null || mc.player == null || mc.level == null || mc.screen != null) {
 target = null;
 return;
 }
-// Only calculate when attacking
 if (!mc.options.keyAttack.isDown()) {
 target = null;
 return;
 }
 chooseTarget();
 if (target == null) return;
-// Calculate aim point (center of bounding box)
 AABB box = target.getBoundingBox();
 Vec3 aimPoint = new Vec3(box.getCenter().x, box.getCenter().y, box.getCenter().z);
 Vec3 eyes = mc.player.getEyePosition();
-// Calculate required rotations
 double diffX = aimPoint.x - eyes.x;
 double diffY = aimPoint.y - eyes.y;
 double diffZ = aimPoint.z - eyes.z;
 double distXZ = Math.sqrt(diffX * diffX + diffZ * diffZ);
 float neededYaw = (float) (Math.toDegrees(Math.atan2(diffZ, diffX)) - 90.0F);
 float neededPitch = (float) -Math.toDegrees(Math.atan2(diffY, distXZ));
-// Activate silent aim with higher packet count for reliability
 SilentAimUtil.setRotation(neededYaw, neededPitch, 4);
-// Force-sync rotation immediately if active to prevent standing-still desync
 if (SilentAimUtil.isActive() && mc.getConnection() != null) {
 mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Rot(
 SilentAimUtil.getYaw(), SilentAimUtil.getPitch(), mc.player.onGround(), false
@@ -59,7 +54,6 @@ SilentAimUtil.consume();
 }
 
     private void chooseTarget() {
-        // Cooldown to prevent rapid target switching
         if (System.currentTimeMillis() - lastTargetTime < TARGET_COOLDOWN) return;
 
         Setting rangeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Range");
@@ -76,7 +70,6 @@ SilentAimUtil.consume();
             if (mc.player.distanceTo(entity) > range) continue;
             if (!isValidTarget(entity)) continue;
 
-            // Check FOV
             AABB box = entity.getBoundingBox();
             Vec3 aimPoint = new Vec3(box.getCenter().x, box.getCenter().y, box.getCenter().z);
             double angle = getAngleToLookVec(aimPoint);

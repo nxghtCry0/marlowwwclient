@@ -37,10 +37,8 @@ public class CheckBox extends Comp {
         boolean hovered = isInside(mouseX, mouseY, parent.posX + x, parent.posY + y, parent.posX + x + 35 + FontUtils.width(setting.getName()), parent.posY + y + 16);
         if (hovered && slideAnim < 0.5f) currentBg = new Color(60, 60, 65).getRGB();
 
-        // Rounded Pill Background
         AnimationUtil.drawRoundedRect(guiGraphics, (int)(parent.posX + x), (int)(parent.posY + y), 32, 16, 8, currentBg);
         
-        // Sliding Knob
         int knobX = (int)(parent.posX + x + 2 + (slideAnim * 16));
         AnimationUtil.drawRoundedRect(guiGraphics, knobX, (int)(parent.posY + y + 2), 12, 12, 6, -1);
 

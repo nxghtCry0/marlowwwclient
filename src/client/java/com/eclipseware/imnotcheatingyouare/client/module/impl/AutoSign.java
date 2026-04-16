@@ -17,7 +17,6 @@ public class AutoSign extends Module {
     public static void handleScreen(AbstractSignEditScreen screen) {
         if (savedLines != null && Minecraft.getInstance().player != null) {
             try {
-                // Mojmap name for the sign field inside AbstractSignEditScreen
                 java.lang.reflect.Field signField = AbstractSignEditScreen.class.getDeclaredField("sign");
                 signField.setAccessible(true);
                 net.minecraft.world.level.block.entity.SignBlockEntity signEntity = (net.minecraft.world.level.block.entity.SignBlockEntity) signField.get(screen);

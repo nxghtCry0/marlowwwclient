@@ -61,9 +61,6 @@ public class Module {
     public void tickKeybind() {
         if (this.keyBind == -1 || mc == null || mc.getWindow() == null) return;
 
-        // Don't toggle modules while any screen is open (chat, inventory, GUIs).
-        // Reset latching so releasing the key inside a screen doesn't cause
-        // an instant toggle the moment the screen closes.
         if (mc.screen != null) {
             wasKeyPressed = false;
             return;

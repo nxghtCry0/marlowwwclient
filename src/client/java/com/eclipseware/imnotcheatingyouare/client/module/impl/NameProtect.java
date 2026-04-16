@@ -9,5 +9,4 @@ public class NameProtect extends Module {
         super("NameProtect", Category.Misc);
     }
     
-    // Logic is handled natively by Minecraft Accessibility Settings
 }

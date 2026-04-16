@@ -135,7 +135,7 @@ public class ConfigManager {
         try {
             String encrypted = new String(Files.readAllBytes(CONFIG_FILE.toPath()));
             String rawJson = CryptoUtils.decrypt(encrypted);
-            if (rawJson == null) return; // If decryption fails, abort
+            if (rawJson == null) return; 
 
             JsonObject json = JsonParser.parseString(rawJson).getAsJsonObject();
             if (json.has("Modules")) {

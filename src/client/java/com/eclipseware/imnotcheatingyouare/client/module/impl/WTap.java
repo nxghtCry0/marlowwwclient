@@ -8,7 +8,6 @@ import org.lwjgl.glfw.GLFW;
 
 public class WTap extends Module {
 
-    // 0 = idle, 1 = counting down before release, 2 = W is released counting down to re-press
     private int phase = 0;
     private int ticksRemaining = 0;
 
@@ -36,15 +35,12 @@ public class WTap extends Module {
 
         switch (phase) {
             case 1 -> {
-                // Before releasing: abort if player let go of W during the wait
                 if (!mc.options.keyUp.isDown()) {
                     phase = 0;
                     return;
                 }
                 ticksRemaining--;
                 if (ticksRemaining <= 0) {
-                    // Physically unpress W — aiStep() sees zza=0 and sends STOP_SPRINTING
-                    // naturally through the vanilla movement pipeline, identical to a real key release
                     mc.options.keyUp.setDown(false);
                     phase = 2;
                     Setting actionSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Action Ticks");
@@ -54,11 +50,8 @@ public class WTap extends Module {
             case 2 -> {
                 ticksRemaining--;
                 if (ticksRemaining <= 0) {
-                    // Only re-press if the player is still physically holding the W key.
-                    // Reading raw GLFW state avoids the false-negative from our own setDown(false).
                     if (isPhysicallyHoldingW()) {
                         mc.options.keyUp.setDown(true);
-                        // aiStep() sees zza>0 again → sends START_SPRINTING naturally
                     }
                     phase = 0;
                 }

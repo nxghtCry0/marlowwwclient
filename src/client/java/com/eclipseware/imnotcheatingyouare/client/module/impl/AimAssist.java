@@ -148,7 +148,6 @@ public class AimAssist extends Module {
             stepPitch = pitchVelocity + breathPitch;
         }
 
-        // Overflick
         Setting doOverflick = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Overflick");
         if (doOverflick != null && doOverflick.getValBoolean()) {
             Setting ofPower = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Overflick Power");
@@ -170,7 +169,6 @@ public class AimAssist extends Module {
             }
         }
 
-        // Stop On Target: gradually release when close to reduce robotic look
         Setting stopSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Stop On Target");
         if (stopSetting != null && stopSetting.getValBoolean()) {
             double angleToTarget = getAngleToLookVec(aimPoint);
@@ -187,18 +185,15 @@ public class AimAssist extends Module {
             float randVal = randSetting != null ? (float) randSetting.getValDouble() : 3.0f;
             float maxJitter = (randVal / 10.0f) * 0.3f;
 
-            // Apply non-linear jitter scaled by Randomness slider
             stepYaw *= (1.0f - maxJitter/2f) + (float) Math.random() * maxJitter;
             stepPitch *= (1.0f - maxJitter/2f) + (float) Math.random() * maxJitter;
 
-            // Quantize to GCD
             float gcd = com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getGCD();
             if (gcd < 0.001f) gcd = 0.15f;
 
             int yawSteps = Math.round(stepYaw / gcd);
             int pitchSteps = Math.round(stepPitch / gcd);
             
-            // Random +/-1 step jitter occasionally, scaled by randomness
             float stepJitterChance = (randVal / 10.0f) * 0.2f;
             if (yawSteps != 0 && Math.random() < stepJitterChance) yawSteps += (Math.random() < 0.5 ? 1 : -1);
             if (pitchSteps != 0 && Math.random() < stepJitterChance) pitchSteps += (Math.random() < 0.5 ? 1 : -1);
@@ -211,7 +206,6 @@ public class AimAssist extends Module {
             Setting silentAimSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Silent Aim");
             boolean useSilent = silentAimSetting != null && silentAimSetting.getValBoolean();
 
-            // Do not wrap the yaw! Vanilla never wraps, wrapping here causes AimModulo360.
             float newYaw = currentYaw + stepYaw;
             float newPitch = Mth.clamp(currentPitch + stepPitch, -90.0F, 90.0F);
 

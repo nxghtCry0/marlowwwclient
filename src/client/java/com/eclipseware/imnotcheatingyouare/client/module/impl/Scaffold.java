@@ -22,9 +22,7 @@ public class Scaffold extends Module {
     @Override
     public void onTick() {
         if (mc != null && mc.player != null && mc.screen == null) {
-            // Hold the backwards key automatically
             mc.options.keyDown.setDown(true);
-            // Optionally hold right click to place blocks automatically
             mc.options.keyUse.setDown(true);
         }
     }

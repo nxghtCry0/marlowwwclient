@@ -31,11 +31,9 @@ public class ElytraBoost extends Module {
             Setting soundSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Play Sound");
             boolean playSound = soundSet == null || soundSet.getValBoolean();
 
-            // Create a fake firework item stack with the desired flight duration
             ItemStack stack = new ItemStack(Items.FIREWORK_ROCKET);
             stack.set(DataComponents.FIREWORKS, new Fireworks((byte) level, List.of()));
 
-            // Spawn the rocket entity bound to the player
             FireworkRocketEntity rocket = new FireworkRocketEntity(mc.level, stack, mc.player);
             mc.level.addFreshEntity(rocket);
 

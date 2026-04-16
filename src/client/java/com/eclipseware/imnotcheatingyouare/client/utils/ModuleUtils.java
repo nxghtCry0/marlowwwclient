@@ -43,7 +43,6 @@ public class ModuleUtils {
 
     public static void placeBlockPacket(BlockPos pos, Direction face) {
         if (mc.player == null || mc.getConnection() == null) return;
-        // 1.21+ constructor requires a BlockHitResult and a sequence ID
         BlockHitResult hitResult = new BlockHitResult(
             Vec3.atCenterOf(pos), face, pos, false
         );
@@ -60,7 +59,6 @@ useItemPacket(mc.player.getYRot(), mc.player.getXRot());
 
 public static void useItemPacket(float yaw, float pitch) {
 if (mc.player == null || mc.getConnection() == null) return;
-// 1.21.1+ constructor: (Hand, Sequence, Yaw, Pitch)
 ServerboundUseItemPacket packet = new ServerboundUseItemPacket(
 InteractionHand.MAIN_HAND, 0, yaw, pitch
 );

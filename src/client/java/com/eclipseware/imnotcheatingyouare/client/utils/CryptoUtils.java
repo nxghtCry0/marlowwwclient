@@ -7,10 +7,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 public class CryptoUtils {
-    // 32-byte key is required for AES-256 (256 bits)
     private static final String KEY = "EclipseWareConfigEncKey_32bytes!";
     
-    // 16-byte Initialization Vector (128 bits)
     private static final String INIT_VECTOR = "EclipseWareIV_16";
 
     public static String encrypt(String value) {

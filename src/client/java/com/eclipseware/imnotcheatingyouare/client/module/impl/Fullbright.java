@@ -15,8 +15,6 @@ public class Fullbright extends Module {
     public void onTick() {
         if (mc.player == null) return;
         
-        // Adds Night Vision with infinite duration. 
-        // The three 'false' parameters completely hide the particles, ambient effects, and the UI icon!
         mc.player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 999999, 0, false, false, false));
     }
 

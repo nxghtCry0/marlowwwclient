@@ -14,7 +14,6 @@ public class ClientPacketListenerMixin {
     private void onResourcePackPush(ClientboundResourcePackPushPacket packet, CallbackInfo ci) {
         String url = packet.url().toLowerCase();
         
-        // Block local SSRF (Server-Side Request Forgery) attempts
         if (url.contains("localhost") || url.contains("127.0.0.1") || url.contains("192.168.") || 
             url.contains("10.") || url.contains("172.16.") || url.contains("0.0.0.0")) {
             System.err.println("[EclipseWare] Blocked malicious local SSRF resource pack exploit from server: " + url);

@@ -20,7 +20,6 @@ public class Reach extends Module {
         Setting reachSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Distance");
         double reachAdd = reachSetting != null ? reachSetting.getValDouble() : 0.5;
 
-        // Vanilla Entity reach is 3.0. Max slider is 1.0. Max total reach = 4.0!
         if (mc.player.getAttribute(Attributes.BLOCK_INTERACTION_RANGE) != null) {
             Objects.requireNonNull(mc.player.getAttribute(Attributes.BLOCK_INTERACTION_RANGE)).setBaseValue(4.5 + reachAdd);
         }

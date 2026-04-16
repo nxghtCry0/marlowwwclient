@@ -21,7 +21,6 @@ public class BlockBehaviourMixin {
         }
     }
 
-    // Forces ambient occlusion to act as if everything is fully lit so ores aren't pitched black inside the earth
     @Inject(method = "getShadeBrightness", at = @At("HEAD"), cancellable = true)
     private void onGetShadeBrightness(BlockState state, net.minecraft.world.level.BlockGetter level, net.minecraft.core.BlockPos pos, CallbackInfoReturnable<Float> cir) {
         if (Xray.INSTANCE != null && Xray.INSTANCE.isToggled()) {
@@ -29,7 +28,6 @@ public class BlockBehaviourMixin {
         }
     }
     
-    // Forces the renderer to allow skylight to propagate through the invisible dirt/stone
     @Inject(method = "propagatesSkylightDown", at = @At("HEAD"), cancellable = true)
     private void onPropagatesSkylightDown(BlockState state, CallbackInfoReturnable<Boolean> cir) {
         if (Xray.INSTANCE != null && Xray.INSTANCE.isToggled()) {

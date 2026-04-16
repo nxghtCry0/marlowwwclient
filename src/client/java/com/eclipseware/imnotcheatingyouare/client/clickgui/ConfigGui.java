@@ -17,7 +17,6 @@ public class ConfigGui extends Screen {
 
     public ConfigGui() {
         super(Component.literal("Config Manager"));
-        // Default to exporting everything
         includedModules.addAll(ImnotcheatingyouareClient.INSTANCE.moduleManager.modules);
     }
 
@@ -33,7 +32,6 @@ public class ConfigGui extends Screen {
         int w = this.width;
         int h = this.height;
 
-        // Theme Sync
         Module theme = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Theme");
         int r = 155, g = 60, b = 255;
         if (theme != null) {
@@ -43,12 +41,10 @@ public class ConfigGui extends Screen {
         }
         int accent = new Color(r, g, b).getRGB();
 
-        // Background
         guiGraphics.fill(0, 0, w, h, new Color(10, 10, 10, 240).getRGB());
         com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.drawCenteredString(guiGraphics, "Cloud Config Manager", w / 2, 20, accent);
         com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.drawCenteredString(guiGraphics, "Select modules to include in your export", w / 2, 35, new Color(170, 170, 170).getRGB());
 
-        // Buttons
         boolean exportHovered = mouseX >= w / 2 - 160 && mouseX <= w / 2 - 10 && mouseY >= h - 40 && mouseY <= h - 20;
         guiGraphics.fill(w / 2 - 160, h - 40, w / 2 - 10, h - 20, exportHovered ? new Color(50, 50, 52).getRGB() : new Color(30, 30, 32).getRGB());
         com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.drawCenteredString(guiGraphics, "Export to Clipboard", w / 2 - 85, h - 34, -1);
@@ -57,7 +53,6 @@ public class ConfigGui extends Screen {
         guiGraphics.fill(w / 2 + 10, h - 40, w / 2 + 160, h - 20, importHovered ? new Color(50, 50, 52).getRGB() : new Color(30, 30, 32).getRGB());
         com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.drawCenteredString(guiGraphics, "Import from Clipboard", w / 2 + 85, h - 34, accent);
 
-        // Scrollable Module List
         guiGraphics.enableScissor(w / 2 - 100, 55, w / 2 + 100, h - 60);
         guiGraphics.pose().pushMatrix();
         guiGraphics.pose().translate(0f, (float) scrollY);
@@ -83,7 +78,6 @@ int button = event.button();
     int w = this.width;
     int h = this.height;
 
-    // Export Action
     if (mouseX >= w / 2 - 160 && mouseX <= w / 2 - 10 && mouseY >= h - 40 && mouseY <= h - 20) {
         String exported = ConfigManager.exportSpecific(includedModules);
         Minecraft.getInstance().keyboardHandler.setClipboard(exported);
@@ -92,7 +86,6 @@ int button = event.button();
         return true;
     }
 
-    // Import Action
     if (mouseX >= w / 2 + 10 && mouseX <= w / 2 + 160 && mouseY >= h - 40 && mouseY <= h - 20) {
         String clipboard = Minecraft.getInstance().keyboardHandler.getClipboard();
         ConfigManager.importString(clipboard);
@@ -101,7 +94,6 @@ int button = event.button();
         return true;
     }
 
-    // Module Toggling
     int y = 60 + (int) scrollY;
     for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.modules) {
         if (mouseX >= w / 2 - 80 && mouseX <= w / 2 + 80 && mouseY >= y && mouseY <= y + 15) {

@@ -29,11 +29,9 @@ public class AutoClicker extends Module {
         }
 
         if (System.currentTimeMillis() - lastClickTime >= nextDelay) {
-            // Send Native Click
             KeyMapping.click(targetKey.getDefaultKey());
             lastClickTime = System.currentTimeMillis();
 
-            // Calculate next randomized delay
             Setting minCpsSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Min CPS");
             Setting maxCpsSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Max CPS");
             
@@ -45,7 +43,6 @@ public class AutoClicker extends Module {
             }
 
             double randomCps = minCps + (Math.random() * (maxCps - minCps));
-            // Add extreme micro-jitter to prevent static CPS detection
             randomCps += (Math.random() - 0.5); 
             
             nextDelay = (long) (1000.0 / Math.max(1.0, randomCps));

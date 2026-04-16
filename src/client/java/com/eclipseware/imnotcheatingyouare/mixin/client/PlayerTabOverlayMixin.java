@@ -23,17 +23,14 @@ public class PlayerTabOverlayMixin {
         if (np != null && np.isToggled() && Minecraft.getInstance().getUser() != null) {
             String myName = Minecraft.getInstance().getUser().getName();
             
-            // Only process if this is OUR player entry in the tab list
 if (playerInfo.getProfile().name().equals(myName)) {
 Component current = cir.getReturnValue();
 Setting nameSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(np, "Name");
                 String alias = nameSetting != null ? nameSetting.getValString() : "Marlowww";
 
                 if (current == null) {
-                    // Default fallback if no styling exists
                     cir.setReturnValue(Component.literal(alias));
                 } else if (current.getString().contains(myName)) {
-                    // Rebuild to preserve prefixes/suffixes (like Scoreboard teams)
                     cir.setReturnValue(replaceName(current, myName, alias));
                 }
             }

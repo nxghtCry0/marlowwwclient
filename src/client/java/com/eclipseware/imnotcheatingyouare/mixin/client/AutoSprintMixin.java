@@ -17,7 +17,6 @@ if (sprintMod == null || !sprintMod.isToggled()) return;
 
     LocalPlayer player = (LocalPlayer) (Object) this;
     
-    // zza > 0 checks for forward movement in Mojang Mappings
     if (player.zza > 0 && !player.isShiftKeyDown() && !player.isUsingItem()) {
         player.setSprinting(true);
     }

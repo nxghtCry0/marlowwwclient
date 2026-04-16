@@ -27,7 +27,7 @@ public class PearlCatch extends Module {
         windChargeSlot = findItem("wind_charge");
 
         if (pearlSlot == -1 || windChargeSlot == -1) {
-            super.onKeybind(); // Toggle normally if we don't have the required items
+            super.onKeybind(); 
             return;
         }
 
@@ -35,11 +35,9 @@ public class PearlCatch extends Module {
         targetYaw = mc.player.getYRot();
         targetPitch = mc.player.getXRot();
         
-        // Swap to Pearl
         mc.player.getInventory().setSelectedSlot(pearlSlot);
         mc.getConnection().send(new ServerboundSetCarriedItemPacket(pearlSlot));
 
-        // Throw Pearl
         mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
         mc.player.swing(InteractionHand.MAIN_HAND);
 
@@ -71,18 +69,14 @@ public class PearlCatch extends Module {
     }
     
     private void fireWindCharge() {
-        // Force the rotation check for exactly when we swap
         com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.keepRotated(targetYaw, targetPitch, 40.0f, false);
 
-        // Swap to Wind Charge
         mc.player.getInventory().setSelectedSlot(windChargeSlot);
         mc.getConnection().send(new ServerboundSetCarriedItemPacket(windChargeSlot));
 
-        // Throw Wind Charge
         mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
         mc.player.swing(InteractionHand.MAIN_HAND);
 
-        // Swap back to whatever weapon we were holding
         mc.player.getInventory().setSelectedSlot(originalSlot);
         mc.getConnection().send(new ServerboundSetCarriedItemPacket(originalSlot));
 
@@ -92,7 +86,7 @@ public class PearlCatch extends Module {
 
     @Override
     public void onDisable() {
-        active = false; // Failsafe
+        active = false; 
     }
 
     private int findItem(String targetName) {

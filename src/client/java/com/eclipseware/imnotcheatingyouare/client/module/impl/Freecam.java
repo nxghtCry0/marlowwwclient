@@ -21,7 +21,6 @@ public class Freecam extends Module {
         savedYaw = mc.player.getYRot();
         savedPitch = mc.player.getXRot();
 
-        // Spawn a fake player entity to leave behind
         dummy = new RemotePlayer(mc.level, mc.player.getGameProfile());
         dummy.setPos(savedPos);
         dummy.setYRot(savedYaw);
@@ -38,14 +37,12 @@ public class Freecam extends Module {
     public void onDisable() {
         if (mc.player == null || mc.level == null) return;
        
-        // Snap back to the dummy's position
         mc.player.setPos(savedPos);
         mc.player.setYRot(savedYaw);
         mc.player.setXRot(savedPitch);
         mc.player.getAbilities().flying = false;
         mc.player.setDeltaMovement(0, 0, 0);
 
-        // Remove the dummy
         if (dummy != null) {
             mc.level.removeEntity(dummy.getId(), net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
             dummy = null;

@@ -17,7 +17,6 @@ import net.minecraft.client.gui.GuiGraphics;
  */
 public class AnimationUtil {
 
-    // ==================== EASING FUNCTIONS ====================
 
     /**
      * Cubic ease-out: starts fast, decelerates smoothly to the target.
@@ -75,7 +74,6 @@ public class AnimationUtil {
         return 1.0f + c3 * (float) Math.pow(t - 1.0f, 3.0f) + c1 * (float) Math.pow(t - 1.0f, 2.0f);
     }
 
-    // ==================== ANIMATION HELPERS ====================
 
     /**
      * Smoothly animates a value toward a target using linear interpolation with a speed factor.
@@ -110,7 +108,6 @@ public class AnimationUtil {
         return Math.max(min, Math.min(max, value));
     }
 
-    // ==================== COLOR INTERPOLATION ====================
 
     /**
      * Interpolates between two ARGB colors.
@@ -140,7 +137,6 @@ public class AnimationUtil {
         return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
-    // ==================== ROUNDED RECTANGLE RENDERING ====================
 
     /**
      * Draws a rounded rectangle using Minecraft's native fill method.
@@ -164,12 +160,9 @@ public class AnimationUtil {
             return;
         }
 
-        // Minecraft's software rendering makes large corner radii look pixelated.
-        // Instead, we draw a perfectly crisp "soft" rectangle by clipping exactly 1 pixel
-        // from each corner, preserving a high-resolution modern feel without needing shaders.
-        guiGraphics.fill(x + 1, y, x + width - 1, y + height, color); // Main body
-        guiGraphics.fill(x, y + 1, x + 1, y + height - 1, color);     // Left edge
-        guiGraphics.fill(x + width - 1, y + 1, x + width, y + height - 1, color); // Right edge
+        guiGraphics.fill(x + 1, y, x + width - 1, y + height, color); 
+        guiGraphics.fill(x, y + 1, x + 1, y + height - 1, color);     
+        guiGraphics.fill(x + width - 1, y + 1, x + width, y + height - 1, color); 
     }
 
     /**
@@ -188,24 +181,20 @@ public class AnimationUtil {
      */
     public static void drawRoundedOutline(GuiGraphics guiGraphics, int x, int y, int width, int height, int radius, int thickness, int color) {
         if (radius <= 0) {
-            // Simple rectangle outline
-            guiGraphics.fill(x, y, x + width, y + thickness, color); // Top
-            guiGraphics.fill(x, y + height - thickness, x + width, y + height, color); // Bottom
-            guiGraphics.fill(x, y, x + thickness, y + height, color); // Left
-            guiGraphics.fill(x + width - thickness, y, x + width, y + height, color); // Right
+            guiGraphics.fill(x, y, x + width, y + thickness, color); 
+            guiGraphics.fill(x, y + height - thickness, x + width, y + height, color); 
+            guiGraphics.fill(x, y, x + thickness, y + height, color); 
+            guiGraphics.fill(x + width - thickness, y, x + width, y + height, color); 
             return;
         }
 
         radius = Math.min(radius, Math.min(width, height) / 2);
 
-        // Top and bottom edges
         guiGraphics.fill(x + radius, y, x + width - radius, y + thickness, color);
         guiGraphics.fill(x + radius, y + height - thickness, x + width - radius, y + height, color);
-        // Left and right edges
         guiGraphics.fill(x, y + radius, x + thickness, y + height - radius, color);
         guiGraphics.fill(x + width - thickness, y + radius, x + width, y + height - radius, color);
 
-        // Corner outlines (simplified)
         drawCircleOutline(guiGraphics, x + radius, y + radius, radius, thickness, color);
         drawCircleOutline(guiGraphics, x + width - radius, y + radius, radius, thickness, color);
         drawCircleOutline(guiGraphics, x + radius, y + height - radius, radius, thickness, color);
@@ -216,8 +205,6 @@ public class AnimationUtil {
      * Draws a circle outline using the difference of two filled circles.
      */
     private static void drawCircleOutline(GuiGraphics guiGraphics, int centerX, int centerY, int radius, int thickness, int color) {
-        // Draw outer circle, then "erase" inner circle with background-colored fill
-        // For simplicity, we just draw a thicker filled circle
         drawFilledCircle(guiGraphics, centerX, centerY, radius, color);
     }
 

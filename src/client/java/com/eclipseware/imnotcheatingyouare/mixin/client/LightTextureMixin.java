@@ -12,7 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(LightTexture.class)
 public class LightTextureMixin {
 
-    // Injects into the dimension's brightness calculation
     @Inject(method = "getBrightness", at = @At("HEAD"), cancellable = true)
     private static void onGetBrightness(net.minecraft.world.level.dimension.DimensionType dimensionType, int lightLevel, CallbackInfoReturnable<Float> cir) {
         Module fbMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Fullbright");
@@ -20,7 +19,7 @@ public class LightTextureMixin {
         if (fbMod != null && fbMod.isToggled()) {
             Setting mode = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(fbMod, "Mode");
             if (mode != null && mode.getValString().equals("Gamma")) {
-                cir.setReturnValue(15.0F); // Forces maximum ambient light
+                cir.setReturnValue(15.0F); 
             }
         }
     }

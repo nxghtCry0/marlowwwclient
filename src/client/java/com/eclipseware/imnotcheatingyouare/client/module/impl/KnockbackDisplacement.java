@@ -56,7 +56,6 @@ public class KnockbackDisplacement extends Module {
         Setting cdSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Cooldown (Ticks)");
         cooldown = cdSetting != null ? (int) cdSetting.getValDouble() : 15;
 
-        // Apply GCD to the silent aim packet for perfection
         float gcd = com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getGCD();
         if (gcd < 0.001f) gcd = 0.15f;
         yaw = Math.round(yaw / gcd) * gcd;

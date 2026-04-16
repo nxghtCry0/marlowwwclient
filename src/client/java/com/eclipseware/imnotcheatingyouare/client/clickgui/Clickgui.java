@@ -145,7 +145,6 @@ public class Clickgui extends Screen {
             animSpeed = (float) ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(theme, "Anim Speed").getValDouble() * 0.03f;
         }
 
-        // Smooth Scroll Interpolation
         scrollOffset += (targetScrollOffset - scrollOffset) * (animSpeed * 1.5f);
         moduleScrollOffset += (targetModuleScrollOffset - moduleScrollOffset) * (animSpeed * 1.5f);
 
@@ -184,10 +183,9 @@ public class Clickgui extends Screen {
         int sidebarColor = new Color(22, 22, 25, Math.min(255, a + 15)).getRGB();
         int accent = new Color(r, g, b).getRGB(); 
 
-        // Main Window Base
         AnimationUtil.drawRoundedRect(guiGraphics, (int)posX, (int)posY, (int)windowWidth, (int)windowHeight, 10, bgDark);
         AnimationUtil.drawRoundedRect(guiGraphics, (int)posX, (int)posY, 130, (int)windowHeight, 10, sidebarColor);
-        guiGraphics.fill((int)posX + 120, (int)posY, (int)posX + 130, (int)(posY + windowHeight), sidebarColor); // Flatten right side of sidebar
+        guiGraphics.fill((int)posX + 120, (int)posY, (int)posX + 130, (int)(posY + windowHeight), sidebarColor); 
 
         FontUtils.drawString(guiGraphics, "MARLOWWW", (int)posX + 15, (int)posY + 15, -1, true);
         FontUtils.drawString(guiGraphics, "CLIENT", (int)posX + 15 + FontUtils.width("MARLOWWW "), (int)posY + 15, accent, true);
@@ -209,12 +207,10 @@ public class Clickgui extends Screen {
             guiGraphics.pose().pushMatrix();
             guiGraphics.pose().translate(-(settingsSlideAnim * 400), 0f); 
 
-            // Render static headers outside of the scissor box
             FontUtils.drawString(guiGraphics, selectedCategory.name().toUpperCase(), (int)posX + 150, (int)posY + 20, accent, false);
             FontUtils.drawString(guiGraphics, "Select a module to configure", (int)posX + 150, (int)posY + 32, new Color(140, 140, 140).getRGB(), false);
             guiGraphics.fill((int)posX + 150, (int)posY + 50, (int)(posX + windowWidth - 20), (int)posY + 51, new Color(255, 255, 255, 20).getRGB());
 
-            // Enable scissor precisely under the title line to clip scrolling modules
             guiGraphics.enableScissor((int)posX + 130, (int)posY + 51, (int)(posX + windowWidth), (int)(posY + windowHeight));
             guiGraphics.pose().pushMatrix();
             guiGraphics.pose().translate(0f, (float) moduleScrollOffset);
@@ -250,7 +246,6 @@ public class Clickgui extends Screen {
             guiGraphics.pose().pushMatrix();
             guiGraphics.pose().translate((1f - settingsSlideAnim) * 400, 0f);
 
-            // Render static settings headers outside of the scissor box
             boolean backHover = isInside(mouseX, mouseY, posX + 150, posY + 20, posX + 220, posY + 35);
             FontUtils.drawString(guiGraphics, "< Back", (int)posX + 150, (int)posY + 22, backHover ? -1 : new Color(160, 160, 160).getRGB(), false);
 
@@ -259,7 +254,6 @@ public class Clickgui extends Screen {
             }
             guiGraphics.fill((int)posX + 150, (int)posY + 66, (int)(posX + windowWidth - 20), (int)posY + 67, new Color(255, 255, 255, 20).getRGB());
 
-            // Enable scissor precisely under the title line to clip scrolling settings
             guiGraphics.enableScissor((int)posX + 130, (int)posY + 67, (int)(posX + windowWidth), (int)(posY + windowHeight));
             guiGraphics.pose().pushMatrix();
             guiGraphics.pose().translate(0f, (float) scrollOffset);
@@ -273,7 +267,6 @@ public class Clickgui extends Screen {
             guiGraphics.pose().popMatrix();
         }
 
-        // Hover Descriptions
         if (selectedModule == null) {
             int modY = (int)posY + 60 + (int)moduleScrollOffset;
             for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.getModules(selectedCategory)) {
@@ -312,7 +305,6 @@ public class Clickgui extends Screen {
             }
         }
 
-        // Render Search Bar
         int searchY = (int)posY + (int)windowHeight + 10;
         AnimationUtil.drawRoundedRect(guiGraphics, (int)posX, searchY, (int)windowWidth, 30, 8, bgDark);
         if (searchFocused) {
@@ -478,7 +470,6 @@ modY += 44;
         return (mouseX >= x && mouseX <= x2) && (mouseY >= y && mouseY <= y2);
     }
     
-    // Search Functionality
     public String searchText = "";
     public boolean searchFocused = false;
 
