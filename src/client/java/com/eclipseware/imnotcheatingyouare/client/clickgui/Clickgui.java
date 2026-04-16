@@ -86,6 +86,34 @@ public class Clickgui extends Screen {
             }
         }
 
+        if (searchFocused) {
+            if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_BACKSPACE && !searchText.isEmpty()) {
+                searchText = searchText.substring(0, searchText.length() - 1);
+                playSound();
+                return true;
+            } else if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE || event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER) {
+                searchFocused = false;
+                return true;
+            } else if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE) {
+                searchText += " ";
+                return true;
+            } else if (event.key() >= org.lwjgl.glfw.GLFW.GLFW_KEY_A && event.key() <= org.lwjgl.glfw.GLFW.GLFW_KEY_Z) {
+                char c = (char) event.key();
+                if ((event.modifiers() & org.lwjgl.glfw.GLFW.GLFW_MOD_SHIFT) == 0) {
+                    c = Character.toLowerCase(c);
+                }
+                searchText += c;
+                return true;
+            }
+        }
+
+        if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_H) {
+            float uiScale = getScale();
+            posX = (this.width / uiScale - windowWidth) / 2.0;
+            posY = (this.height / uiScale - windowHeight) / 2.0;
+            return true;
+        }
+
         if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
             closing = true;
             return true;
@@ -93,9 +121,17 @@ public class Clickgui extends Screen {
         return super.keyPressed(event);
     }
 
+    private float getScale() {
+        return Math.max(0.5f, Math.min(2.0f, Math.min((float) this.width / 800f, (float) this.height / 500f)));
+    }
+
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+    public void render(GuiGraphics guiGraphics, int rawMouseX, int rawMouseY, float partialTick) {
+        float uiScale = getScale();
+        int mouseX = (int) (rawMouseX / uiScale);
+        int mouseY = (int) (rawMouseY / uiScale);
+
+        super.render(guiGraphics, rawMouseX, rawMouseY, partialTick);
         
         Module theme = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Theme");
         
@@ -135,6 +171,8 @@ public class Clickgui extends Screen {
         guiGraphics.fill(0, 0, this.width, this.height, screenDim);
 
         guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().scale(uiScale, uiScale);
+        
         float centerX = (float) (posX + windowWidth / 2.0);
         float centerY = (float) (posY + windowHeight / 2.0);
         
@@ -161,7 +199,9 @@ public class Clickgui extends Screen {
                 AnimationUtil.drawRoundedRect(guiGraphics, (int)posX + 10, catY, 110, 30, 6, new Color(255, 255, 255, 15).getRGB());
                 AnimationUtil.drawRoundedRect(guiGraphics, (int)posX + 10, catY + 6, 4, 18, 2, accent);
             }
-            FontUtils.drawString(guiGraphics, cat.name(), (int)posX + 28, catY + 11, sel ? -1 : new Color(160, 160, 160).getRGB(), false);
+            boolean hasMatch = catHasMatch(cat);
+            int catColor = sel ? -1 : (hasMatch ? accent : new Color(160, 160, 160).getRGB());
+            FontUtils.drawString(guiGraphics, cat.name(), (int)posX + 28, catY + 11, catColor, false);
             catY += 36;
         }
 
@@ -186,6 +226,9 @@ public class Clickgui extends Screen {
                 moduleToggleAnims.put(m, currentModAnim);
 
                 int cardColor = interpolateColor(new Color(30, 30, 33), new Color(r, g, b, 60), currentModAnim).getRGB();
+                if (isMatch(m)) {
+                    cardColor = new Color(r, g, b, 120).getRGB();
+                }
                 int textColor = interpolateColor(new Color(170, 170, 170), new Color(255, 255, 255), currentModAnim).getRGB();
 
                 AnimationUtil.drawRoundedRect(guiGraphics, (int)posX + 150, modY, (int)(windowWidth - 170), 36, 6, cardColor);
@@ -236,16 +279,46 @@ public class Clickgui extends Screen {
             for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.getModules(selectedCategory)) {
                 if (isInside(mouseX, mouseY, posX + 150, modY, posX + windowWidth - 20, modY + 36)) {
                     String desc = m.getDescription();
-                    if (desc != null && !desc.isEmpty()) {
-                        int tw = FontUtils.width(desc);
-                        AnimationUtil.drawRoundedRect(guiGraphics, mouseX + 12, mouseY + 4, tw + 10, 20, 4, new Color(15, 15, 15, 240).getRGB());
-                        FontUtils.drawString(guiGraphics, desc, mouseX + 17, mouseY + 10, -1, false);
+                    boolean detected = false;
+                    String srv = net.minecraft.client.Minecraft.getInstance().getCurrentServer() != null ? net.minecraft.client.Minecraft.getInstance().getCurrentServer().ip : null;
+                    if (srv != null) {
+                        com.eclipseware.imnotcheatingyouare.client.module.impl.DetectionAlert da = (com.eclipseware.imnotcheatingyouare.client.module.impl.DetectionAlert) ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("DetectionDB");
+                        if (da != null && da.isToggled() && da.isModuleDetected(m, srv)) {
+                            detected = true;
+                        }
+                    }
+
+                    int tw = (desc != null && !desc.isEmpty()) ? FontUtils.width(desc) : 0;
+                    String detStr = detected ? "DETECTED ON " + srv.toUpperCase() : null;
+                    int tw2 = detected ? FontUtils.width(detStr) : 0;
+                    int maxTw = Math.max(tw, tw2);
+
+                    if (maxTw > 0) {
+                        int h = detected && desc != null && !desc.isEmpty() ? 32 : 20;
+                        AnimationUtil.drawRoundedRect(guiGraphics, mouseX + 12, mouseY + 4, maxTw + 10, h, 4, new Color(15, 15, 15, 240).getRGB());
+                        
+                        int textY = mouseY + 10;
+                        if (desc != null && !desc.isEmpty()) {
+                            FontUtils.drawString(guiGraphics, desc, mouseX + 17, textY, -1, false);
+                            textY += 12;
+                        }
+                        if (detected) {
+                            FontUtils.drawString(guiGraphics, detStr, mouseX + 17, textY, new Color(255, 80, 80).getRGB(), false);
+                        }
                     }
                     break;
                 }
                 modY += 44;
             }
         }
+
+        // Render Search Bar
+        int searchY = (int)posY + (int)windowHeight + 10;
+        AnimationUtil.drawRoundedRect(guiGraphics, (int)posX, searchY, (int)windowWidth, 30, 8, bgDark);
+        if (searchFocused) {
+            AnimationUtil.drawRoundedRect(guiGraphics, (int)posX, searchY, (int)windowWidth, 30, 8, new Color(r, g, b, 80).getRGB());
+        }
+        FontUtils.drawString(guiGraphics, "Search: " + searchText + (searchFocused && System.currentTimeMillis() % 1000 < 500 ? "_" : ""), (int)posX + 15, searchY + 11, -1, false);
 
         guiGraphics.pose().popMatrix(); 
     }
@@ -262,8 +335,9 @@ public class Clickgui extends Screen {
     public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
         if (closing) return false;
 
-        double mouseX = event.x();
-        double mouseY = event.y();
+        float uiScale = getScale();
+        double mouseX = event.x() / uiScale;
+        double mouseY = event.y() / uiScale;
         int button = event.button();
 
         if (selectedModule != null) {
@@ -275,7 +349,19 @@ public class Clickgui extends Screen {
             }
         }
 
-        if (isInside(mouseX, mouseY, posX, posY, posX + windowWidth, posY + 20) && button == 0) {
+        boolean searchHover = isInside(mouseX, mouseY, posX, posY + windowHeight + 10, posX + windowWidth, posY + windowHeight + 40);
+        if (searchHover && button == 0) {
+            searchFocused = true;
+            playSound();
+            return true;
+        } else if (button == 0 || button == 1) {
+            searchFocused = false;
+        }
+
+        boolean headerHover = isInside(mouseX, mouseY, posX, posY, posX + windowWidth, posY + 20);
+        boolean footerHover = isInside(mouseX, mouseY, posX, posY + windowHeight - 20, posX + windowWidth, posY + windowHeight);
+        
+        if ((headerHover || footerHover) && button == 0) {
             dragging = true;
             dragX = mouseX - posX;
             dragY = mouseY - posY;
@@ -294,22 +380,22 @@ public class Clickgui extends Screen {
         }
 
         if (selectedModule == null) {
-            if (mouseY > posY + 58) {
-                int modY = (int)posY + 70 + (int)moduleScrollOffset;
-                for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.getModules(selectedCategory)) {
-                    if (isInside(mouseX, mouseY, posX + 150, modY, posX + windowWidth - 20, modY + 36)) {
-                        playSound();
-                        if (button == 0) m.toggle();
-                        else if (button == 1) {
-                            selectedModule = m;
-                            loadComponents(m);
-                        }
-                        return true;
-                    }
-                    modY += 44;
-                }
-            }
-        } else {
+if (mouseY > posY + 58) {
+int modY = (int)posY + 70 + (int)moduleScrollOffset;
+for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.getModules(selectedCategory)) {
+if (isInside(mouseX, mouseY, posX + 150, modY, posX + windowWidth - 20, modY + 36)) {
+playSound();
+if (button == 0) m.toggle();
+else if (button == 1) {
+selectedModule = m;
+loadComponents(m);
+}
+return true;
+}
+modY += 44;
+}
+}
+} else {
             if (isInside(mouseX, mouseY, posX + 150, posY + 20, posX + 220, posY + 35) && button == 0) {
                 selectedModule = null;
                 playSound();
@@ -330,8 +416,9 @@ public class Clickgui extends Screen {
     public boolean mouseReleased(net.minecraft.client.input.MouseButtonEvent event) {
         dragging = false;
         if (selectedModule != null) {
+            float uiScale = getScale();
             for (Comp comp : new ArrayList<>(comps)) {
-                comp.mouseReleased(event.x(), event.y() - scrollOffset, event.button());
+                comp.mouseReleased(event.x() / uiScale, (event.y() / uiScale) - scrollOffset, event.button());
             }
         }
         return false;
@@ -390,4 +477,25 @@ public class Clickgui extends Screen {
     public boolean isInside(double mouseX, double mouseY, double x, double y, double x2, double y2) {
         return (mouseX >= x && mouseX <= x2) && (mouseY >= y && mouseY <= y2);
     }
+    
+    // Search Functionality
+    public String searchText = "";
+    public boolean searchFocused = false;
+
+    private boolean isMatch(Module m) {
+        if (searchText.isEmpty()) return false;
+        String query = searchText.toLowerCase();
+        return m.getName().toLowerCase().contains(query) || 
+               (m.getDescription() != null && m.getDescription().toLowerCase().contains(query));
+    }
+
+    private boolean catHasMatch(Category cat) {
+        if (searchText.isEmpty()) return false;
+        for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.getModules(cat)) {
+            if (isMatch(m)) return true;
+        }
+        return false;
+    }
+
+
 }

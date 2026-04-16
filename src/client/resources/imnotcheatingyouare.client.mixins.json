@@ -16,7 +16,10 @@
 "ClientPacketListenerMixin",
 "WTapMixin",
 "EntityGlowMixin",
-"HandViewMixin"
+"HandViewMixin",
+"FastPlaceMixin",
+"BlockBehaviourMixin",
+"MovementCorrectionMixin"
 ],
 "injectors": {
 "defaultRequire": 1

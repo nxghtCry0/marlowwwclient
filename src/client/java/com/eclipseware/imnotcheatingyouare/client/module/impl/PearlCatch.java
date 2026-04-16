@@ -13,6 +13,7 @@ public class PearlCatch extends Module {
     private int ticksElapsed = 0;
     private int originalSlot = -1;
     private int windChargeSlot = -1;
+    private float targetYaw, targetPitch;
 
     public PearlCatch() {
         super("PearlCatch", Category.Movement);
@@ -31,6 +32,8 @@ public class PearlCatch extends Module {
         }
 
         originalSlot = mc.player.getInventory().getSelectedSlot();
+        targetYaw = mc.player.getYRot();
+        targetPitch = mc.player.getXRot();
         
         // Swap to Pearl
         mc.player.getInventory().setSelectedSlot(pearlSlot);
@@ -44,10 +47,8 @@ public class PearlCatch extends Module {
         int delay = delaySetting != null ? (int) delaySetting.getValDouble() : 5;
 
         if (delay <= 0) {
-            // If delay is 0, fire wind charge instantly in the same tick
             fireWindCharge();
         } else {
-            // Defer the wind charge to the tick loop
             active = true;
             ticksElapsed = 0;
         }
@@ -56,6 +57,8 @@ public class PearlCatch extends Module {
     @Override
     public void onTick() {
         if (!active || mc.player == null || mc.getConnection() == null) return;
+
+        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.keepRotated(targetYaw, targetPitch, 40.0f, false);
 
         ticksElapsed++;
         
@@ -68,6 +71,9 @@ public class PearlCatch extends Module {
     }
     
     private void fireWindCharge() {
+        // Force the rotation check for exactly when we swap
+        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.keepRotated(targetYaw, targetPitch, 40.0f, false);
+
         // Swap to Wind Charge
         mc.player.getInventory().setSelectedSlot(windChargeSlot);
         mc.getConnection().send(new ServerboundSetCarriedItemPacket(windChargeSlot));
@@ -80,6 +86,7 @@ public class PearlCatch extends Module {
         mc.player.getInventory().setSelectedSlot(originalSlot);
         mc.getConnection().send(new ServerboundSetCarriedItemPacket(originalSlot));
 
+        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.requestReturn();
         active = false;
     }
 

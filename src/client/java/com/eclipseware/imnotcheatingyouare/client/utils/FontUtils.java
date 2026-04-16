@@ -12,8 +12,7 @@ public class FontUtils {
     public static final Identifier VERDANA = Identifier.parse("imnotcheatingyouare:verdana");
 
     public static Component get(String text) {
-        // In 1.21+, the Identifier must be wrapped in a FontDescription.Resource
-        return Component.literal(text).withStyle(Style.EMPTY.withFont(new FontDescription.Resource(VERDANA)));
+        return Component.literal(text);
     }
 
     public static void drawString(GuiGraphics graphics, String text, int x, int y, int color, boolean dropShadow) {

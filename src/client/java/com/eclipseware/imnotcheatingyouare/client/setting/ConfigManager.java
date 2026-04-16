@@ -146,8 +146,13 @@ public class ConfigManager {
                     Module m = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule(name);
                     
                     if (m != null) {
-                        if (moduleJson.has("Toggled") && moduleJson.get("Toggled").getAsBoolean() && !m.isToggled()) {
-                            m.toggle();
+                        if (moduleJson.has("Toggled")) {
+                            boolean shouldBeToggled = moduleJson.get("Toggled").getAsBoolean();
+                            if (shouldBeToggled && !m.isToggled()) {
+                                m.toggle();
+                            } else if (!shouldBeToggled && m.isToggled()) {
+                                m.toggle();
+                            }
                         }
                         if (moduleJson.has("Keybind")) {
                             m.setKeyBind(moduleJson.get("Keybind").getAsInt());

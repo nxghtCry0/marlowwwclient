@@ -8,27 +8,36 @@ public class Module {
     private String description;
     private int keyBind;
     private boolean toggled;
-    private boolean wasKeyPressed; // Used for keybind latching
+    private boolean wasKeyPressed;
+    private boolean hidden;
     
-    // Protected Minecraft instance so all your modules can access 'mc' cleanly
-    protected static final Minecraft mc = Minecraft.getInstance();
+    public static Minecraft mc;
 
-    // The new Elite constructor with Descriptions!
     public Module(String name, Category category, String description) {
         this.name = name;
         this.category = category;
         this.description = description;
         this.keyBind = -1;
         this.toggled = false;
+        this.hidden = false;
     }
 
-    // Fallback constructor so we don't break your older modules!
     public Module(String name, Category category) {
         this.name = name;
         this.category = category;
         this.description = "";
         this.keyBind = -1;
         this.toggled = false;
+        this.hidden = false;
+    }
+
+    public Module(String name, Category category, String description, boolean hidden) {
+        this.name = name;
+        this.category = category;
+        this.description = description;
+        this.keyBind = -1;
+        this.toggled = false;
+        this.hidden = hidden;
     }
 
     public void toggle() {
@@ -50,7 +59,7 @@ public class Module {
     }
 
     public void tickKeybind() {
-        if (this.keyBind == -1 || mc.getWindow() == null) return;
+        if (this.keyBind == -1 || mc == null || mc.getWindow() == null) return;
 
         // Don't toggle modules while any screen is open (chat, inventory, GUIs).
         // Reset latching so releasing the key inside a screen doesn't cause
@@ -95,4 +104,7 @@ public class Module {
     
     public boolean isToggled() { return toggled; }
     public void setToggled(boolean toggled) { this.toggled = toggled; }
+    
+    public boolean isHidden() { return hidden; }
+    public void setHidden(boolean hidden) { this.hidden = hidden; }
 }

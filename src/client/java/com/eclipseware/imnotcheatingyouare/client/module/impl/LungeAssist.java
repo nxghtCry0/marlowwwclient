@@ -23,7 +23,7 @@ public class LungeAssist extends Module {
 
     @Override
     public void onKeybind() {
-        if (mc.player == null || mc.getConnection() == null) return;
+        if (mc == null || mc.player == null || mc.getConnection() == null) return;
         
         int spearSlot = findLungeSpear(mc.player);
         if (spearSlot == -1) {
@@ -64,7 +64,7 @@ public class LungeAssist extends Module {
 
     @Override
     public void onTick() {
-        if (mc.player == null || mc.getConnection() == null) return;
+        if (mc == null || mc.player == null || mc.getConnection() == null) return;
 
         // --- APEX CALCULATION ---
         if (waitingForApex) {

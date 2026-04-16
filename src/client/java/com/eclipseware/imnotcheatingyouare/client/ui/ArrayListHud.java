@@ -47,6 +47,8 @@ public class ArrayListHud {
         List<Module> activeMods = new ArrayList<>();
         
         for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.modules) {
+            if (m.isHidden()) continue;
+            
             float currentAnim = animMap.getOrDefault(m, 0f);
             float target = m.isToggled() ? 1f : 0f;
             currentAnim += (target - currentAnim) * animSpeed;
