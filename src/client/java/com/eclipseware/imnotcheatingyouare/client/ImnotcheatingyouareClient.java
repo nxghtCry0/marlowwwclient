@@ -43,6 +43,7 @@ Module hitSelect = new com.eclipseware.imnotcheatingyouare.client.module.impl.Hi
         Module nameProtect = new com.eclipseware.imnotcheatingyouare.client.module.impl.NameProtect();
         Module breachSwap = new com.eclipseware.imnotcheatingyouare.client.module.impl.BreachSwap();
 Module lungeAssist = new com.eclipseware.imnotcheatingyouare.client.module.impl.LungeAssist();
+Module autoMace = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoMace();
 Module pearlCatch = new com.eclipseware.imnotcheatingyouare.client.module.impl.PearlCatch();
 Module jumpReset = new com.eclipseware.imnotcheatingyouare.client.module.impl.JumpReset();
         Module configurator = new com.eclipseware.imnotcheatingyouare.client.module.impl.Configurator();
@@ -65,6 +66,7 @@ Module jumpReset = new com.eclipseware.imnotcheatingyouare.client.module.impl.Ju
         moduleManager.modules.add(nameProtect);
         moduleManager.modules.add(breachSwap);
 moduleManager.modules.add(lungeAssist);
+moduleManager.modules.add(autoMace);
 moduleManager.modules.add(pearlCatch);
 moduleManager.modules.add(jumpReset);
 moduleManager.modules.add(configurator);
