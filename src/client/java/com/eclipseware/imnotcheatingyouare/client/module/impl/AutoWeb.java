@@ -102,8 +102,7 @@ public class AutoWeb extends Module {
 
         if (target == null) return null;
 
-        Vec3 feetPos = target.position().add(0, -0.1, 0);
-        BlockPos feetBlock = BlockPos.containing(feetPos);
+        BlockPos feetBlock = target.blockPosition();
         BlockState state = mc.level.getBlockState(feetBlock);
         if (!state.isAir()) return null;
 

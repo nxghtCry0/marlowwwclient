@@ -41,5 +41,19 @@ public class HandViewMixin {
             float pZ = posZ != null ? (float) posZ.getValDouble() : 0.0f;
             poseStack.translate(pX, pY, pZ);
         }
+
+        if (com.eclipseware.imnotcheatingyouare.client.module.impl.RenderOptimizer.INSTANCE != null && com.eclipseware.imnotcheatingyouare.client.module.impl.RenderOptimizer.INSTANCE.isToggled()) {
+            if (stack.is(net.minecraft.world.item.Items.SHIELD)) {
+                Setting lowShield = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(com.eclipseware.imnotcheatingyouare.client.module.impl.RenderOptimizer.INSTANCE, "Low Shield");
+                if (lowShield != null && lowShield.getValBoolean()) {
+                    poseStack.translate(0.0, -0.2, 0.0);
+                }
+            } else if (stack.is(net.minecraft.world.item.Items.TOTEM_OF_UNDYING)) {
+                Setting lowTotem = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(com.eclipseware.imnotcheatingyouare.client.module.impl.RenderOptimizer.INSTANCE, "Low Totem");
+                if (lowTotem != null && lowTotem.getValBoolean()) {
+                    poseStack.translate(0.0, -0.35, 0.0);
+                }
+            }
+        }
     }
 }

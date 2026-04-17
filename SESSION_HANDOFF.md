@@ -1,14 +1,13 @@
 ## 🧠 Codebase Intelligence
-- The project environment uses Official Mojang Mappings for 1.21.11, dropping "get" prefixes on records/frequently used methods (e.g., `camera.position()` instead of `camera.getPosition()`).
-- The previous String-based reflection setup for `Camera` bypassed Fabric Loom's remapper, resulting in field lookup crashes during obfuscated production releases and defaulting to `getEyePosition`. Native `camera.position()` correctly remaps. 
-- `ConnectionMixin` acts as the primary movement packet firewall. It is safer to spoof rotations by overriding vanilla's 1-tick `ServerboundMovePlayerPacket` instead of forcing out separate `.Rot` packets through a utility class. This prevents `TickTimer` and `PacketOrder` Grim AC flags.
+- The project leverages robust Mixins (e.g., `MultiPlayerGameModeMixin`) for granular packet monitoring and interaction injection.
+- Minecraft's `handleInventoryMouseClick` with container ID `0` allows absolute silent manipulation of items without rendering `InventoryScreen` on the client.
+- Client-side chunk iteration (`chunk.getBlockEntities().values()`) is the only performant method for wide-radius scanning compared to `mc.level.getBlockEntity(pos)`.
 
 ## 🚀 Future Roadmap
-- Address potential pitch spoofing for the client's visual 3rd person rotations. Currently, we update the server's body/head yaw, but syncing visual pitch requires a custom mixin without breaking the `Camera` rotation reference point.
-- Implement specialized AC checks in `RotationManager` to dynamically slow rotation smoothing based on the sever's violation tolerance if an anti-cheat is active.
+- `HitSwap` logic currently reads simple heuristic mappings (Netherite > Diamond > Iron). It may benefit from calculating exact attributes (e.g. Sharpness) using `EnchantmentHelper`.
+- Implement interpolation for entity ESPs (Tracer lines can stutter if FPS is uncapped and entity ticks differ from render ticks).
 
 ## 🤖 AI Context & Handoff
-- Successfully overhauled `RotationManager` and `SilentAimUtil` to pipeline identically through `ConnectionMixin` instead of sending direct packets.
-- Fixed the cached ESP references lingering between singleplayer/servers.
-- The `cat << EOF` multiline syntax had powershell parsing issues directly through the `run_command` interface; using standard file writes is preferred.
-- Built without errors using Gradle.
+- Modified `AutoTotem` to use direct container manipulation rather than triggering an active screen overlay, minimizing detectability.
+- Updated `CrystalAura` damage heuristics to approximate target armor and explicitly override Anti-Suicide protections when enemies are below the `Face Place Threshold`.
+- Created `HitSwap` module that injects before network packets send on standard UI attack to ensure peak damage. The agent should know Caveman logic is active for terse outputs.

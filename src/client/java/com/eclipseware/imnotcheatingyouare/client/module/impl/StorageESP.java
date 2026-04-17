@@ -64,15 +64,23 @@ public class StorageESP extends Module {
             int range = rangeSetting != null ? (int) rangeSetting.getValDouble() : 32;
 
             BlockPos playerPos = mc.player.blockPosition();
-            for (int x = -range; x <= range; x++) {
-                for (int y = -range; y <= range; y++) {
-                    for (int z = -range; z <= range; z++) {
-                        BlockPos pos = playerPos.offset(x, y, z);
-                        BlockEntity be = mc.level.getBlockEntity(pos);
-                        if (be == null) continue;
-                        Color color = getColorForEntity(be, chestSetting, barrelSetting, shulkerSetting,
-                            enderChestSetting, trappedChestSetting, hopperSetting, dispenserSetting, dropperSetting, furnacesSetting);
-                        if (color != null) cache.add(new CachedBlock(pos, color));
+            net.minecraft.world.level.ChunkPos playerChunk = new net.minecraft.world.level.ChunkPos(playerPos);
+            int chunkRange = (range >> 4) + 1;
+
+            if (mc.level.getChunkSource() != null) {
+                for (int cx = playerChunk.x - chunkRange; cx <= playerChunk.x + chunkRange; cx++) {
+                    for (int cz = playerChunk.z - chunkRange; cz <= playerChunk.z + chunkRange; cz++) {
+                        net.minecraft.world.level.chunk.LevelChunk chunk = mc.level.getChunkSource().getChunk(cx, cz, false);
+                        if (chunk == null || chunk.isEmpty()) continue;
+                        
+                        for (BlockEntity be : chunk.getBlockEntities().values()) {
+                            BlockPos pos = be.getBlockPos();
+                            if (mc.player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) <= range * range) {
+                                Color color = getColorForEntity(be, chestSetting, barrelSetting, shulkerSetting,
+                                    enderChestSetting, trappedChestSetting, hopperSetting, dispenserSetting, dropperSetting, furnacesSetting);
+                                if (color != null) cache.add(new CachedBlock(pos, color));
+                            }
+                        }
                     }
                 }
             }

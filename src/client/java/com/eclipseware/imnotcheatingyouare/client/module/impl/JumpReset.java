@@ -29,7 +29,7 @@ public class JumpReset extends Module {
             Setting delaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Delay (Ticks)");
             int delay = delaySetting != null ? (int) delaySetting.getValDouble() : 0;
             if (jumpDelayTicks >= delay) {
-                mc.options.keyJump.setDown(true);
+                mc.player.jumpFromGround();
                 shouldJump = false;
                 jumpDelayTicks = 0;
             } else {
@@ -40,6 +40,9 @@ public class JumpReset extends Module {
 
     public void onKnockback() {
         if (!isToggled() || mc.player == null) return;
+        
+        // Debounce knockback events to prevent infinite jump loops from packet spam
+        if (System.currentTimeMillis() - lastHitTime < 50) return;
 
         hitsInTrade++;
         lastHitTime = System.currentTimeMillis();

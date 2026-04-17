@@ -11,8 +11,10 @@ public class Configurator extends Module {
 
     @Override
     public void onEnable() {
-        if (mc.screen != null) mc.screen.onClose();
-        mc.setScreen(new ConfigGui());
-        this.toggle(); 
+        if (mc.level != null && mc.player != null) {
+            if (mc.screen != null) mc.screen.onClose();
+            mc.setScreen(new ConfigGui());
+        }
+        this.setToggled(false); 
     }
 }

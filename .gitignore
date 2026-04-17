@@ -26,7 +26,6 @@ logs/
 # Run directory (Minecraft)
 run/
 .ai_backups
-SESSION_HANDOFF.md
 
 dist/
 *.exe
@@ -36,3 +35,5 @@ __pycache__/
 venv/
 node_modules/
 .env
+SESSION_HANDOFF.md
+SESSION_HANDOFF.md

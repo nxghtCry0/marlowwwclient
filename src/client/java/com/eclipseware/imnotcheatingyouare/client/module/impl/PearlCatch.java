@@ -56,6 +56,12 @@ public class PearlCatch extends Module {
     public void onTick() {
         if (!active || mc.player == null || mc.getConnection() == null) return;
 
+        // Hard lock local camera rotation
+        mc.player.setYRot(targetYaw);
+        mc.player.setXRot(targetPitch);
+        mc.player.yRotO = targetYaw;
+        mc.player.xRotO = targetPitch;
+
         com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.keepRotated(targetYaw, targetPitch, 40.0f, false);
 
         ticksElapsed++;

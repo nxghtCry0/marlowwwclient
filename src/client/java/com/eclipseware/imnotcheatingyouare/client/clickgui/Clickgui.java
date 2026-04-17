@@ -23,6 +23,7 @@ public class Clickgui extends Screen {
     public double posX, posY, windowWidth, windowHeight, dragX, dragY;
     public boolean dragging;
     public Category selectedCategory;
+    public String selectedSubCategory;
     public Module selectedModule;
 
     public float openAnim = 0f;
@@ -41,6 +42,7 @@ public class Clickgui extends Screen {
         super(Component.literal("ClickGUI"));
         dragging = false;
         selectedCategory = Category.values()[0]; 
+        selectedSubCategory = null;
         posX = -1; 
         posY = -1;
     }
@@ -216,7 +218,18 @@ public class Clickgui extends Screen {
             guiGraphics.pose().translate(0f, (float) moduleScrollOffset);
 
             int modY = (int)posY + 60;
+            java.util.List<Module> modsToRender = new ArrayList<>();
             for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.getModules(selectedCategory)) {
+                if (selectedSubCategory == null && m != selectedModule) continue;
+                if (selectedSubCategory != null && !selectedSubCategory.equals("ALL") && m != selectedModule) {
+                    String sub = m.getSubCategory() == null || m.getSubCategory().isEmpty() ? "General" : m.getSubCategory();
+                    if (!sub.equals(selectedSubCategory)) continue;
+                }
+                modsToRender.add(m);
+            }
+            if (modsToRender.isEmpty() && selectedModule != null) modsToRender.add(selectedModule);
+            
+            for (Module m : modsToRender) {
                 float currentModAnim = moduleToggleAnims.getOrDefault(m, m.isToggled() ? 1f : 0f);
                 currentModAnim += ((m.isToggled() ? 1f : 0f) - currentModAnim) * 0.15f;
                 moduleToggleAnims.put(m, currentModAnim);
@@ -268,40 +281,60 @@ public class Clickgui extends Screen {
         }
 
         if (selectedModule == null) {
-            int modY = (int)posY + 60 + (int)moduleScrollOffset;
-            for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.getModules(selectedCategory)) {
-                if (isInside(mouseX, mouseY, posX + 150, modY, posX + windowWidth - 20, modY + 36)) {
-                    String desc = m.getDescription();
-                    boolean detected = false;
-                    String srv = net.minecraft.client.Minecraft.getInstance().getCurrentServer() != null ? net.minecraft.client.Minecraft.getInstance().getCurrentServer().ip : null;
-                    if (srv != null) {
-                        com.eclipseware.imnotcheatingyouare.client.module.impl.DetectionAlert da = (com.eclipseware.imnotcheatingyouare.client.module.impl.DetectionAlert) ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("DetectionDB");
-                        if (da != null && da.isToggled() && da.isModuleDetected(m, srv)) {
-                            detected = true;
-                        }
-                    }
-
-                    int tw = (desc != null && !desc.isEmpty()) ? FontUtils.width(desc) : 0;
-                    String detStr = detected ? "DETECTED ON " + srv.toUpperCase() : null;
-                    int tw2 = detected ? FontUtils.width(detStr) : 0;
-                    int maxTw = Math.max(tw, tw2);
-
-                    if (maxTw > 0) {
-                        int h = detected && desc != null && !desc.isEmpty() ? 32 : 20;
-                        AnimationUtil.drawRoundedRect(guiGraphics, mouseX + 12, mouseY + 4, maxTw + 10, h, 4, new Color(15, 15, 15, 240).getRGB());
-                        
-                        int textY = mouseY + 10;
-                        if (desc != null && !desc.isEmpty()) {
-                            FontUtils.drawString(guiGraphics, desc, mouseX + 17, textY, -1, false);
-                            textY += 12;
-                        }
-                        if (detected) {
-                            FontUtils.drawString(guiGraphics, detStr, mouseX + 17, textY, new Color(255, 80, 80).getRGB(), false);
-                        }
-                    }
-                    break;
+            if (selectedSubCategory == null) {
+                // Render SubCategory Folders
+                int modY = (int)posY + 60 + (int)moduleScrollOffset;
+                java.util.Set<String> subCats = new java.util.LinkedHashSet<>();
+                for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.getModules(selectedCategory)) {
+                    String sub = m.getSubCategory() == null || m.getSubCategory().isEmpty() ? "General" : m.getSubCategory();
+                    subCats.add(sub);
                 }
-                modY += 44;
+                for (String sub : subCats) {
+                    AnimationUtil.drawRoundedRect(guiGraphics, (int)posX + 150, modY, (int)(windowWidth - 170), 36, 6, new Color(30, 30, 33).getRGB());
+                    FontUtils.drawString(guiGraphics, "📁 " + sub, (int)posX + 165, modY + 14, new Color(220, 220, 220).getRGB(), false);
+                    FontUtils.drawRightAlignedString(guiGraphics, "Click to open", (int)(posX + windowWidth - 30), modY + 14, new Color(100, 100, 100).getRGB());
+                    modY += 44;
+                }
+            } else {
+                int modY = (int)posY + 60 + (int)moduleScrollOffset;
+                for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.getModules(selectedCategory)) {
+                    if (!selectedSubCategory.equals("ALL")) {
+                        String sub = m.getSubCategory() == null || m.getSubCategory().isEmpty() ? "General" : m.getSubCategory();
+                        if (!sub.equals(selectedSubCategory)) continue;
+                    }
+                    if (isInside(mouseX, mouseY, posX + 150, modY, posX + windowWidth - 20, modY + 36)) {
+                        String desc = m.getDescription();
+                        boolean detected = false;
+                        String srv = net.minecraft.client.Minecraft.getInstance().getCurrentServer() != null ? net.minecraft.client.Minecraft.getInstance().getCurrentServer().ip : null;
+                        if (srv != null) {
+                            com.eclipseware.imnotcheatingyouare.client.module.impl.DetectionAlert da = (com.eclipseware.imnotcheatingyouare.client.module.impl.DetectionAlert) ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("DetectionDB");
+                            if (da != null && da.isToggled() && da.isModuleDetected(m, srv)) {
+                                detected = true;
+                            }
+                        }
+
+                        int tw = (desc != null && !desc.isEmpty()) ? FontUtils.width(desc) : 0;
+                        String detStr = detected ? "DETECTED ON " + srv.toUpperCase() : null;
+                        int tw2 = detected ? FontUtils.width(detStr) : 0;
+                        int maxTw = Math.max(tw, tw2);
+
+                        if (maxTw > 0) {
+                            int h = detected && desc != null && !desc.isEmpty() ? 32 : 20;
+                            AnimationUtil.drawRoundedRect(guiGraphics, mouseX + 12, mouseY + 4, maxTw + 10, h, 4, new Color(15, 15, 15, 240).getRGB());
+                            
+                            int textY = mouseY + 10;
+                            if (desc != null && !desc.isEmpty()) {
+                                FontUtils.drawString(guiGraphics, desc, mouseX + 17, textY, -1, false);
+                                textY += 12;
+                            }
+                            if (detected) {
+                                FontUtils.drawString(guiGraphics, detStr, mouseX + 17, textY, new Color(255, 80, 80).getRGB(), false);
+                            }
+                        }
+                        break;
+                    }
+                    modY += 44;
+                }
             }
         }
 
@@ -361,33 +394,66 @@ public class Clickgui extends Screen {
 
         int catY = (int)posY + 60;
         for (Category cat : Category.values()) {
-            if (isInside(mouseX, mouseY, posX + 10, catY, posX + 120, catY + 30) && button == 0) {
-                selectedCategory = cat;
-                selectedModule = null;
-                targetModuleScrollOffset = 0;
-                playSound();
-                return true;
+            if (isInside(mouseX, mouseY, posX + 10, catY, posX + 120, catY + 30)) {
+                if (button == 0) {
+                    selectedCategory = cat;
+                    selectedModule = null;
+                    targetModuleScrollOffset = 0;
+                    selectedSubCategory = null; 
+                    playSound();
+                    return true;
+                } else if (button == 1) {
+                    selectedCategory = cat;
+                    selectedModule = null;
+                    targetModuleScrollOffset = 0;
+                    selectedSubCategory = "ALL";
+                    playSound();
+                    return true;
+                }
             }
             catY += 36;
         }
 
         if (selectedModule == null) {
-if (mouseY > posY + 58) {
-int modY = (int)posY + 70 + (int)moduleScrollOffset;
-for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.getModules(selectedCategory)) {
-if (isInside(mouseX, mouseY, posX + 150, modY, posX + windowWidth - 20, modY + 36)) {
-playSound();
-if (button == 0) m.toggle();
-else if (button == 1) {
-selectedModule = m;
-loadComponents(m);
-}
-return true;
-}
-modY += 44;
-}
-}
-} else {
+            if (mouseY > posY + 58) {
+                int modY = (int)posY + 70 + (int)moduleScrollOffset;
+                if (selectedSubCategory == null) {
+                    java.util.Set<String> subCats = new java.util.LinkedHashSet<>();
+                    for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.getModules(selectedCategory)) {
+                        String sub = m.getSubCategory() == null || m.getSubCategory().isEmpty() ? "General" : m.getSubCategory();
+                        subCats.add(sub);
+                    }
+                    for (String sub : subCats) {
+                        if (isInside(mouseX, mouseY, posX + 150, modY, posX + windowWidth - 20, modY + 36)) {
+                            playSound();
+                            if (button == 0) {
+                                selectedSubCategory = sub;
+                                targetModuleScrollOffset = 0;
+                            }
+                            return true;
+                        }
+                        modY += 44;
+                    }
+                } else {
+                    for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.getModules(selectedCategory)) {
+                        if (!selectedSubCategory.equals("ALL")) {
+                            String sub = m.getSubCategory() == null || m.getSubCategory().isEmpty() ? "General" : m.getSubCategory();
+                            if (!sub.equals(selectedSubCategory)) continue;
+                        }
+                        if (isInside(mouseX, mouseY, posX + 150, modY, posX + windowWidth - 20, modY + 36)) {
+                            playSound();
+                            if (button == 0) m.toggle();
+                            else if (button == 1) {
+                                selectedModule = m;
+                                loadComponents(m);
+                            }
+                            return true;
+                        }
+                        modY += 44;
+                    }
+                }
+            }
+        } else {
             if (isInside(mouseX, mouseY, posX + 150, posY + 20, posX + 220, posY + 35) && button == 0) {
                 selectedModule = null;
                 playSound();

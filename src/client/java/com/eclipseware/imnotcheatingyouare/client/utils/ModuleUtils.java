@@ -24,10 +24,24 @@ public class ModuleUtils {
         return -1;
     }
 
+    private static int lastSentSlot = -1;
+
     public static void switchToSlot(int slot) {
-        if (mc.player == null || mc.getConnection() == null) return;
+        if (mc.player == null) return;
         mc.player.getInventory().setSelectedSlot(slot);
+        setServerSlot(slot);
+    }
+    
+    public static void setServerSlot(int slot) {
+        if (mc.player == null || mc.getConnection() == null) return;
+        if (lastSentSlot == slot) return; // Prevent duplicate packet bursts!
+        
         mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
+        lastSentSlot = slot;
+    }
+    
+    public static void resetServerSlot() {
+        lastSentSlot = -1;
     }
 
     public static float[] getRotations(Vec3 from, Vec3 to) {
@@ -46,10 +60,7 @@ public class ModuleUtils {
         BlockHitResult hitResult = new BlockHitResult(
             Vec3.atCenterOf(pos), face, pos, false
         );
-        ServerboundUseItemOnPacket packet = new ServerboundUseItemOnPacket(
-            InteractionHand.MAIN_HAND, hitResult, 0
-        );
-        mc.getConnection().send(packet);
+        mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
         mc.player.swing(InteractionHand.MAIN_HAND);
     }
 

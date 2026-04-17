@@ -5,6 +5,7 @@ import net.minecraft.client.Minecraft;
 public class Module {
     private String name;
     private Category category;
+    private String subCategory;
     private String description;
     private int keyBind;
     private boolean toggled;
@@ -16,6 +17,7 @@ public class Module {
     public Module(String name, Category category, String description) {
         this.name = name;
         this.category = category;
+        this.subCategory = "";
         this.description = description;
         this.keyBind = -1;
         this.toggled = false;
@@ -25,6 +27,7 @@ public class Module {
     public Module(String name, Category category) {
         this.name = name;
         this.category = category;
+        this.subCategory = "";
         this.description = "";
         this.keyBind = -1;
         this.toggled = false;
@@ -34,6 +37,7 @@ public class Module {
     public Module(String name, Category category, String description, boolean hidden) {
         this.name = name;
         this.category = category;
+        this.subCategory = "";
         this.description = description;
         this.keyBind = -1;
         this.toggled = false;
@@ -92,6 +96,9 @@ public class Module {
     
     public Category getCategory() { return category; }
     public void setCategory(Category category) { this.category = category; }
+    
+    public String getSubCategory() { return subCategory; }
+    public void setSubCategory(String subCategory) { this.subCategory = subCategory; }
     
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }

@@ -6,5 +6,6 @@ public enum Category {
     Render,
     Misc,
     World,
+    Blatant,
     Configs 
 }

@@ -35,8 +35,20 @@ public class BlockBehaviourMixin {
         }
     }
 
+    @Inject(method = "skipRendering", at = @At("RETURN"), cancellable = true)
+    private void onSkipRendering(BlockState state, BlockState adjacentBlockState, Direction direction, CallbackInfoReturnable<Boolean> cir) {
+        if (Xray.INSTANCE != null && Xray.INSTANCE.isToggled()) {
+            if (isImportant(state)) {
+                cir.setReturnValue(false); 
+            }
+        }
+    }
+
     private boolean isImportant(BlockState state) {
         String name = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();
-        return name.contains("ore") || name.equals("ancient_debris") || name.contains("chest") || name.contains("spawner");
+        if (Xray.INSTANCE != null) {
+            return Xray.INSTANCE.isImportantBlock(name);
+        }
+        return false;
     }
 }

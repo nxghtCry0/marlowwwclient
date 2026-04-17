@@ -24,6 +24,10 @@ public class MultiPlayerGameModeMixin {
 
     @Inject(method = "attack", at = @At("HEAD"), cancellable = true)
     private void onAttack(Player player, Entity target, CallbackInfo ci) {
+        if (com.eclipseware.imnotcheatingyouare.client.module.impl.HitSwap.INSTANCE != null) {
+            com.eclipseware.imnotcheatingyouare.client.module.impl.HitSwap.INSTANCE.onPreAttack(target);
+        }
+
         Module hitSelectMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("HitSelect");
         if (hitSelectMod != null && hitSelectMod.isToggled() && hitSelectMod instanceof HitSelect hs) {
             if (!hs.canAttack(target)) {
@@ -77,6 +81,10 @@ com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.consume();
 
     @Inject(method = "attack", at = @At("RETURN"))
     private void afterAttack(Player player, Entity target, CallbackInfo ci) {
+        if (com.eclipseware.imnotcheatingyouare.client.module.impl.HitSwap.INSTANCE != null) {
+            com.eclipseware.imnotcheatingyouare.client.module.impl.HitSwap.INSTANCE.onPostAttack(target);
+        }
+
         if (com.eclipseware.imnotcheatingyouare.client.module.impl.AttributeSwap.INSTANCE != null) {
             com.eclipseware.imnotcheatingyouare.client.module.impl.AttributeSwap.INSTANCE.onAttack(target);
         }

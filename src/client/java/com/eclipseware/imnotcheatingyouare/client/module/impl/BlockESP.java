@@ -19,25 +19,82 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class BlockESP extends Module {
-    private final Set<String> selectedBlocks = new HashSet<>();
-    
+
+    private final Set<String> defaultBlocks = new HashSet<>();
+
     public BlockESP() {
-        super("BlockESP", Category.Render, "Highlights specific blocks with customizable colors and tracers.");
+        super("BlockESP", Category.Render, "Highlights target blocks.");
         HudRenderCallback.EVENT.register((guiGraphics, tickCounter) -> onRenderHUD(guiGraphics, tickCounter));
+
+        addDefault("obsidian");
+        addDefault("bedrock");
+        addDefault("diamond_ore");
+        addDefault("ancient_debris");
+        addDefault("spawner");
+        addDefault("end_portal_frame");
+    }
+
+    private void addDefault(String id) {
+        defaultBlocks.add(id);
+        SettingsManager sm = ImnotcheatingyouareClient.INSTANCE.settingsManager;
+        if (sm.getSettingByName(this, "Find " + id) == null) {
+            sm.rSetting(new Setting("Find " + id, this, false));
+            sm.rSetting(new Setting(id + " R", this, 255.0, 0.0, 255.0, true));
+            sm.rSetting(new Setting(id + " G", this, 255.0, 0.0, 255.0, true));
+            sm.rSetting(new Setting(id + " B", this, 255.0, 0.0, 255.0, true));
+        }
+    }
+
+    private boolean isBlockEnabled(String id) {
+        Setting s = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Find " + id);
+        return s != null && s.getValBoolean();
+    }
+
+    private final java.util.List<BlockPos> cachedBlocks = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private long lastCacheTick = 0;
+
+    @Override
+    public void onTick() {
+        if (!isToggled() || mc.player == null || mc.level == null) return;
+        
+        Setting fpsSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "FPS");
+        double targetFPS = fpsSetting != null ? fpsSetting.getValDouble() : 30;
+        int interval = Math.max(1, (int)(20.0 / targetFPS)); // Wait, TPS is 20! Render frames are fast!
+        // We will scan blocks every 10 ticks (0.5s) to save massive chunk iteration FPS lag!
+        
+        if (mc.player.tickCount - lastCacheTick < 10) return;
+        lastCacheTick = mc.player.tickCount;
+
+        Setting rangeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Range");
+        int range = rangeSetting != null ? (int) rangeSetting.getValDouble() : 32;
+
+        BlockPos playerPos = mc.player.blockPosition();
+        java.util.List<BlockPos> newCache = new java.util.ArrayList<>();
+
+        // Fast block scanning within range
+        for (int x = -range; x <= range; x++) {
+            for (int y = -range; y <= range; y++) {
+                for (int z = -range; z <= range; z++) {
+                    BlockPos pos = playerPos.offset(x, y, z);
+                    BlockState state = mc.level.getBlockState(pos);
+                    Block block = state.getBlock();
+                    String blockName = BuiltInRegistries.BLOCK.getKey(block).getPath();
+                    
+                    if (defaultBlocks.contains(blockName) && isBlockEnabled(blockName)) {
+                        newCache.add(pos);
+                    }
+                }
+            }
+        }
+        
+        cachedBlocks.clear();
+        cachedBlocks.addAll(newCache);
     }
 
     private void onRenderHUD(GuiGraphics guiGraphics, Object tickCounterObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
         
         float partialTick = getTickDelta(tickCounterObj);
-
-        Setting fpsSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "FPS");
-        double targetFPS = fpsSetting != null ? fpsSetting.getValDouble() : 30;
-        int interval = Math.max(1, (int)(60.0 / targetFPS));
-        if (mc.player.tickCount % interval != 0) return;
-
-        Setting rangeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Range");
-        int range = rangeSetting != null ? (int) rangeSetting.getValDouble() : 32;
         
         Setting tracersSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Tracers");
         Setting fillSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Fill");
@@ -48,33 +105,25 @@ public class BlockESP extends Module {
         boolean doOutline = outlineSetting != null && outlineSetting.getValBoolean();
         
         if (!showTracers && !doFill && !doOutline) return;
-
-        BlockPos playerPos = mc.player.blockPosition();
         
-        for (int x = -range; x <= range; x++) {
-            for (int y = -range; y <= range; y++) {
-                for (int z = -range; z <= range; z++) {
-                    BlockPos pos = playerPos.offset(x, y, z);
-                    BlockState state = mc.level.getBlockState(pos);
-                    Block block = state.getBlock();
-                    String blockName = BuiltInRegistries.BLOCK.getKey(block).getPath();
-                    
-                    if (!selectedBlocks.contains(blockName)) continue;
-                    
-                    Color color = getColorForBlock(blockName);
-                    Vector3d screenPos = RenderUtils.project2D(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, partialTick);
-                    
-                    if (screenPos != null && screenPos.z > 0 && screenPos.z < 1.0) {
-                        if (showTracers) {
-                            RenderUtils.drawLine2D(guiGraphics,
-                                mc.getWindow().getGuiScaledWidth() / 2.0,
-                                mc.getWindow().getGuiScaledHeight() / 2.0,
-                                screenPos.x, screenPos.y, color);
-                        }
-                        if (doFill || doOutline) {
-                            drawBlockBox(guiGraphics, pos, color, doFill, doOutline, partialTick);
-                        }
-                    }
+        for (BlockPos pos : cachedBlocks) {
+            // Re-validate just in case it broke
+            BlockState state = mc.level.getBlockState(pos);
+            String blockName = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();
+            if (!defaultBlocks.contains(blockName) || !isBlockEnabled(blockName)) continue;
+            
+            Color color = getColorForBlock(blockName);
+            Vector3d screenPos = RenderUtils.project2D(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, partialTick);
+            
+            if (screenPos != null && screenPos.z > 0 && screenPos.z < 1.0) {
+                if (showTracers) {
+                    RenderUtils.drawLine2D(guiGraphics,
+                        mc.getWindow().getGuiScaledWidth() / 2.0,
+                        mc.getWindow().getGuiScaledHeight() / 2.0,
+                        screenPos.x, screenPos.y, color);
+                }
+                if (doFill || doOutline) {
+                    drawBlockBox(guiGraphics, pos, color, doFill, doOutline, partialTick);
                 }
             }
         }
@@ -125,38 +174,6 @@ public class BlockESP extends Module {
         int b = bSetting != null ? (int) bSetting.getValDouble() : 255;
         
         return new Color(r, g, b);
-    }
-
-    public void addBlock(String blockName) {
-        if (selectedBlocks.add(blockName)) {
-            registerBlockSettings(blockName);
-        }
-    }
-
-    public void removeBlock(String blockName) {
-        selectedBlocks.remove(blockName);
-    }
-
-    public boolean hasBlock(String blockName) {
-        return selectedBlocks.contains(blockName);
-    }
-
-    private void registerBlockSettings(String blockName) {
-        SettingsManager sm = ImnotcheatingyouareClient.INSTANCE.settingsManager;
-        if (sm.getSettingByName(this, blockName + " R") == null) {
-            sm.rSetting(new Setting(blockName + " R", this, 255.0, 0.0, 255.0, true));
-            sm.rSetting(new Setting(blockName + " G", this, 255.0, 0.0, 255.0, true));
-            sm.rSetting(new Setting(blockName + " B", this, 255.0, 0.0, 255.0, true));
-        }
-    }
-
-    @Override
-    public void onDisable() {
-        selectedBlocks.clear();
-    }
-
-    public Set<String> getSelectedBlocks() {
-        return new HashSet<>(selectedBlocks);
     }
     
     private float getTickDelta(Object tickDeltaObj) {
