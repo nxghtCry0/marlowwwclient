@@ -24,6 +24,10 @@ public class MultiPlayerGameModeMixin {
 
     @Inject(method = "attack", at = @At("HEAD"), cancellable = true)
     private void onAttack(Player player, Entity target, CallbackInfo ci) {
+        // 1. TriggerBot shouldBlock
+        Module triggerBotMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Triggerbot");
+        if (triggerBotMod != null && triggerBotMod.isToggled() && triggerBotMod instanceof com.eclipseware.imnotcheatingyouare.client.module.impl.Triggerbot tb) {
+            if (tb.shouldBlock(target)) {
         Module hitSelectMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("HitSelect");
         if (hitSelectMod != null && hitSelectMod.isToggled() && hitSelectMod instanceof HitSelect hs) {
             if (!hs.canAttack(target)) {
@@ -34,12 +38,22 @@ public class MultiPlayerGameModeMixin {
 
         Module shieldBreakerMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("AutoShieldBreaker");
         if (shieldBreakerMod != null && shieldBreakerMod.isToggled() && shieldBreakerMod instanceof AutoShieldBreaker asb) {
-            if (asb.handleAttack(target, player)) {
+            if (asb.shouldCancelAttack(target)) {
                 ci.cancel();
                 return;
             }
         }
 
+        // 3. HitSelect
+        Module hitSelectMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("HitSelect");
+        if (hitSelectMod != null && hitSelectMod.isToggled() && hitSelectMod instanceof HitSelect hs) {
+            if (!hs.canAttack(target)) {
+                ci.cancel();
+                return;
+            }
+        }
+
+        // 4. BreachSwap
         Module breachSwapMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("BreachSwap");
         if (breachSwapMod != null && breachSwapMod instanceof com.eclipseware.imnotcheatingyouare.client.module.impl.BreachSwap bs) {
             if (bs.handleAttack(target, player)) {
@@ -48,6 +62,20 @@ public class MultiPlayerGameModeMixin {
             }
         }
 
+        // 5. KBDisplacement
+        if (!ci.isCancelled()) {
+            Module kbMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("KBDisplacement");
+            if (kbMod != null && kbMod.isToggled() && kbMod instanceof KnockbackDisplacement kbd) {
+                float[] flip = kbd.getFlipRotation(target);
+                if (flip != null && Minecraft.getInstance().getConnection() != null) {
+                    Minecraft.getInstance().getConnection().send(new ServerboundMovePlayerPacket.Rot(
+                        flip[0], flip[1], player.onGround(), false
+                    ));
+                    kbShouldRevert = true;
+                }
+            }
+        }
+    }
 if (!ci.isCancelled()) {
 Module kbMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("KBDisplacement");
 if (kbMod != null && kbMod.isToggled() && kbMod instanceof KnockbackDisplacement kbd) {
