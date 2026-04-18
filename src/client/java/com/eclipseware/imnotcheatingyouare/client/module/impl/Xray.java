@@ -30,8 +30,6 @@ public class Xray extends Module {
     
     public boolean isImportantBlock(String blockName) {
         if (blockName.contains("ore") && !customBlocks.contains(blockName)) {
-            // By default, if it's an ore not in the list, just show it or fallback
-            // But let's dynamically register it if seen to populate the GUI!
             addDefault(blockName);
         }
         

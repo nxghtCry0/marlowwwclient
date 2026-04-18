@@ -22,7 +22,6 @@ import java.nio.file.Paths;
  */
 public class ScreenshareBypass {
 
-    // The directory we actually write configs to — hidden, innocent-looking name
     private static final String CONFIG_DIR_NAME = ".minecraft_perf_cache";
 
     /**
@@ -30,11 +29,9 @@ public class ScreenshareBypass {
      * Use this instead of writing to .minecraft/config/clientname/
      */
     public static Path getSafeConfigDir() {
-        // Store next to .minecraft, not inside it, so mod scanners miss it
         Path base = Paths.get(System.getProperty("user.home"), CONFIG_DIR_NAME);
         try {
             Files.createDirectories(base);
-            // Mark hidden on Windows
             File f = base.toFile();
             if (System.getProperty("os.name").toLowerCase().contains("win")) {
                 Runtime.getRuntime().exec("attrib +H " + f.getAbsolutePath());

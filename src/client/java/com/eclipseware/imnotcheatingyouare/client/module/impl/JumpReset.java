@@ -41,7 +41,6 @@ public class JumpReset extends Module {
     public void onKnockback() {
         if (!isToggled() || mc.player == null) return;
         
-        // Debounce knockback events to prevent infinite jump loops from packet spam
         if (System.currentTimeMillis() - lastHitTime < 50) return;
 
         hitsInTrade++;

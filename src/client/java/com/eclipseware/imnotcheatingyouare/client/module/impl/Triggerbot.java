@@ -25,7 +25,6 @@ public class Triggerbot extends Module {
     private int tickCounter        = 0;
     private int currentTargetDelay = 0;
 
-    // Tracks last-attack ms for humanised inter-click timing
     private long lastAttackMs = 0L;
 
     private int clickGraceTicks = 0;
@@ -38,7 +37,6 @@ public class Triggerbot extends Module {
     public void onTick() {
         if (mc.player == null || mc.level == null) return;
 
-        // Keep GCD updated
         GCDFix.update(mc.options.sensitivity().get());
 
         Setting modeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Mode");

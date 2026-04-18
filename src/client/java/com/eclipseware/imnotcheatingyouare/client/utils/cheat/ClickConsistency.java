@@ -21,11 +21,9 @@ public class ClickConsistency {
     private static final int   WINDOW_MS   = 1000;
     private static final Deque<Long> clicks = new ArrayDeque<>();
 
-    // Gaussian jitter parameters (ms)
     private static final double JITTER_MEAN   = 0.0;
     private static final double JITTER_STDDEV = 18.0;
 
-    // Probability of inserting an extra "human pause" gap
     private static final double MISCLICK_PROB = 0.04;
     private static final int    MISCLICK_EXTRA_MS = 120;
 
@@ -45,11 +43,9 @@ public class ClickConsistency {
         long lastClick = clicks.isEmpty() ? 0L : clicks.peekLast();
         long elapsed   = now - lastClick;
 
-        // Apply Gaussian jitter
         double jitter = JITTER_MEAN + JITTER_STDDEV * gaussian();
         long   needed = (long) (baseDelayMs + jitter);
 
-        // Occasionally add a human hesitation gap
         if (Math.random() < MISCLICK_PROB) needed += MISCLICK_EXTRA_MS;
 
         if (elapsed < needed) return false;
@@ -77,7 +73,6 @@ public class ClickConsistency {
         }
     }
 
-    // Box-Muller transform for Gaussian random
     private static double gaussian() {
         double u = Math.random(), v = Math.random();
         return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);

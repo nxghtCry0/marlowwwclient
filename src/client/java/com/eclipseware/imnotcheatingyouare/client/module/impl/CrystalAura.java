@@ -72,7 +72,6 @@ public class CrystalAura extends Module {
         Setting silentSwapS = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Silent Swap");
         boolean silentSwap = silentSwapS != null ? silentSwapS.getValBoolean() : true;
         
-        // Defer reverting the slot to the start of the tick to avoid BadPackets burst in 1 tick
         if (deferredRevertSlot != -1) {
             if (silentSwap) {
                 ModuleUtils.setServerSlot(deferredRevertSlot);
@@ -113,7 +112,7 @@ public class CrystalAura extends Module {
                         Vec3 to = eyePos.add(looking.scale(r + 0.5));
                         net.minecraft.world.phys.AABB aabb = mc.player.getBoundingBox().expandTowards(looking.scale(r + 0.5)).inflate(1.0D);
                         net.minecraft.world.phys.EntityHitResult hitResult = net.minecraft.world.entity.projectile.ProjectileUtil.getEntityHitResult(mc.player, eyePos, to, aabb, (e) -> e == crystal, (r+2) * (r+2));
-                        if (hitResult == null || hitResult.getEntity() != crystal) continue; // Wait for rotation sync
+                        if (hitResult == null || hitResult.getEntity() != crystal) continue; 
                     }
                     
                     mc.gameMode.attack(mc.player, crystal);
@@ -267,17 +266,15 @@ public class CrystalAura extends Module {
     private boolean isLethalToSelf(BlockPos crystalPos) {
         if (!antiSuicide.getValBoolean()) return false;
         
-        // Face place override: if the optimal target is very low health, ignore self damage
         Player target = getOptimalTarget(range.getValDouble() + 2);
         Setting facePlaceSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Face Place Threshold");
         double fpThresh = facePlaceSetting != null ? facePlaceSetting.getValDouble() : 10.0;
         if (target != null && target.getHealth() <= fpThresh) {
-            // But still avoid absolute certain death if we are ultra low
             if (mc.player.getHealth() > 8.0f) return false;
         }
 
         double distSq = mc.player.distanceToSqr(crystalPos.getX() + 0.5, crystalPos.getY() + 1.0, crystalPos.getZ() + 0.5);
-        if (distSq > 16.0) return false; // Safe beyond 4 blocks
+        if (distSq > 16.0) return false; 
         
         Vec3 crystalVec = new Vec3(crystalPos.getX() + 0.5, crystalPos.getY() + 1.0, crystalPos.getZ() + 0.5);
         Vec3 playerLegs = mc.player.position().add(0, 0.2, 0);
@@ -287,7 +284,6 @@ public class CrystalAura extends Module {
         ));
         
         if (result.getType() == net.minecraft.world.phys.HitResult.Type.MISS) {
-            // We have direct exposure. Check pseudo damage.
             double dmg = (20.0 / Math.max(1, distSq)) * (1.0 - (mc.player.getArmorValue() / 30.0));
             if (dmg >= mc.player.getHealth()) return true;
         }
@@ -322,10 +318,9 @@ public class CrystalAura extends Module {
         if (bodyHit.getType() == net.minecraft.world.phys.HitResult.Type.MISS) exposure += 0.5;
         if (feetHit.getType() == net.minecraft.world.phys.HitResult.Type.MISS) exposure += 0.5;
         
-        if (exposure == 0) return 0; // completely blocked
+        if (exposure == 0) return 0; 
         
         double rawDamage = (20.0 / Math.max(1, distSq)) * exposure;
-        // Approximation factoring in target armor (very rough)
         double armorMod = 1.0 - (target.getArmorValue() / 25.0); 
         return rawDamage * armorMod;
     }

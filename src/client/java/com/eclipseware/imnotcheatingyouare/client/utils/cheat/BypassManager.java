@@ -18,7 +18,6 @@ public class BypassManager {
     }
 
     public static void applyBypass() {
-        // AntiCheatProfile.set(AntiCheatProfile.Level.STRICT);
     }
 
     public static boolean isBypassActive() {

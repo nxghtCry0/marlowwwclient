@@ -22,7 +22,7 @@ public class AnchorMacro extends Module {
     private Setting autoDisable;
     private Setting silentAim;
     
-    private int step = 0; // 0=place anchor, 1=charge, 2=explode
+    private int step = 0; 
     private int ticksAssigned = 0;
     private BlockPos targetAnchorPos = null;
 
@@ -92,7 +92,7 @@ public class AnchorMacro extends Module {
             if (safeAnchor.getValBoolean() && currentPosState.is(Blocks.RESPAWN_ANCHOR)) {
                 if (currentPosState.hasProperty(BlockStateProperties.RESPAWN_ANCHOR_CHARGES) && 
                     currentPosState.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES) > 0) {
-                    step = 2; // already charged enough to explode
+                    step = 2; 
                     return;
                 }
             }
@@ -106,10 +106,7 @@ public class AnchorMacro extends Module {
             ticksAssigned = (int) delaySetting.getValDouble();
         } else if (step == 2) {
             if (silentAim.getValBoolean()) aimAt(targetAnchorPos);
-            // Must right click with something that doesn't inherently place/block
             int oldSlot = mc.player.getInventory().getSelectedSlot();
-            // Just reuse anchor slot if it doesn't matter, or a non-item
-            // Usually an empty explicit packet works
             mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundUseItemOnPacket(
                 InteractionHand.MAIN_HAND, new BlockHitResult(Vec3.atCenterOf(targetAnchorPos), Direction.UP, targetAnchorPos, false), 0
             ));

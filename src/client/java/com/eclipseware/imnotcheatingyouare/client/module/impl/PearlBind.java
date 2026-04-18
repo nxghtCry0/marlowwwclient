@@ -38,7 +38,6 @@ public class PearlBind extends Module {
             mc.player.swing(InteractionHand.MAIN_HAND);
         }
 
-        // Always toggle off after use
         setToggled(false);
     }
 }

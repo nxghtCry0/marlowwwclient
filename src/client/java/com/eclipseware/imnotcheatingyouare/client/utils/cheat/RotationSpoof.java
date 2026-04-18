@@ -20,7 +20,6 @@ public class RotationSpoof {
     private static float serverPitch = 0f;
     private static boolean active    = false;
 
-    // How many ticks the spoof stays alive (prevents stale spoofed angles)
     private static int ttl = 0;
 
     public static void set(float yaw, float pitch) {

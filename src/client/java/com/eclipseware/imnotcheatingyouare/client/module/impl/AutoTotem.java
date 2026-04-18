@@ -71,13 +71,13 @@ public class AutoTotem extends Module {
         }
 
         if (NeedsTotem && activationActive) {
-            queueSwap(findItem(Items.TOTEM_OF_UNDYING, true)); // Hotbar prioritized
+            queueSwap(findItem(Items.TOTEM_OF_UNDYING, true)); 
         }
     }
 
     private void queueSwap(int slot) {
         if (slot == -1) return;
-        int delay = Math.max(3, (int) popDelay.getValDouble()); // Enforce 3 tick cooldown to prevent packet spam on lag
+        int delay = Math.max(3, (int) popDelay.getValDouble()); 
         swapDelayCounter = delay;
         queuedSwapSlot = slot;
     }

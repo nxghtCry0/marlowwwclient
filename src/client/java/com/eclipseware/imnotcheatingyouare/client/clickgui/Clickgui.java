@@ -282,7 +282,6 @@ public class Clickgui extends Screen {
 
         if (selectedModule == null) {
             if (selectedSubCategory == null) {
-                // Render SubCategory Folders
                 int modY = (int)posY + 60 + (int)moduleScrollOffset;
                 java.util.Set<String> subCats = new java.util.LinkedHashSet<>();
                 for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.getModules(selectedCategory)) {

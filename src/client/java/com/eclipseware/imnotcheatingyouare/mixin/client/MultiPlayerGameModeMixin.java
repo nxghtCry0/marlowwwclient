@@ -28,7 +28,6 @@ public class MultiPlayerGameModeMixin {
             com.eclipseware.imnotcheatingyouare.client.module.impl.HitSwap.INSTANCE.onPreAttack(target);
         }
 
-        // 1. TriggerBot shouldBlock
         Module triggerBotMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Triggerbot");
         if (triggerBotMod != null && triggerBotMod.isToggled() && triggerBotMod instanceof com.eclipseware.imnotcheatingyouare.client.module.impl.Triggerbot tb) {
             if (tb.shouldBlock(target)) {
@@ -37,7 +36,6 @@ public class MultiPlayerGameModeMixin {
             }
         }
 
-        // 2. ShieldBreaker
         Module shieldBreakerMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("AutoShieldBreaker");
         if (shieldBreakerMod != null && shieldBreakerMod.isToggled() && shieldBreakerMod instanceof AutoShieldBreaker asb) {
             if (asb.shouldCancelAttack(target)) {
@@ -46,7 +44,6 @@ public class MultiPlayerGameModeMixin {
             }
         }
 
-        // 3. HitSelect
         Module hitSelectMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("HitSelect");
         if (hitSelectMod != null && hitSelectMod.isToggled() && hitSelectMod instanceof HitSelect hs) {
             if (!hs.canAttack(target)) {
@@ -55,7 +52,6 @@ public class MultiPlayerGameModeMixin {
             }
         }
 
-        // 4. BreachSwap
         Module breachSwapMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("BreachSwap");
         if (breachSwapMod != null && breachSwapMod instanceof com.eclipseware.imnotcheatingyouare.client.module.impl.BreachSwap bs) {
             if (bs.handleAttack(target, player)) {
@@ -64,7 +60,6 @@ public class MultiPlayerGameModeMixin {
             }
         }
 
-        // 5. KBDisplacement
         if (!ci.isCancelled()) {
             Module kbMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("KBDisplacement");
             if (kbMod != null && kbMod.isToggled() && kbMod instanceof KnockbackDisplacement kbd) {

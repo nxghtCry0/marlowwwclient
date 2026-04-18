@@ -10,7 +10,7 @@ public class Hitboxes extends Module {
 
     public Hitboxes() {
         super("Hitboxes", Category.Blatant, "Expands entity hitboxes (F3+B won't show it but it works)");
-        setSubCategory("Semi-Blatant"); // Requested to go in Semi-Blatant inside Blatant category
+        setSubCategory("Semi-Blatant"); 
         size = new Setting("Expand Size", this, 0.2, 0.0, 3.0, false);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(size);
     }

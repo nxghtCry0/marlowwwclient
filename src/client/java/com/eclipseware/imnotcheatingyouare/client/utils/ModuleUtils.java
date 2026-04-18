@@ -34,7 +34,7 @@ public class ModuleUtils {
     
     public static void setServerSlot(int slot) {
         if (mc.player == null || mc.getConnection() == null) return;
-        if (lastSentSlot == slot) return; // Prevent duplicate packet bursts!
+        if (lastSentSlot == slot) return; 
         
         mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
         lastSentSlot = slot;

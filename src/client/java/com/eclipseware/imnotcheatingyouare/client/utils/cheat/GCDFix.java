@@ -13,8 +13,6 @@ package com.eclipseware.imnotcheatingyouare.client.utils.cheat;
  */
 public class GCDFix {
 
-    // Vanilla sensitivity multiplier constant (from MouseHandler)
-    // f(sens) = sens * 0.6 + 0.2,  GCD = f^3
     private static double cachedSens = -1.0;
     private static double cachedGCD  = -1.0;
 
@@ -38,7 +36,6 @@ public class GCDFix {
      */
     public static float snapDelta(float delta) {
         if (cachedGCD <= 0) return delta;
-        // Round to nearest multiple of GCD
         return (float) (Math.round(delta / cachedGCD) * cachedGCD);
     }
 

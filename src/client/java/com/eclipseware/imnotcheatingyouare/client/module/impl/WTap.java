@@ -9,11 +9,9 @@ import org.lwjgl.glfw.GLFW;
 
 public class WTap extends Module {
 
-    // 0 = idle, 1 = counting down before release, 2 = W released counting to re-press
     private int phase           = 0;
     private int ticksRemaining  = 0;
 
-    // Randomised per-cycle jitter so the release timing isn't perfectly constant
     private int jitterTicks = 0;
 
     public WTap() {
@@ -33,7 +31,6 @@ public class WTap extends Module {
         Setting waitSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Wait Ticks");
         int base = waitSetting != null ? (int) waitSetting.getValDouble() : 0;
 
-        // Add 0-1 tick of jitter to prevent perfectly periodic sprint-reset pattern
         jitterTicks = (int) (Math.random() * 2);
         ticksRemaining = base + jitterTicks;
     }
@@ -55,7 +52,7 @@ public class WTap extends Module {
                     phase = 2;
                     Setting actionSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Action Ticks");
                     int base = actionSetting != null ? (int) actionSetting.getValDouble() : 1;
-                    ticksRemaining = base + (int) (Math.random() * 2); // jitter
+                    ticksRemaining = base + (int) (Math.random() * 2); 
                 }
             }
             case 2 -> {

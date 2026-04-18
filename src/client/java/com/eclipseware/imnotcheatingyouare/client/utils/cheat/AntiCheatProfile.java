@@ -22,7 +22,6 @@ public class AntiCheatProfile {
     public static void set(Level l) { current = l; }
     public static Level get()       { return current; }
 
-    // ── Reach ──────────────────────────────────────────────────────────────
     /** Max extra reach (blocks) safe for current profile. */
     public static double safeReachExtra() {
         return switch (current) {
@@ -33,7 +32,6 @@ public class AntiCheatProfile {
         };
     }
 
-    // ── Aim Assist ─────────────────────────────────────────────────────────
     /** Max degrees per tick the aim assist should move. */
     public static float safeAimMaxTurn() {
         return switch (current) {
@@ -44,7 +42,6 @@ public class AntiCheatProfile {
         };
     }
 
-    // ── Triggerbot ─────────────────────────────────────────────────────────
     /** Minimum ms between triggerbot clicks. */
     public static int safeTriggerMinDelayMs() {
         return switch (current) {
@@ -55,13 +52,11 @@ public class AntiCheatProfile {
         };
     }
 
-    // ── WTap ───────────────────────────────────────────────────────────────
     /** Whether WTap should use silent (packet-level) sprint reset. */
     public static boolean wtapSilentMode() {
         return current == Level.STRICT || current == Level.MEDIUM;
     }
 
-    // ── Rotation ───────────────────────────────────────────────────────────
     /** Whether rotations should be server-side only (silent aim). */
     public static boolean silentRotations() {
         return current == Level.STRICT;

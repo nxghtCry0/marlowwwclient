@@ -48,10 +48,8 @@ public class AimAssist extends Module {
             return;
         }
 
-        // Update GCD for current sensitivity every tick
         GCDFix.update(mc.options.sensitivity().get());
 
-        // Jitter-click protection
         if (mc.options.keyAttack.isDown()) {
             clickGraceTicks = 5;
         } else if (clickGraceTicks > 0) {

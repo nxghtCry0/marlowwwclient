@@ -15,20 +15,17 @@ public class AntiBot extends Module {
     public static boolean isBot(Player player) {
         if (INSTANCE == null || !INSTANCE.isToggled()) return false;
         
-        // AntiBot regex check for standard MC names (3-16 alphanumeric + underscores)
         String name = player.getName().getString();
         if (!name.matches("^[a-zA-Z0-9_]{3,16}$")) {
             return true; 
         }
 
-        // UUID check: NPCs typically have generated UUIDs or missing network info
         if (mc.getConnection() != null) {
             if (mc.getConnection().getPlayerInfo(player.getUUID()) == null) {
                 return true; 
             }
         }
 
-        // Placeholder for ping checks, tick existed checks, etc.
         return false;
     }
 }

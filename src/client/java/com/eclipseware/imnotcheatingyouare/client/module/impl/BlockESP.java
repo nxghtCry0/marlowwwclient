@@ -59,8 +59,7 @@ public class BlockESP extends Module {
         
         Setting fpsSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "FPS");
         double targetFPS = fpsSetting != null ? fpsSetting.getValDouble() : 30;
-        int interval = Math.max(1, (int)(20.0 / targetFPS)); // Wait, TPS is 20! Render frames are fast!
-        // We will scan blocks every 10 ticks (0.5s) to save massive chunk iteration FPS lag!
+        int interval = Math.max(1, (int)(20.0 / targetFPS)); 
         
         if (mc.player.tickCount - lastCacheTick < 10) return;
         lastCacheTick = mc.player.tickCount;
@@ -71,7 +70,6 @@ public class BlockESP extends Module {
         BlockPos playerPos = mc.player.blockPosition();
         java.util.List<BlockPos> newCache = new java.util.ArrayList<>();
 
-        // Fast block scanning within range
         for (int x = -range; x <= range; x++) {
             for (int y = -range; y <= range; y++) {
                 for (int z = -range; z <= range; z++) {
@@ -107,7 +105,6 @@ public class BlockESP extends Module {
         if (!showTracers && !doFill && !doOutline) return;
         
         for (BlockPos pos : cachedBlocks) {
-            // Re-validate just in case it broke
             BlockState state = mc.level.getBlockState(pos);
             String blockName = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();
             if (!defaultBlocks.contains(blockName) || !isBlockEnabled(blockName)) continue;
