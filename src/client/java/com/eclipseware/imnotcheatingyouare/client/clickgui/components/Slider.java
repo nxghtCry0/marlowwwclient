@@ -77,6 +77,7 @@ public class Slider extends Button {
 
     private void setSettingFromX(int mouseX) {
         float percent = ((float) mouseX - this.x) / ((float) this.width + 7.4f);
+        percent = Math.max(0.0f, Math.min(1.0f, percent));
         double range = this.setting.getMax() - this.setting.getMin();
         double result = this.setting.getMin() + (range * percent);
         if (this.setting.onlyInt()) {

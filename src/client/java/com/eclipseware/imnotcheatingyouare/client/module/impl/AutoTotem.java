@@ -14,6 +14,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class AutoTotem extends Module {
+    private static final int MIN_DURATION_MS = 5;
+    private static final int MAX_DURATION_MS = 175;
+
     private final Setting durationMs;
     private volatile boolean sequenceRunning = false;
     private volatile long lastPopMs = 0L;
@@ -22,7 +25,7 @@ public class AutoTotem extends Module {
         super("AutoTotem", Category.Crystal, "Re-equips a totem right after a pop with a timed inventory macro.");
         setSubCategory("Crystal PvP");
 
-        durationMs = new Setting("Duration (ms)", this, 45.0, 10.0, 125.0, true);
+        durationMs = new Setting("Duration (ms)", this, 45.0, MIN_DURATION_MS, MAX_DURATION_MS, true);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(durationMs);
     }
 
@@ -42,7 +45,7 @@ public class AutoTotem extends Module {
         if (totemSlot == -1) return;
 
         lastPopMs = now;
-        int requestedDuration = (int) Math.max(10, Math.min(125, durationMs.getValDouble()));
+        int requestedDuration = clampDuration((int) Math.round(durationMs.getValDouble()));
         sequenceRunning = true;
 
         Thread worker = new Thread(() -> runTimedSwapSequence(totemSlot, requestedDuration), "AutoTotemSequence");
@@ -51,8 +54,9 @@ public class AutoTotem extends Module {
     }
 
     private void runTimedSwapSequence(int totemSlot, int durationMs) {
-        long start = System.currentTimeMillis();
-        int stageDelay = Math.max(0, durationMs / 3);
+        long startNanos = System.nanoTime();
+        long totalNanos = Math.max(0L, durationMs) * 1_000_000L;
+        long swapAtNanos = totalNanos / 2L;
 
         try {
             if (findTotemSlot() == -1) return;
@@ -63,20 +67,17 @@ public class AutoTotem extends Module {
                 }
             });
 
-            sleep(stageDelay);
+            sleepUntil(startNanos + swapAtNanos);
 
             executeOnClientThread(() -> performMouseSwapToOffhand(totemSlot));
 
-            sleep(stageDelay);
+            sleepUntil(startNanos + totalNanos);
 
             executeOnClientThread(() -> {
                 if (mc.screen instanceof InventoryScreen) {
                     mc.setScreen(null);
                 }
             });
-
-            long elapsed = System.currentTimeMillis() - start;
-            sleep(Math.max(0, durationMs - (int) elapsed));
         } finally {
             sequenceRunning = false;
         }
@@ -162,6 +163,24 @@ public class AutoTotem extends Module {
             Thread.sleep(ms);
         } catch (InterruptedException ignored) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private int clampDuration(int inputMs) {
+        return Math.max(MIN_DURATION_MS, Math.min(MAX_DURATION_MS, inputMs));
+    }
+
+    private void sleepUntil(long targetNanos) {
+        while (true) {
+            long remainingNanos = targetNanos - System.nanoTime();
+            if (remainingNanos <= 0L) return;
+
+            long sleepMillis = remainingNanos / 1_000_000L;
+            if (sleepMillis > 1L) {
+                sleep((int) Math.min(Integer.MAX_VALUE, sleepMillis - 1L));
+            } else {
+                sleep(1);
+            }
         }
     }
 }
