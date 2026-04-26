@@ -72,6 +72,9 @@ Module fullbright = new com.eclipseware.imnotcheatingyouare.client.module.impl.F
 Module reach = new com.eclipseware.imnotcheatingyouare.client.module.impl.Reach();
 Module handView = new com.eclipseware.imnotcheatingyouare.client.module.impl.HandView();
 Module esp = new com.eclipseware.imnotcheatingyouare.client.module.impl.ESP();
+Module noParticles = new com.eclipseware.imnotcheatingyouare.client.module.impl.NoParticles();
+Module lowFire = new com.eclipseware.imnotcheatingyouare.client.module.impl.LowFire();
+Module noTotemPop = new com.eclipseware.imnotcheatingyouare.client.module.impl.NoTotemPop();
 Module tracers = new com.eclipseware.imnotcheatingyouare.client.module.impl.Tracers();
 Module nametags = new com.eclipseware.imnotcheatingyouare.client.module.impl.Nametags();
 Module silentAim = new com.eclipseware.imnotcheatingyouare.client.module.impl.SilentAim();
@@ -123,6 +126,9 @@ moduleManager.modules.add(configurator);
 moduleManager.modules.add(fullbright);
 moduleManager.modules.add(reach);
 moduleManager.modules.add(handView);
+moduleManager.modules.add(noParticles);
+moduleManager.modules.add(lowFire);
+moduleManager.modules.add(noTotemPop);
 moduleManager.modules.add(detectionAlert);
 moduleManager.modules.add(esp);
 moduleManager.modules.add(tracers);
@@ -180,7 +186,7 @@ settingsManager.rSetting(new Setting("Overflick Power", aimAssist, 3.0, 1.0, 10.
 settingsManager.rSetting(new Setting("Reaction Delay (ms)", aimAssist, 50.0, 0.0, 300.0, true));
 settingsManager.rSetting(new Setting("Attack Only", aimAssist, true));
 settingsManager.rSetting(new Setting("Stop On Target", aimAssist, true));
-settingsManager.rSetting(new Setting("FOV", aimAssist, 60.0, 10.0, 360.0, true));
+settingsManager.rSetting(new Setting("FOV", aimAssist, 60.0, 0.0, 360.0, true));
 settingsManager.rSetting(new Setting("Range", aimAssist, 4.0, 1.0, 8.0, false));
 settingsManager.rSetting(new Setting("Silent Aim", aimAssist, false));
 

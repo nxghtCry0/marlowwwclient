@@ -32,6 +32,7 @@ public class CrystalAura extends Module {
     private Setting smoothAim;
     private Setting aimSpeed;
     private Setting antiSuicide;
+    private Setting requireHeld;
 
     private int placeTicks = 0;
     private int breakTicks = 0;
@@ -39,7 +40,7 @@ public class CrystalAura extends Module {
     private final Map<BlockPos, Long> recentObby = new HashMap<>();
 
     public CrystalAura() {
-        super("CrystalAura", Category.Blatant, "Advanced Crystal Aura with Anti-Suicide. Use with KillAura for PVP.");
+        super("CrystalAura", Category.Crystal, "Advanced Crystal Aura with Anti-Suicide. Use with KillAura for PVP.");
         setSubCategory("Semi-Blatant");
 
         range = new Setting("Range", this, 4.5, 1.0, 6.0, false);
@@ -49,6 +50,7 @@ public class CrystalAura extends Module {
         smoothAim = new Setting("Smooth Aim", this, true);
         aimSpeed = new Setting("Aim Speed", this, 45.0, 1.0, 180.0, true);
         antiSuicide = new Setting("Anti-Suicide", this, true);
+        requireHeld = new Setting("Require held", this, false);
         Setting facePlace = new Setting("Face Place Threshold", this, 10.0, 1.0, 20.0, true);
         Setting silentSwap = new Setting("Silent Swap", this, true);
 
@@ -60,6 +62,7 @@ public class CrystalAura extends Module {
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(smoothAim);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(aimSpeed);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(antiSuicide);
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(requireHeld);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(facePlace);
     }
 
@@ -118,6 +121,10 @@ public class CrystalAura extends Module {
         }
 
         if (placeTicks == 0) {
+            if (requireHeld.getValBoolean() && !isHoldingCrystal()) {
+                return;
+            }
+
             int crystalSlot = ModuleUtils.findItemInHotbar(Items.END_CRYSTAL);
             if (crystalSlot == -1) return;
 
@@ -149,6 +156,10 @@ public class CrystalAura extends Module {
                 }
             }
         }
+    }
+
+    private boolean isHoldingCrystal() {
+        return mc.player.getMainHandItem().is(Items.END_CRYSTAL) || mc.player.getOffhandItem().is(Items.END_CRYSTAL);
     }
     
     private void aimAt(Vec3 pos) {
