@@ -46,7 +46,8 @@ public class Widget {
         this.drag(mouseX, mouseY);
         
         int color = RenderUtils.getThemeAccentColor().getRGB();
-        int darkBg = 0xEE121212;
+        java.awt.Color secondary = RenderUtils.getThemeSecondaryColor();
+        int darkBg = new java.awt.Color(secondary.getRed(), secondary.getGreen(), secondary.getBlue(), 238).getRGB();
         
         context.fill(this.x, this.y, this.x + this.width, this.y + this.height, darkBg);
         context.drawString(mc.font, this.name, this.x + 4, this.y + 5, color, false);
@@ -54,7 +55,8 @@ public class Widget {
 
         if (this.open) {
             float totalItemHeight = this.getTotalItemHeight();
-            context.fill(this.x, this.y + this.height, this.x + this.width, (int)(this.y + this.height + totalItemHeight), 0x99111111);
+            int itemsBg = new java.awt.Color(secondary.getRed(), secondary.getGreen(), secondary.getBlue(), 153).getRGB();
+            context.fill(this.x, this.y + this.height, this.x + this.width, (int)(this.y + this.height + totalItemHeight), itemsBg);
             
             float currentY = this.y + this.height;
             for (Item item : this.getItems()) {

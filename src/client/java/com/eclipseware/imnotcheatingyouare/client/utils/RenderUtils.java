@@ -94,6 +94,16 @@ public class RenderUtils {
     }
 
     public static Color getThemeAccentColor() {
+        Module menu = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Menu");
+        if (menu != null) {
+            Setting rM = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(menu, "Primary R");
+            Setting gM = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(menu, "Primary G");
+            Setting bM = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(menu, "Primary B");
+            if (rM != null && gM != null && bM != null) {
+                return new Color((int) rM.getValDouble(), (int) gM.getValDouble(), (int) bM.getValDouble());
+            }
+        }
+        
         Module theme = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Theme");
         if (theme != null) {
             Setting rS = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(theme, "Accent R");
@@ -104,5 +114,18 @@ public class RenderUtils {
             }
         }
         return new Color(155, 60, 255);
+    }
+    
+    public static Color getThemeSecondaryColor() {
+        Module menu = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Menu");
+        if (menu != null) {
+            Setting rS = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(menu, "Secondary R");
+            Setting gS = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(menu, "Secondary G");
+            Setting bS = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(menu, "Secondary B");
+            if (rS != null && gS != null && bS != null) {
+                return new Color((int) rS.getValDouble(), (int) gS.getValDouble(), (int) bS.getValDouble());
+            }
+        }
+        return new Color(20, 20, 20);
     }
 }

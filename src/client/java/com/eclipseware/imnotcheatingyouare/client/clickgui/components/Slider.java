@@ -31,7 +31,7 @@ public class Slider extends Button {
 
         context.fill((int)this.x, (int)this.y, (int)(this.x + this.width), (int)(this.y + this.height), fill);
         
-        float length = this.x + ((float) this.width + 7.4f) * this.partialMultiplier();
+        float length = this.x + ((float) this.width) * this.partialMultiplier();
         if (length > this.x) {
             java.awt.Color theme = RenderUtils.getThemeAccentColor();
             int accent = new java.awt.Color(theme.getRed(), theme.getGreen(), theme.getBlue(), 120).getRGB();
@@ -67,7 +67,7 @@ public class Slider extends Button {
             if (!widget.drag) continue;
             return false;
         }
-        return (float) mouseX >= this.getX() && (float) mouseX <= this.getX() + (float) this.getWidth() + 8.0f && (float) mouseY >= this.getY() && (float) mouseY < this.getY() + (float) this.height;
+        return (float) mouseX >= this.getX() && (float) mouseX <= this.getX() + (float) this.getWidth() && (float) mouseY >= this.getY() && (float) mouseY < this.getY() + (float) this.height;
     }
 
     private void dragSetting(int mouseX, int mouseY) {
@@ -76,7 +76,7 @@ public class Slider extends Button {
 
 
     private void setSettingFromX(int mouseX) {
-        float percent = ((float) mouseX - this.x) / ((float) this.width + 7.4f);
+        float percent = ((float) mouseX - this.x) / ((float) this.width);
         percent = Math.max(0.0f, Math.min(1.0f, percent));
         double range = this.setting.getMax() - this.setting.getMin();
         double result = this.setting.getMin() + (range * percent);
