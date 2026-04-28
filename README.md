@@ -1,4 +1,9 @@
+# IMPORTANT!
+My main account, @nxght_Cry0 on discord was TERMINATED!
+The only official account of mine is now @bananafan.a
+
 # Marlow Client
+
 
 Marlow Client is an open-source Fabric client focused on combat automation, movement utilities, rendering tools, and quality-of-life systems for PvP-oriented gameplay.
 
