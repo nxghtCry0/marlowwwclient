@@ -102,6 +102,9 @@ SilentAimUtil.consume();
         if (entity instanceof Player) {
             return playersSetting != null && playersSetting.getValBoolean();
         }
+        Module npcMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("NPC");
+        if (npcMod == null || !npcMod.isToggled()) return false;
+
         if (entity instanceof Enemy) {
             return hostileSetting != null && hostileSetting.getValBoolean();
         }

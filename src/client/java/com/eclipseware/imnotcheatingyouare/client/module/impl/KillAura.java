@@ -129,12 +129,17 @@ public class KillAura extends Module {
                 if (!targetPlayers) return false;
                 if (player.isSpectator() || player.isCreative()) return false;
                 if (FriendManager.isFriend(player.getGameProfile().name())) return false;
-            } else if (entity instanceof Enemy) {
-                if (!targetMobs) return false;
-            } else if (entity instanceof Animal) {
-                if (!targetAnimals) return false;
             } else {
-                if (!targetMobs) return false;
+                Module npcMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("NPC");
+                if (npcMod == null || !npcMod.isToggled()) return false;
+                
+                if (entity instanceof Enemy) {
+                    if (!targetMobs) return false;
+                } else if (entity instanceof Animal) {
+                    if (!targetAnimals) return false;
+                } else {
+                    if (!targetMobs) return false;
+                }
             }
             return true;
         });

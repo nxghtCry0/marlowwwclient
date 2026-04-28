@@ -272,6 +272,10 @@ public class AimAssist extends Module {
         Setting passiveSetting  = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Passive Mobs");
 
         if (entity instanceof Player)       return playersSetting  != null && playersSetting.getValBoolean();
+        
+        Module npcMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("NPC");
+        if (npcMod == null || !npcMod.isToggled()) return false;
+
         if (entity instanceof Enemy)        return hostileSetting  != null && hostileSetting.getValBoolean();
         if (entity instanceof Animal || entity instanceof LivingEntity)
                                             return passiveSetting  != null && passiveSetting.getValBoolean();

@@ -27,6 +27,9 @@ public class ESP extends Module {
     private void onHudRender(GuiGraphics guiGraphics, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
 
+        Module bypassMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Bypass");
+        if (bypassMod != null && bypassMod.isToggled()) return;
+
         float partialTick = getTickDelta(tickDeltaObj);
 
         Setting modeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Mode");

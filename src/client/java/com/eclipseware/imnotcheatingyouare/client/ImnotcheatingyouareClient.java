@@ -169,6 +169,8 @@ Module boatFly = new com.eclipseware.imnotcheatingyouare.client.module.impl.Boat
 Module flight = new com.eclipseware.imnotcheatingyouare.client.module.impl.Flight();
 Module silentAimbot = new com.eclipseware.imnotcheatingyouare.client.module.impl.SilentAimbot();
 Module weapons = new com.eclipseware.imnotcheatingyouare.client.module.impl.Weapons();
+Module bypassModule = new com.eclipseware.imnotcheatingyouare.client.module.impl.Bypass();
+Module npcModule = new com.eclipseware.imnotcheatingyouare.client.module.impl.NPC();
 
 moduleManager.modules.add(autoDHand);
 moduleManager.modules.add(autoWindcharge);
@@ -176,6 +178,8 @@ moduleManager.modules.add(boatFly);
 moduleManager.modules.add(flight);
 moduleManager.modules.add(silentAimbot);
 moduleManager.modules.add(weapons);
+moduleManager.modules.add(bypassModule);
+moduleManager.modules.add(npcModule);
 
 moduleManager.modules.add(blink);
 

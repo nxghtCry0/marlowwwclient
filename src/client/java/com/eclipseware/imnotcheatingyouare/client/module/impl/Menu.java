@@ -12,6 +12,55 @@ public class Menu extends Module {
         this.setKeyBind(GLFW.GLFW_KEY_RIGHT_SHIFT); // Default bind
     }
 
+    private long keyHoldStartTime = 0;
+
+    @Override
+    public void tickKeybind() {
+        Module bypassMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Bypass");
+        boolean bypassActive = bypassMod != null && bypassMod.isToggled();
+        
+        if (!bypassActive) {
+            super.tickKeybind();
+            return;
+        }
+
+        if (this.getKeyBind() == -1 || mc == null || mc.getWindow() == null || mc.player == null) return;
+        if (mc.screen != null) return;
+
+        long windowHandle = 0;
+        try {
+            for (java.lang.reflect.Field f : mc.getWindow().getClass().getDeclaredFields()) {
+                if (f.getType() == long.class) {
+                    f.setAccessible(true);
+                    windowHandle = f.getLong(mc.getWindow());
+                    break;
+                }
+            }
+        } catch (Exception e) {}
+
+        if (windowHandle == 0) return;
+
+        boolean isPressed;
+        if (this.getKeyBind() >= 0 && this.getKeyBind() <= 7) {
+            isPressed = org.lwjgl.glfw.GLFW.glfwGetMouseButton(windowHandle, this.getKeyBind()) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+        } else {
+            isPressed = org.lwjgl.glfw.GLFW.glfwGetKey(windowHandle, this.getKeyBind()) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+        }
+
+        boolean lookingDown = mc.player.getXRot() > 75.0f;
+
+        if (isPressed && lookingDown) {
+            if (keyHoldStartTime == 0) {
+                keyHoldStartTime = System.currentTimeMillis();
+            } else if (System.currentTimeMillis() - keyHoldStartTime >= 5000) {
+                this.onKeybind();
+                keyHoldStartTime = 0;
+            }
+        } else {
+            keyHoldStartTime = 0;
+        }
+    }
+
     @Override
     public void onEnable() {
         if (mc.player == null) {

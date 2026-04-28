@@ -25,6 +25,9 @@ public class ArrayListHud {
         Module arrayListMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("ArrayList");
         if (arrayListMod == null || !arrayListMod.isToggled()) return;
 
+        Module bypassMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Bypass");
+        if (bypassMod != null && bypassMod.isToggled()) return;
+
         boolean syncTheme = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(arrayListMod, "Sync Theme").getValBoolean();
         String alignment = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(arrayListMod, "Alignment").getValString();
         double startY = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(arrayListMod, "Y Offset").getValDouble();

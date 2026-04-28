@@ -178,6 +178,10 @@ public class Triggerbot extends Module {
 
         if (entity instanceof net.minecraft.world.entity.player.Player)
             return playersSetting != null && playersSetting.getValBoolean();
+            
+        Module npcMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("NPC");
+        if (npcMod == null || !npcMod.isToggled()) return false;
+
         if (entity instanceof Enemy)
             return hostileSetting != null && hostileSetting.getValBoolean();
         if (entity instanceof Animal || entity instanceof LivingEntity)
