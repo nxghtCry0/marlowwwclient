@@ -157,6 +157,20 @@ moduleManager.modules.add(freecam);
 moduleManager.modules.add(friendProtector);
 moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.AntiTranslationKey());
 
+Module autoDHand = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoDHand();
+Module autoWindcharge = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoWindcharge();
+Module boatFly = new com.eclipseware.imnotcheatingyouare.client.module.impl.BoatFly();
+Module flight = new com.eclipseware.imnotcheatingyouare.client.module.impl.Flight();
+Module silentAimbot = new com.eclipseware.imnotcheatingyouare.client.module.impl.SilentAimbot();
+Module weapons = new com.eclipseware.imnotcheatingyouare.client.module.impl.Weapons();
+
+moduleManager.modules.add(autoDHand);
+moduleManager.modules.add(autoWindcharge);
+moduleManager.modules.add(boatFly);
+moduleManager.modules.add(flight);
+moduleManager.modules.add(silentAimbot);
+moduleManager.modules.add(weapons);
+
 moduleManager.modules.add(blink);
 
 
