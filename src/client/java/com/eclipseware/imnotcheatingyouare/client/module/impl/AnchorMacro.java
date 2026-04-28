@@ -26,9 +26,11 @@ public class AnchorMacro extends Module {
     private int step = 0; 
     private int ticksAssigned = 0;
     private BlockPos targetAnchorPos = null;
+    private int previousSlot = 0;
+    private boolean chargeAttempted = false;
 
     public AnchorMacro() {
-        super("AnchorMacro", Category.Blatant, "Automatically places, charges, and detonates respawn anchors.");
+        super("AnchorMacro", Category.Crystal, "Automatically places, charges, and detonates respawn anchors.");
         setSubCategory("Semi-Blatant");
 
         delaySetting = new Setting("Delay Ticks", this, 1.0, 0.0, 5.0, true);
@@ -49,11 +51,14 @@ public class AnchorMacro extends Module {
         step = 0;
         ticksAssigned = 0;
         targetAnchorPos = null;
+        previousSlot = ModuleUtils.getSelectedSlot();
+        chargeAttempted = false;
     }
 
     @Override
     public void onTick() {
         if (mc.player == null || mc.level == null) return;
+
         if (targetAnchorPos == null) {
             net.minecraft.world.phys.HitResult crosshairTarget = mc.hitResult;
             if (crosshairTarget != null && crosshairTarget.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
@@ -69,47 +74,83 @@ public class AnchorMacro extends Module {
             return;
         }
 
-        int anchorSlot = ModuleUtils.findItemInHotbar(Items.RESPAWN_ANCHOR);
-        int glowstoneSlot = ModuleUtils.findItemInHotbar(Items.GLOWSTONE);
-
-        if (anchorSlot == -1 || glowstoneSlot == -1) {
-            if (autoDisable.getValBoolean()) setToggled(false);
-            return;
-        }
-
         BlockState currentPosState = mc.level.getBlockState(targetAnchorPos);
-        int oldSlot = ModuleUtils.getSelectedSlot();
 
         if (step == 0) {
             if (currentPosState.is(Blocks.RESPAWN_ANCHOR)) {
                 step = 1;
+                chargeAttempted = false;
+                ticksAssigned = (int) delaySetting.getValDouble();
+                return;
             } else {
+                int anchorSlot = ModuleUtils.findItemInHotbar(Items.RESPAWN_ANCHOR);
+                if (anchorSlot == -1) {
+                    if (autoDisable.getValBoolean()) setToggled(false);
+                    return;
+                }
+
                 if (silentAim.getValBoolean()) aimAt(targetAnchorPos);
+                previousSlot = ModuleUtils.getSelectedSlot();
                 ModuleUtils.switchToSlot(anchorSlot);
                 
                 Direction approachFace = Direction.UP;
-                if (mc.hitResult instanceof BlockHitResult bhr) approachFace = bhr.getDirection();
+                BlockPos supportPos = targetAnchorPos.below();
+                if (mc.hitResult instanceof BlockHitResult bhr) {
+                    approachFace = bhr.getDirection();
+                    supportPos = targetAnchorPos.relative(approachFace.getOpposite());
+                }
                 
-                ModuleUtils.placeBlockPacket(targetAnchorPos.relative(approachFace.getOpposite()), approachFace);
+                ModuleUtils.placeBlockPacket(supportPos, approachFace);
                 step = 1;
+                chargeAttempted = false;
                 ticksAssigned = (int) delaySetting.getValDouble();
+                return;
             }
         } else if (step == 1) {
-            if (safeAnchor.getValBoolean() && currentPosState.is(Blocks.RESPAWN_ANCHOR)) {
-                if (currentPosState.hasProperty(BlockStateProperties.RESPAWN_ANCHOR_CHARGES) && 
-                    currentPosState.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES) > 0) {
-                    step = 2; 
-                    return;
-                }
+            if (!currentPosState.is(Blocks.RESPAWN_ANCHOR)) {
+                step = 0;
+                chargeAttempted = false;
+                targetAnchorPos = null;
+                return;
             }
 
-            if (silentAim.getValBoolean()) aimAt(targetAnchorPos);
-            ModuleUtils.switchToSlot(glowstoneSlot);
-            ModuleUtils.placeBlockPacket(targetAnchorPos, Direction.UP);
+            int charges = currentPosState.hasProperty(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
+                ? currentPosState.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
+                : 0;
+
+            if (charges <= 0 && !chargeAttempted) {
+                int glowstoneSlot = ModuleUtils.findItemInHotbar(Items.GLOWSTONE);
+                if (glowstoneSlot == -1) {
+                    if (autoDisable.getValBoolean()) setToggled(false);
+                    return;
+                }
+
+                if (silentAim.getValBoolean()) aimAt(targetAnchorPos);
+                ModuleUtils.switchToSlot(glowstoneSlot);
+                BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(targetAnchorPos), Direction.UP, targetAnchorPos, false);
+                mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hit);
+                mc.player.swing(InteractionHand.MAIN_HAND);
+
+                chargeAttempted = true;
+                ticksAssigned = (int) delaySetting.getValDouble();
+                return;
+            }
+
+            if (safeAnchor.getValBoolean() && charges > 0) {
+                step = 2;
+                ticksAssigned = (int) delaySetting.getValDouble();
+                return;
+            }
+
             step = 2;
             ticksAssigned = (int) delaySetting.getValDouble();
+            return;
         } else if (step == 2) {
-            int fallbackSlot = oldSlot;
+            int fallbackSlot = previousSlot;
+            if (fallbackSlot < 0 || fallbackSlot > 8) {
+                fallbackSlot = ModuleUtils.getSelectedSlot();
+            }
+
             if (mc.player.getInventory().getItem(fallbackSlot).is(Items.GLOWSTONE) || mc.player.getInventory().getItem(fallbackSlot).is(Items.RESPAWN_ANCHOR)) {
                 for (int i = 0; i < 9; i++) {
                     if (!mc.player.getInventory().getItem(i).is(Items.GLOWSTONE) && !mc.player.getInventory().getItem(i).is(Items.RESPAWN_ANCHOR)) {
@@ -118,17 +159,23 @@ public class AnchorMacro extends Module {
                     }
                 }
             }
-            ModuleUtils.switchToSlot(fallbackSlot);
+            if (fallbackSlot >= 0 && fallbackSlot < 9) {
+                ModuleUtils.switchToSlot(fallbackSlot);
+            }
             
             if (autoDetonate.getValBoolean()) {
                 if (silentAim.getValBoolean()) aimAt(targetAnchorPos);
-                mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundUseItemOnPacket(
-                    InteractionHand.MAIN_HAND, new BlockHitResult(Vec3.atCenterOf(targetAnchorPos), Direction.UP, targetAnchorPos, false), 0
-                ));
+                BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(targetAnchorPos), Direction.UP, targetAnchorPos, false);
+                mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hit);
                 mc.player.swing(InteractionHand.MAIN_HAND);
+            }
+
+            if (previousSlot >= 0 && previousSlot < 9) {
+                ModuleUtils.switchToSlot(previousSlot);
             }
             
             step = 0;
+            chargeAttempted = false;
             targetAnchorPos = null;
             if (autoDisable.getValBoolean()) setToggled(false);
         }

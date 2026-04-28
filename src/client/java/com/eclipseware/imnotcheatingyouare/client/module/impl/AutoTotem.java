@@ -4,195 +4,183 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Items;
-import java.util.ArrayList;
-import java.util.Arrays;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class AutoTotem extends Module {
-    private Setting mode;
-    private Setting activationMode;
-    private Setting healthThreshold;
-    private Setting popDelay;
-    private Setting targetSlot;
+    private static final int MIN_DURATION_MS = 5;
+    private static final int MAX_DURATION_MS = 175;
 
-    private int popTickGrace = 0;
-    private int antiDec = -1;
-    private int fifteenTickSafety = -1;
-    
-    private int swapDelayCounter = -1;
-    private int queuedSwapSlot = -1;
-
-    private int mouseSequenceStage = 0;
-    private int targetSlotForMouse = -1;
+    private final Setting durationMs;
+    private volatile boolean sequenceRunning = false;
+    private volatile long lastPopMs = 0L;
 
     public AutoTotem() {
-        super("AutoTotem", Category.Combat, "Silently replaces totems automatically.");
+        super("AutoTotem", Category.Crystal, "Re-equips a totem right after a pop with a timed inventory macro.");
         setSubCategory("Crystal PvP");
-        
-        mode = new Setting("Mode", this, "Crystal", new ArrayList<>(Arrays.asList("Crystal", "SMP", "Mouse")));
-        activationMode = new Setting("Activation", this, "Always", new ArrayList<>(Arrays.asList("Always", "Low HP")));
-        healthThreshold = new Setting("Health Threshold", this, 10, 1, 20, true);
-        popDelay = new Setting("Pop Delay (Ticks)", this, 0, 0, 10, true);
-        targetSlot = new Setting("Target", this, "Offhand", new ArrayList<>(Arrays.asList("Offhand", "First Hotbar Slot")));
-        
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(mode);
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(activationMode);
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(healthThreshold);
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(popDelay);
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(targetSlot);
+
+        durationMs = new Setting("Duration (ms)", this, 45.0, MIN_DURATION_MS, MAX_DURATION_MS, true);
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(durationMs);
     }
 
     @Override
     public void onEnable() {
-        antiDec = -1;
-        fifteenTickSafety = -1;
-        swapDelayCounter = -1;
-        queuedSwapSlot = -1;
-        mouseSequenceStage = 0;
+        sequenceRunning = false;
+        lastPopMs = 0L;
     }
 
-    @Override
-    public void onTick() {
-        if (mc.player == null || mc.level == null) return;
-        
-        if (mouseSequenceStage > 0) {
-            handleMouseSequence();
-            return;
-        }
+    public void onLocalTotemPop() {
+        if (!isToggled() || mc.player == null || mc.gameMode == null) return;
 
-        if (swapDelayCounter > 0) {
-            swapDelayCounter--;
-            return;
-        } else if (swapDelayCounter == 0 && queuedSwapSlot != -1) {
-            performSilentSwap(queuedSwapSlot);
-            swapDelayCounter = -1;
-            queuedSwapSlot = -1;
-            return;
-        }
+        long now = System.currentTimeMillis();
+        if (sequenceRunning || now - lastPopMs < 50L) return;
 
-        boolean targetOffhand = targetSlot.getValString().equals("Offhand");
-        boolean NeedsTotem = targetOffhand 
-            ? mc.player.getOffhandItem().getItem() != Items.TOTEM_OF_UNDYING
-            : mc.player.getInventory().getItem(0).getItem() != Items.TOTEM_OF_UNDYING;
+        int totemSlot = findTotemSlot();
+        if (totemSlot == -1) return;
 
-        boolean activationActive = activationMode.getValString().equals("Always") || mc.player.getHealth() <= healthThreshold.getValDouble();
+        lastPopMs = now;
+        int requestedDuration = clampDuration((int) Math.round(durationMs.getValDouble()));
+        sequenceRunning = true;
 
-        if (mode.getValString().equals("SMP")) {
-            if (mc.player.getHealth() > healthThreshold.getValDouble()) {
-                if (targetOffhand && mc.player.getOffhandItem().getItem() != Items.SHIELD) {
-                    queueSwap(findItem(Items.SHIELD, true));
+        Thread worker = new Thread(() -> runTimedSwapSequence(totemSlot, requestedDuration), "AutoTotemSequence");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private void runTimedSwapSequence(int totemSlot, int durationMs) {
+        long startNanos = System.nanoTime();
+        long totalNanos = Math.max(0L, durationMs) * 1_000_000L;
+        long swapAtNanos = totalNanos / 2L;
+
+        try {
+            if (findTotemSlot() == -1) return;
+
+            executeOnClientThread(() -> {
+                if (mc.player != null && !(mc.screen instanceof InventoryScreen)) {
+                    mc.setScreen(new InventoryScreen(mc.player));
                 }
-                return;
-            }
-        }
+            });
 
-        if (NeedsTotem && activationActive) {
-            queueSwap(findItem(Items.TOTEM_OF_UNDYING, true)); 
-        }
-    }
+            sleepUntil(startNanos + swapAtNanos);
 
-    private void handleMouseSequence() {
-        if (mc.player == null) {
-            mouseSequenceStage = 0;
-            return;
-        }
-        
-        switch (mouseSequenceStage) {
-            case 1:
-                if (!(mc.screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen)) {
-                    mc.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(mc.player));
+            executeOnClientThread(() -> performMouseSwapToOffhand(totemSlot));
+
+            sleepUntil(startNanos + totalNanos);
+
+            executeOnClientThread(() -> {
+                if (mc.screen instanceof InventoryScreen) {
+                    mc.setScreen(null);
                 }
-                mouseSequenceStage = 2;
-                break;
-            case 2:
-                if (mc.screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen invScreen) {
-                    try {
-                        net.minecraft.world.inventory.Slot menuSlot = invScreen.getMenu().getSlot(targetSlotForMouse);
-                        
-                        java.lang.reflect.Field leftPosField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("leftPos");
-                        java.lang.reflect.Field topPosField = net.minecraft.client.gui.screens.inventory.AbstractContainerScreen.class.getDeclaredField("topPos");
-                        leftPosField.setAccessible(true);
-                        topPosField.setAccessible(true);
-                        
-                        int leftPos = leftPosField.getInt(invScreen);
-                        int topPos = topPosField.getInt(invScreen);
-                        
-                        double targetX = menuSlot.x + leftPos + 8;
-                        double targetY = menuSlot.y + topPos + 8;
-                        
-                        long windowHandle = 0;
-                        for (java.lang.reflect.Field field : mc.getWindow().getClass().getDeclaredFields()) {
-                            if (field.getType() == long.class) {
-                                field.setAccessible(true);
-                                windowHandle = field.getLong(mc.getWindow());
-                                break;
-                            }
-                        }
-                        double scale = mc.getWindow().getGuiScale();
-                        org.lwjgl.glfw.GLFW.glfwSetCursorPos(windowHandle, targetX * scale, targetY * scale);
-                    } catch (Exception ignored) {}
-                    mouseSequenceStage = 3;
-                } else {
-                    mouseSequenceStage = 0;
+            });
+        } finally {
+            sequenceRunning = false;
+        }
+    }
+
+    private void performMouseSwapToOffhand(int totemSlot) {
+        if (mc.player == null || mc.gameMode == null) return;
+        if (!(mc.screen instanceof InventoryScreen invScreen)) return;
+        if (totemSlot < 0 || totemSlot >= invScreen.getMenu().slots.size()) return;
+
+        moveCursorToSlot(invScreen, invScreen.getMenu().getSlot(totemSlot));
+        mc.gameMode.handleInventoryMouseClick(mc.player.inventoryMenu.containerId, totemSlot, 40, ClickType.SWAP, mc.player);
+    }
+
+    private void moveCursorToSlot(InventoryScreen screen, Slot slot) {
+        try {
+            java.lang.reflect.Field leftPosField = AbstractContainerScreen.class.getDeclaredField("leftPos");
+            java.lang.reflect.Field topPosField = AbstractContainerScreen.class.getDeclaredField("topPos");
+            leftPosField.setAccessible(true);
+            topPosField.setAccessible(true);
+
+            int leftPos = leftPosField.getInt(screen);
+            int topPos = topPosField.getInt(screen);
+
+            double targetX = slot.x + leftPos + 8;
+            double targetY = slot.y + topPos + 8;
+
+            long windowHandle = 0L;
+            for (java.lang.reflect.Field field : mc.getWindow().getClass().getDeclaredFields()) {
+                if (field.getType() == long.class) {
+                    field.setAccessible(true);
+                    windowHandle = field.getLong(mc.getWindow());
+                    break;
                 }
-                break;
-            case 3:
-                int containerId = mc.player.inventoryMenu.containerId;
-                boolean targetOffhand = targetSlot.getValString().equals("Offhand");
-                int destButton = targetOffhand ? 40 : 0; 
-                
-                mc.gameMode.handleInventoryMouseClick(containerId, targetSlotForMouse, destButton, net.minecraft.world.inventory.ClickType.SWAP, mc.player);
-                mouseSequenceStage = 4;
-                break;
-            case 4:
-                mc.setScreen(null);
-                mouseSequenceStage = 0;
-                break;
+            }
+
+            if (windowHandle != 0L) {
+                double scale = mc.getWindow().getGuiScale();
+                org.lwjgl.glfw.GLFW.glfwSetCursorPos(windowHandle, targetX * scale, targetY * scale);
+            }
+        } catch (Exception ignored) {
         }
     }
 
-    private void queueSwap(int slot) {
-        if (slot == -1) return;
-        int delay = Math.max(3, (int) popDelay.getValDouble()); 
-        swapDelayCounter = delay;
-        queuedSwapSlot = slot;
-    }
+    private int findTotemSlot() {
+        if (mc.player == null) return -1;
 
-    private void performSilentSwap(int slot) {
-        if (mc.player == null) return;
-        mc.player.setSprinting(false);
-        
-        if (mode.getValString().equals("Mouse")) {
-            targetSlotForMouse = slot;
-            mouseSequenceStage = 1;
-            return;
+        for (int i = 0; i < 9; i++) {
+            if (mc.player.getInventory().getItem(i).is(Items.TOTEM_OF_UNDYING)) {
+                return i + 36;
+            }
         }
 
-        if (mc.screen == null || mc.screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen) {
-            int containerId = mc.player.inventoryMenu.containerId;
-            boolean targetOffhand = targetSlot.getValString().equals("Offhand");
-            int destButton = targetOffhand ? 40 : 0; // 40 = Offhand, 0 = Hotbar slot 0
-            
-            mc.gameMode.handleInventoryMouseClick(containerId, slot, destButton, net.minecraft.world.inventory.ClickType.SWAP, mc.player);
+        for (int i = 9; i < 36; i++) {
+            if (mc.player.getInventory().getItem(i).is(Items.TOTEM_OF_UNDYING)) {
+                return i;
+            }
         }
-    }
 
-    private int findItem(net.minecraft.world.item.Item item, boolean prioritizeHotbar) {
-        if (prioritizeHotbar) {
-            for (int i = 0; i < 9; i++) {
-                if (mc.player.getInventory().getItem(i).getItem() == item) return i + 36;
-            }
-            for (int i = 9; i < 36; i++) {
-                if (mc.player.getInventory().getItem(i).getItem() == item) return i;
-            }
-        } else {
-            for (int i = 9; i < 36; i++) {
-                if (mc.player.getInventory().getItem(i).getItem() == item) return i;
-            }
-            for (int i = 0; i < 9; i++) {
-                if (mc.player.getInventory().getItem(i).getItem() == item) return i + 36;
-            }
-        }
         return -1;
+    }
+
+    private void executeOnClientThread(Runnable task) {
+        CountDownLatch latch = new CountDownLatch(1);
+        mc.execute(() -> {
+            try {
+                task.run();
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        try {
+            latch.await(1, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private void sleep(int ms) {
+        if (ms <= 0) return;
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private int clampDuration(int inputMs) {
+        return Math.max(MIN_DURATION_MS, Math.min(MAX_DURATION_MS, inputMs));
+    }
+
+    private void sleepUntil(long targetNanos) {
+        while (true) {
+            long remainingNanos = targetNanos - System.nanoTime();
+            if (remainingNanos <= 0L) return;
+
+            long sleepMillis = remainingNanos / 1_000_000L;
+            if (sleepMillis > 1L) {
+                sleep((int) Math.min(Integer.MAX_VALUE, sleepMillis - 1L));
+            } else {
+                sleep(1);
+            }
+        }
     }
 }
