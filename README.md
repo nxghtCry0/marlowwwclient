@@ -1,6 +1,6 @@
 # IMPORTANT!
 My main account, @nxght_Cry0 on discord was TERMINATED!
-The only official account of mine is now @bananafan.a
+The only official account of mine is now @firefox.lol
 
 # Marlow Client
 
