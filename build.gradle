@@ -59,7 +59,7 @@ processResources {
     }
 }
 
-def targetJavaVersion = 21
+def targetJavaVersion = project.minecraft_version.startsWith("26.") ? 25 : 21
 tasks.withType(JavaCompile).configureEach {
     // ensure that the encoding is set to UTF-8, no matter what the system default is
     // this fixes some edge cases with special characters not displaying correctly

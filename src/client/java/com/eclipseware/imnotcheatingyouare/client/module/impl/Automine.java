@@ -19,10 +19,6 @@ public class Automine extends Module {
             BlockHitResult blockHit = (BlockHitResult) mc.hitResult;
             if (!mc.level.getBlockState(blockHit.getBlockPos()).isAir()) {
                 mc.options.keyAttack.setDown(true);
-                if (mc.gameMode != null) {
-                    mc.gameMode.continueDestroyBlock(blockHit.getBlockPos(), blockHit.getDirection());
-                    mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
-                }
             }
         } else {
             mc.options.keyAttack.setDown(false);

@@ -90,6 +90,8 @@ public class KillAura extends Module {
                 double maxCPS = getSettingDouble("1.8.9 Max CPS");
                 double cps = minCPS + (Math.random() * (maxCPS - minCPS));
                 nextDelay = (long) (1000.0 / cps);
+            } else {
+                mc.player.resetAttackStrengthTicker();
             }
         }
     }
