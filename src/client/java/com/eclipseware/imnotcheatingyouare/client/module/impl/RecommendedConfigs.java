@@ -59,7 +59,7 @@ public class RecommendedConfigs extends Module {
         }
 
         if (fetched && currentServer != null && mc.screen == null && !currentServerConfigs.isEmpty()) {
-            mc.setScreen(new ConfigRecommendationScreen(currentServerConfigs));
+            mc.setScreen(new ConfigRecommendationScreen(new ArrayList<>(currentServerConfigs)));
             currentServerConfigs.clear(); // Only show once per join
         }
     }

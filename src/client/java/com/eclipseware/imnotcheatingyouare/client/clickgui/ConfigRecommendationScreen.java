@@ -42,6 +42,7 @@ public class ConfigRecommendationScreen extends Screen {
                 this.addRenderableWidget(Button.builder(Component.literal("Load " + config.name), button -> {
                     ConfigManager.importString(config.base64);
                     this.minecraft.player.sendSystemMessage(Component.literal("\u00A7d[EclipseWare] \u00A7aLoaded config: " + config.name));
+                    this.minecraft.player.sendSystemMessage(Component.literal("\u00A77(Tip: Press F3 + D to clear chat before screenshares)"));
                     this.minecraft.setScreen(null);
                 }).bounds(centerX - 150, configY, 300, 20).build());
                 
