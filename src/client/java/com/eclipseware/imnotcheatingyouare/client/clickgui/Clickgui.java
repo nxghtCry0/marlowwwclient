@@ -56,6 +56,19 @@ public class Clickgui extends Screen {
         com.eclipseware.imnotcheatingyouare.client.clickgui.components.Item.context = context;
         context.fill(0, 0, context.guiWidth(), context.guiHeight(), 0x55000000);
         this.widgets.forEach(components -> components.drawScreen(context, mouseX, mouseY, delta));
+        
+        for (Widget widget : this.widgets) {
+            for (com.eclipseware.imnotcheatingyouare.client.clickgui.components.Item item : widget.getItems()) {
+                if (item instanceof ModuleButton mb) {
+                    if (mb.isHovering(mouseX, mouseY) && mb.getModule().getDescription() != null && !mb.getModule().getDescription().isEmpty()) {
+                        String desc = mb.getModule().getDescription();
+                        int textW = com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.width(desc);
+                        context.fill(mouseX + 5, mouseY - 15, mouseX + 9 + textW, mouseY - 1, 0xAA000000);
+                        com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.drawString(context, desc, mouseX + 7, mouseY - 12, -1, false);
+                    }
+                }
+            }
+        }
     }
 
     @Override

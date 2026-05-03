@@ -316,8 +316,8 @@ public class Backtrack extends Module {
         int ix = (int) minX, iy = (int) minY, ix2 = (int) maxX, iy2 = (int) maxY;
 
         Color themeColor = RenderUtils.getThemeAccentColor();
-        int ghostAlpha = 100;
-        int ghostFill = new Color(themeColor.getRed(), themeColor.getGreen(), themeColor.getBlue(), 25).getRGB();
+        int ghostAlpha = 16;
+        int ghostFill = new Color(themeColor.getRed(), themeColor.getGreen(), themeColor.getBlue(), 10).getRGB();
         int ghostOutline = new Color(themeColor.getRed(), themeColor.getGreen(), themeColor.getBlue(), ghostAlpha).getRGB();
         int black = new Color(0, 0, 0, ghostAlpha).getRGB();
 

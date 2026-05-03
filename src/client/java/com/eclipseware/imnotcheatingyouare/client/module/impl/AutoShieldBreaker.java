@@ -3,7 +3,7 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
-import net.minecraft.network.protocol.game.ServerboundInteractPacket;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -27,11 +27,12 @@ if (!this.isToggled() || !(target instanceof LivingEntity)) return false;
 LivingEntity livingTarget = (LivingEntity) target;
 if (!livingTarget.isBlocking()) return false;
 if (!isShieldBlockingUs(livingTarget, mc.player)) return false;
+if (!isHoldingSword(mc.player)) return false;
 
 Setting delaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Delay (ms)");
 long delay = delaySetting != null ? (long) delaySetting.getValDouble() : 0;
 if (System.currentTimeMillis() - lastBreakTime < delay) {
-return true;
+return false;
 }
 axeSlot = findAxeInHotbar(mc.player);
 if (axeSlot == -1) return false;
@@ -46,16 +47,14 @@ return false;
 if (mode.equals("Silent")) {
 if (mc.getConnection() != null) {
 mc.getConnection().send(new ServerboundSetCarriedItemPacket(axeSlot));
-mc.getConnection().send(new ServerboundInteractPacket(target.getId(), net.minecraft.world.InteractionHand.MAIN_HAND, target.position(), mc.player.isShiftKeyDown()));
 }
 mc.player.getInventory().setSelectedSlot(axeSlot);
-mc.player.swing(InteractionHand.MAIN_HAND);
 needsSwapBack = true;
 originalSlot = oldSlot;
 ticksWaited = 0;
 swapBackTime = 0;
 lastBreakTime = System.currentTimeMillis();
-return true;
+return false;
 } else {
 mc.player.getInventory().setSelectedSlot(axeSlot);
 if (mc.getConnection() != null) {
@@ -95,16 +94,14 @@ return false;
 if (mode.equals("Silent")) {
 if (mc.getConnection() != null) {
 mc.getConnection().send(new ServerboundSetCarriedItemPacket(axeSlot));
-mc.getConnection().send(new ServerboundInteractPacket(target.getId(), net.minecraft.world.InteractionHand.MAIN_HAND, target.position(), player.isShiftKeyDown()));
 }
 player.getInventory().setSelectedSlot(axeSlot);
-player.swing(InteractionHand.MAIN_HAND);
 needsSwapBack = true;
 originalSlot = oldSlot;
 ticksWaited = 0;
 swapBackTime = 0;
 lastBreakTime = System.currentTimeMillis();
-return true;
+return false;
 } else {
 player.getInventory().setSelectedSlot(axeSlot);
 if (mc.getConnection() != null) {
@@ -168,5 +165,10 @@ attackerToDefender = new Vec3(attackerToDefender.x, 0.0, attackerToDefender.z);
 Vec3 defenderLook = target.getViewVector(1.0F);
 defenderLook = new Vec3(defenderLook.x, 0.0, defenderLook.z);
 return attackerToDefender.dot(defenderLook) < 0.0;
+}
+
+private boolean isHoldingSword(Player player) {
+ItemStack held = player.getMainHandItem();
+return held.is(ItemTags.SWORDS);
 }
 }
