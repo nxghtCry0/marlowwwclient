@@ -1,0 +1,35 @@
+{
+"required": true,
+"minVersion": "0.8",
+"package": "com.eclipseware.imnotcheatingyouare.mixin.client",
+"compatibilityLevel": "JAVA_21",
+"client": [
+"NoJumpDelayMixin",
+"AutoSprintMixin",
+"LightTextureMixin",
+"GameRendererMixin",
+"ScreenEffectRendererMixin",
+"ParticleEngineMixin",
+"MultiPlayerGameModeMixin",
+"PlayerTabOverlayMixin",
+"MinecraftAccessor",
+"JumpResetMixin",
+"AutoSignScreenMixin",
+"ConnectionMixin",
+"ClientPacketListenerMixin",
+"ClientGamePacketListenerMixin",
+"WTapMixin",
+"EntityGlowMixin",
+"HandViewMixin",
+"FastPlaceMixin",
+"BlockBehaviourMixin",
+"MovementCorrectionMixin",
+"EntityMixin"
+],
+"injectors": {
+"defaultRequire": 1
+},
+"overwrites": {
+"requireAnnotations": true
+}
+}

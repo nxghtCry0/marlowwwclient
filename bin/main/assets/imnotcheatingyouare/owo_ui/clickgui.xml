@@ -1,0 +1,109 @@
+<owo-ui xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/wisp-forest/owo/1.21/owo-ui.xsd">
+    <components>
+        <flow-layout direction="vertical">
+            <sizing>
+                <horizontal method="fill">100</horizontal>
+                <vertical method="fill">100</vertical>
+            </sizing>
+            <alignment>
+                <horizontal>center</horizontal>
+                <vertical>center</vertical>
+            </alignment>
+            <surface>
+                <flat>#44000000</flat>
+            </surface>
+
+            <children>
+                <flow-layout direction="horizontal">
+                    <sizing>
+                        <horizontal method="fixed">600</horizontal>
+                        <vertical method="fixed">400</vertical>
+                    </sizing>
+                    
+                    <children>
+                        <flow-layout direction="vertical">
+                            <sizing>
+                                <horizontal method="fixed">150</horizontal>
+                                <vertical method="fill">100</vertical>
+                            </sizing>
+                            <surface>
+                                <flat>#dd111111</flat>
+                            </surface>
+
+                            <children>
+                                <flow-layout direction="horizontal">
+                                    <sizing>
+                                        <horizontal method="fill">100</horizontal>
+                                        <vertical method="fixed">40</vertical>
+                                    </sizing>
+                                    <alignment>
+                                        <horizontal>center</horizontal>
+                                        <vertical>center</vertical>
+                                    </alignment>
+                                    <children>
+                                        <label text="MARLOWWW" id="title-label">
+                                        </label>
+                                    </children>
+                                </flow-layout>
+                                
+                                <scroll direction="vertical">
+                                    <flow-layout direction="vertical" id="category-list">
+                                        <padding><all>10</all></padding>
+                                        <sizing>
+                                            <horizontal method="fill">100</horizontal>
+                                        </sizing>
+                                    </flow-layout>
+                                    <sizing>
+                                        <horizontal method="fill">100</horizontal>
+                                        <vertical method="fill">100</vertical>
+                                    </sizing>
+                                </scroll>
+                            </children>
+                        </flow-layout>
+
+                        <flow-layout direction="vertical">
+                            <sizing>
+                                <horizontal method="fill">100</horizontal>
+                                <vertical method="fill">100</vertical>
+                            </sizing>
+                            <surface>
+                                <flat>#dd1e1e1e</flat>
+                            </surface>
+
+                            <children>
+                                <flow-layout direction="horizontal">
+                                    <sizing>
+                                        <horizontal method="fill">100</horizontal>
+                                        <vertical method="fixed">40</vertical>
+                                    </sizing>
+                                    <alignment>
+                                        <horizontal>left</horizontal>
+                                        <vertical>center</vertical>
+                                    </alignment>
+                                    <children>
+                                        <label id="header-label" text="Modules">
+                                            <margins><left>15</left></margins>
+                                        </label>
+                                    </children>
+                                </flow-layout>
+
+                                <scroll direction="vertical">
+                                    <flow-layout direction="vertical" id="content-list">
+                                        <padding><all>15</all></padding>
+                                        <sizing>
+                                            <horizontal method="fill">100</horizontal>
+                                        </sizing>
+                                    </flow-layout>
+                                    <sizing>
+                                        <horizontal method="fill">100</horizontal>
+                                        <vertical method="fill">100</vertical>
+                                    </sizing>
+                                </scroll>
+                            </children>
+                        </flow-layout>
+                    </children>
+                </flow-layout>
+            </children>
+        </flow-layout>
+    </components>
+</owo-ui>
