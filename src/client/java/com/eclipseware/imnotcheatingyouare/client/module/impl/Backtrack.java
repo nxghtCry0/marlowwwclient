@@ -7,7 +7,7 @@ import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.FriendManager;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
 import com.eclipseware.imnotcheatingyouare.client.utils.cheat.TimerUtil;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.PacketListener;
 import net.minecraft.network.protocol.Packet;
