@@ -7,6 +7,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import java.awt.Color;
 import java.util.List;
 
 public class ConfigRecommendationScreen extends Screen {
@@ -25,16 +26,14 @@ public class ConfigRecommendationScreen extends Screen {
         int centerY = this.height / 2;
 
         if (promptMode) {
-            String message = "We found " + configs.size() + " config" + (configs.size() == 1 ? "" : "'s") + "! Would you like to choose and load one?";
-            
             this.addRenderableWidget(Button.builder(Component.literal("Yes"), button -> {
                 promptMode = false;
                 this.init();
-            }).bounds(centerX - 105, centerY + 20, 100, 20).build());
+            }).bounds(centerX - 105, centerY + 30, 100, 20).build());
 
             this.addRenderableWidget(Button.builder(Component.literal("No"), button -> {
                 this.minecraft.setScreen(null);
-            }).bounds(centerX + 5, centerY + 20, 100, 20).build());
+            }).bounds(centerX + 5, centerY + 30, 100, 20).build());
         } else {
             int yOffset = 40;
             for (FoundConfig config : configs) {
@@ -42,7 +41,7 @@ public class ConfigRecommendationScreen extends Screen {
                 
                 this.addRenderableWidget(Button.builder(Component.literal("Load " + config.name), button -> {
                     ConfigManager.importString(config.base64);
-                    this.minecraft.player.sendSystemMessage(Component.literal("§d[EclipseWare] §aLoaded config: " + config.name));
+                    this.minecraft.player.sendSystemMessage(Component.literal("\u00A7d[EclipseWare] \u00A7aLoaded config: " + config.name));
                     this.minecraft.setScreen(null);
                 }).bounds(centerX - 150, configY, 300, 20).build());
                 
@@ -56,30 +55,32 @@ public class ConfigRecommendationScreen extends Screen {
     }
 
     @Override
+    public void extractBackground(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(guiGraphics, mouseX, mouseY, partialTick);
+        guiGraphics.fill(0, 0, this.width, this.height, new Color(15, 15, 40, 200).getRGB());
+    }
+
+    @Override
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
-        context.fill(0, 0, this.width, this.height, 0x88000000);
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
         if (promptMode) {
-            String title = "Recommended Configs Found!";
-            String subtitle = "We found " + configs.size() + " config" + (configs.size() == 1 ? "" : "'s") + "! Would you like to choose and load one?";
-            com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.drawCenteredString(context, title, this.width / 2, this.height / 2 - 40, 0xFF55FF);
-            com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.drawCenteredString(context, subtitle, this.width / 2, this.height / 2 - 20, 0xFFFFFF);
+            context.centeredText(this.font, "\u00a7b\u00a7l[Cloud Configs Found]", this.width / 2, this.height / 2 - 40, -1);
+            context.centeredText(this.font, "\u00a7fWe found \u00a7d" + configs.size() + " custom config" + (configs.size() == 1 ? "" : "s") + "\u00a7f for this server!", this.width / 2, this.height / 2 - 20, -1);
+            context.centeredText(this.font, "Would you like to browse and load them?", this.width / 2, this.height / 2 - 5, -1);
         } else {
-            com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.drawCenteredString(context, "Available Configs", this.width / 2, 15, 0xFF55FF);
+            context.centeredText(this.font, "\u00a7b\u00a7lAvailable Server Configs", this.width / 2, 15, -1);
             
             int yOffset = 40;
             for (FoundConfig config : configs) {
-                // Truncate preview if too long
                 String preview = config.modulesPreview;
                 if (preview.length() > 60) {
                     preview = preview.substring(0, 57) + "...";
                 }
-                com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.drawCenteredString(context, "§7" + preview, this.width / 2, yOffset + 24, 0xAAAAAA);
+                context.centeredText(this.font, "\u00a77" + preview, this.width / 2, yOffset + 24, -1);
                 yOffset += 45;
             }
         }
-
-        super.extractRenderState(context, mouseX, mouseY, delta);
     }
 
     @Override
