@@ -2,10 +2,9 @@
 My main account, @nxght_Cry0 on discord was TERMINATED!
 The only official account of mine is now @firefox.lol
 
-# Marlow Client
+# Marlow Client 2.0.0
 
-
-Marlow Client is an open-source Fabric client focused on combat automation, movement utilities, rendering tools, and quality-of-life systems for PvP-oriented gameplay.
+Marlow Client is an open-source Fabric client focused on combat automation, movement utilities, rendering tools, and quality-of-life systems for PvP-oriented gameplay. Newly rewritten and rearchitected for Minecraft 26.1.2.
 
 <a href="https://www.star-history.com/?repos=nxghtCry0%2Fmarlowwwclient&type=date&legend=top-left">
  <picture>
@@ -17,20 +16,20 @@ Marlow Client is an open-source Fabric client focused on combat automation, move
 
 ## Technology Stack
 
-[![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)](https://adoptium.net/)
+[![Java](https://img.shields.io/badge/Java-25-ED8B00?logo=openjdk&logoColor=white)](https://adoptium.net/)
 [![Gradle](https://img.shields.io/badge/Gradle-Build-02303A?logo=gradle&logoColor=white)](https://gradle.org/)
 [![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.18.4-DBD0B4?logo=fabric&logoColor=black)](https://fabricmc.net/)
-[![Fabric API](https://img.shields.io/badge/Fabric_API-0.141.3%2B1.21.11-DBD0B4?logo=fabric&logoColor=black)](https://modrinth.com/mod/fabric-api)
-[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.11-62B47A?logo=minecraft&logoColor=white)](https://www.minecraft.net/)
+[![Fabric API](https://img.shields.io/badge/Fabric_API-0.148.0%2B26.1.2-DBD0B4?logo=fabric&logoColor=black)](https://modrinth.com/mod/fabric-api)
+[![Minecraft](https://img.shields.io/badge/Minecraft-26.1.2-62B47A?logo=minecraft&logoColor=white)](https://www.minecraft.net/)
 [![Sponge Mixin](https://img.shields.io/badge/SpongePowered-Mixin-1E1E1E)](https://github.com/SpongePowered/Mixin)
 [![LWJGL](https://img.shields.io/badge/LWJGL-Input%20%26%20Rendering-FFFFFF?logo=lwjgl&logoColor=black)](https://www.lwjgl.org/)
 
 ## Compatibility
 
-- Minecraft: `1.21.11`
-- Java: `21+`
+- Minecraft: `26.1.2` *(Legacy `1.21.11` port available on the `port-1.21.11` branch)*
+- Java: `25+`
 - Fabric Loader: `0.18.4+`
-- Fabric API: `0.141.3+1.21.11`
+- Fabric API: `0.148.0+26.1.2`
 
 ## Build and Run
 
@@ -55,89 +54,41 @@ Build a release jar:
 
 Build artifacts are generated in `build/libs/`. Use the main jar artifact, not the `-sources` jar.
 
-## Feature Catalog
-
-The following modules are registered by the client.
+## Feature Catalog (66 Modules)
 
 ### Combat
-
-- `AimAssist`
-- `WTap`
-- `Triggerbot`
-- `AutoWeb`
-- `ShieldDrain`
-- `AttributeSwap`
-- `AutoMaceCounter`
-- `AutoDrain`
-- `HitSelect`
-- `AutoShieldBreaker`
-- `KnockbackDisplacement`
-- `BreachSwap`
-- `LungeAssist`
-- `AutoMace`
-- `PearlCatch`
-- `JumpReset`
-- `SilentAim`
-- `KillAura`
-- `Backtrack`
-- `PearlBind`
-- `AutoTotem`
-- `Hitboxes`
-- `AnchorMacro`
-- `CrystalAura`
-- `HitSwap`
-- `AntiBot`
-- `Teams`
-- `BlinkModule` (`Blink`)
+- `AimAssist` | `AnchorMacro` | `AntiBot` | `AttributeSwap`
+- `AutoDHand` | `AutoDrain` | `AutoMace` | `AutoMaceCounter`
+- `AutoShieldBreaker` | `AutoTotem` | `AutoWeb` | `AutoWindcharge`
+- `Backtrack` | `BlinkModule` (`Blink`) | `BreachSwap` | `CrystalAura`
+- `HitSelect` | `HitSwap` | `Hitboxes` | `JumpReset`
+- `KillAura` | `KnockbackDisplacement` | `LungeAssist` | `PearlBind`
+- `PearlCatch` | `ShieldDrain` | `SilentAim` | `SilentAimbot`
+- `Teams` | `Triggerbot` | `WTap` | `Weapons`
 
 ### Movement
-
-- `AutoSprint`
-- `NoJumpDelay`
+- `AutoWalk` | `AutoSprint` | `BoatFly` | `ElytraBoost`
+- `Flight` | `Freecam` | `GUIMove` | `NoJumpDelay`
 - `Scaffold`
-- `ElytraBoost`
-- `AutoWalk`
-- `GUIMove`
-- `Freecam`
-
-### World and Utility
-
-- `AutoClicker`
-- `FastPlace`
-- `BridgeAssist`
-- `Xray`
-- `Configurator`
-- `Automine`
-- `AutoSign`
 
 ### Render and Visuals
+- `ArrayListMod` | `BlockESP` | `DetectionAlert` | `ESP`
+- `Fullbright` | `HandView` | `LowFire` | `Menu`
+- `NameProtect` | `Nametags` | `NoParticles` | `NoTotemPop`
+- `Reach` | `RenderOptimizer` | `StorageESP` | `Theme`
+- `Tracers` | `Xray`
 
-- `ArrayListMod`
-- `NameProtect`
-- `Fullbright`
-- `Reach`
-- `HandView`
-- `ESP`
-- `Tracers`
-- `Nametags`
-- `StorageESP`
-- `BlockESP`
-- `DetectionAlert`
-- `RenderOptimizer`
-- `Theme`
-- `Menu`
-
-### Client and Safety
-
-- `FriendProtector`
-- `AntiTranslationKey`
+### World and Utility
+- `AntiTranslationKey` | `AutoClicker` | `AutoSign` | `Automine`
+- `BridgeAssist` | `Bypass` | `Configurator` | `FastPlace`
+- `FriendProtector` | `NPC`
 
 ## Additional Systems
 
 - Click GUI and config GUI screens
 - Persistent config save/load via `ConfigManager`
 - Friend list persistence via `FriendManager`
-- HUD array list rendering for active modules
+- HUD array list rendering for active modules powered by `HudElementRegistry`
 - Module keybind toggling and per-tick module lifecycle hooks
 - Client command support:
   - `/config gui`
