@@ -4,12 +4,15 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.clickgui.Clickgui;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
+import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
+import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 public class Menu extends Module {
     public Menu() {
         super("Menu", Category.Client, "Opens the ClickGUI.");
         this.setKeyBind(GLFW.GLFW_KEY_RIGHT_SHIFT); // Default bind
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("NewUI+", this, false));
     }
 
     private long keyHoldStartTime = 0;
@@ -74,12 +77,18 @@ public class Menu extends Module {
             return;
         }
         
-        if (ImnotcheatingyouareClient.INSTANCE.clickGui == null) {
-            ImnotcheatingyouareClient.INSTANCE.clickGui = new Clickgui();
-        }
+        Setting newUI = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "NewUI+");
+        boolean useNewUI = newUI != null && newUI.getValBoolean();
         
-        if (!(mc.screen instanceof Clickgui)) {
-            mc.setScreen(ImnotcheatingyouareClient.INSTANCE.clickGui);
+        if (useNewUI) {
+            mc.setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.NewClickgui());
+        } else {
+            if (ImnotcheatingyouareClient.INSTANCE.clickGui == null) {
+                ImnotcheatingyouareClient.INSTANCE.clickGui = new Clickgui();
+            }
+            if (!(mc.screen instanceof Clickgui)) {
+                mc.setScreen(ImnotcheatingyouareClient.INSTANCE.clickGui);
+            }
         }
         
         setToggled(false);
