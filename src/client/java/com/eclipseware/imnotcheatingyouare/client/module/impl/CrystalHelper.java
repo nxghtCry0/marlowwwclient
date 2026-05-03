@@ -16,7 +16,7 @@ public class CrystalHelper extends Module {
     private boolean wasDown = false;
 
     public CrystalHelper() {
-        super("CrystalHelper", Category.Combat, "Silent swaps to obsidian or crystal on LMB depending on the targeted block.");
+        super("CrystalHelper", Category.Crystal, "Silent swaps to obsidian or crystal on LMB depending on the targeted block.");
     }
 
     @Override

@@ -54,7 +54,7 @@ public class Backtrack extends Module {
     private int currentChance = 0;
 
     public Backtrack() {
-        super("Backtrack", Category.Combat, "Delays entity position updates to extend hitbox window.");
+        super("Backtrack", Category.Blatant, "Delays entity position updates to extend hitbox window.");
         INSTANCE = this;
         // // HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> renderBacktrack(guiGraphics, tickDelta));
     }
