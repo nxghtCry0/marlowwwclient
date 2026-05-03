@@ -139,6 +139,16 @@ public class NewClickgui extends Screen {
         double mouseY = event.y();
         int button = event.button();
         
+        if (button == 0) {
+            for (AbstractWidget w : settingWidgets) {
+                if (w instanceof GlassyDropdown<?> dd && dd.isMenuOpen()) {
+                    if (dd.mouseClicked(event, doubleClick)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
         if (button == 1) {
             int panelWidth = 550;
             int panelHeight = 320;
@@ -335,6 +345,14 @@ public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmou
         graphics.fill(startX + 120, startY + panelHeight - 40, startX + panelWidth, startY + panelHeight - 39, 0x44FFFFFF);
 
         super.extractRenderState(context, mouseX, mouseY, delta);
+        
+        if (expandedModule != null) {
+            for (AbstractWidget w : settingWidgets) {
+                if (w instanceof GlassyDropdown<?> dropdown) {
+                    dropdown.renderOverlay(graphics, mouseX, mouseY);
+                }
+            }
+        }
     }
 
     @Override

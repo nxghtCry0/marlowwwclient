@@ -19,6 +19,12 @@ loom {
             sourceSet sourceSets.client
         }
     }
+
+    runs {
+        client {
+            vmArg "--enable-native-access=ALL-UNNAMED"
+        }
+    }
 }
 
 fabricApi {

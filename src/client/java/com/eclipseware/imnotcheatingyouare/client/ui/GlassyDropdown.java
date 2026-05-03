@@ -25,6 +25,7 @@ public final class GlassyDropdown<T> extends CompatAbstractWidget {
     private final Style style;
 
     private boolean menuOpen;
+    public boolean isMenuOpen() { return this.menuOpen; }
     private int hoveredIndex = -1;
 
     public GlassyDropdown(int x, int y, int w, int h, List<T> options, Supplier<T> getter, Consumer<T> setter, java.util.function.Function<T, Component> labeler) {
@@ -105,33 +106,58 @@ public final class GlassyDropdown<T> extends CompatAbstractWidget {
         WwUiStyle.drawDropdownCaret(guiGraphics, x + w - 16, y, 16, h, this.active);
 
         if (this.menuOpen) {
+            // The overlay will be rendered by renderOverlay.
+            // We just need to update the hovered index here to ensure clicks work if not handled by renderOverlay.
             int menuY = y + h;
             int itemH = 14;
-            int menuH = this.options.size() * itemH;
-            
-            
-            guiGraphics.fill(x, menuY, x + w, menuY + menuH, GlassyTheme.PANEL_BG);
-            guiGraphics.renderOutline(x, menuY, w, menuH, GlassyTheme.PANEL_BORDER_STRONG);
-            
             this.hoveredIndex = -1;
             for (int i = 0; i < this.options.size(); i++) {
-                T option = this.options.get(i);
                 int itemY = menuY + i * itemH;
-                
                 boolean isHovered = mouseX >= x && mouseX < x + w && mouseY >= itemY && mouseY < itemY + itemH;
                 if (isHovered) {
                     this.hoveredIndex = i;
-                    guiGraphics.fill(x + 1, itemY, x + w - 1, itemY + itemH, GlassyTheme.ROW_HOVER_BG);
                 }
-                
-                Component optMsg = (this.labeler != null) ? this.labeler.apply(option) : Component.literal("-");
-                int optText = Objects.equals(current, option) ? GlassyTheme.ACCENT : GlassyTheme.TEXT;
-                
-                guiGraphics.drawString(font, optMsg, textX, itemY + (itemH - 9) / 2, optText, false);
             }
-            
         } else {
             this.hoveredIndex = -1;
+        }
+    }
+
+    public void renderOverlay(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        if (!this.menuOpen) return;
+        int x = getX();
+        int y = getY();
+        int w = getWidth();
+        int h = getHeight();
+        
+        Minecraft mc = Minecraft.getInstance();
+        Font font = mc.font;
+        int textX = x + 8;
+        
+        T current = (this.getter != null) ? this.getter.get() : null;
+
+        int menuY = y + h;
+        int itemH = 14;
+        int menuH = this.options.size() * itemH;
+        
+        guiGraphics.fill(x, menuY, x + w, menuY + menuH, GlassyTheme.PANEL_BG);
+        guiGraphics.renderOutline(x, menuY, w, menuH, GlassyTheme.PANEL_BORDER_STRONG);
+        
+        this.hoveredIndex = -1;
+        for (int i = 0; i < this.options.size(); i++) {
+            T option = this.options.get(i);
+            int itemY = menuY + i * itemH;
+            
+            boolean isHovered = mouseX >= x && mouseX < x + w && mouseY >= itemY && mouseY < itemY + itemH;
+            if (isHovered) {
+                this.hoveredIndex = i;
+                guiGraphics.fill(x + 1, itemY, x + w - 1, itemY + itemH, GlassyTheme.ROW_HOVER_BG);
+            }
+            
+            Component optMsg = (this.labeler != null) ? this.labeler.apply(option) : Component.literal("-");
+            int optText = Objects.equals(current, option) ? GlassyTheme.ACCENT : GlassyTheme.TEXT;
+            
+            guiGraphics.drawString(font, optMsg, textX, itemY + (itemH - 9) / 2, optText, false);
         }
     }
 
