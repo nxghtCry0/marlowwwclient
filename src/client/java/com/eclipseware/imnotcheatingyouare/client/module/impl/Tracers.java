@@ -5,8 +5,8 @@ import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.gui.GuiGraphics;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
@@ -18,10 +18,10 @@ public class Tracers extends Module {
 
     public Tracers() {
         super("Tracers", Category.Render);
-        HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> onHudRender(guiGraphics, tickDelta));
+        // HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> onHudRender(guiGraphics, tickDelta));
     }
 
-    private void onHudRender(GuiGraphics guiGraphics, Object tickDeltaObj) {
+    private void onHudRender(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
 
         float partialTick = getTickDelta(tickDeltaObj);

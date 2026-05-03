@@ -6,7 +6,7 @@ import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Items;
 
@@ -89,7 +89,7 @@ public class AutoTotem extends Module {
         if (totemSlot < 0 || totemSlot >= invScreen.getMenu().slots.size()) return;
 
         moveCursorToSlot(invScreen, invScreen.getMenu().getSlot(totemSlot));
-        mc.gameMode.handleInventoryMouseClick(mc.player.inventoryMenu.containerId, totemSlot, 40, ClickType.SWAP, mc.player);
+        mc.gameMode.handleContainerInput(mc.player.inventoryMenu.containerId, totemSlot, 40, net.minecraft.world.inventory.ContainerInput.SWAP, mc.player);
     }
 
     private void moveCursorToSlot(InventoryScreen screen, Slot slot) {

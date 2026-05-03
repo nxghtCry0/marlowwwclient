@@ -46,7 +46,7 @@ return false;
 if (mode.equals("Silent")) {
 if (mc.getConnection() != null) {
 mc.getConnection().send(new ServerboundSetCarriedItemPacket(axeSlot));
-mc.getConnection().send(ServerboundInteractPacket.createAttackPacket(target, mc.player.isShiftKeyDown()));
+mc.getConnection().send(new ServerboundInteractPacket(target.getId(), net.minecraft.world.InteractionHand.MAIN_HAND, target.position(), mc.player.isShiftKeyDown()));
 }
 mc.player.getInventory().setSelectedSlot(axeSlot);
 mc.player.swing(InteractionHand.MAIN_HAND);
@@ -95,7 +95,7 @@ return false;
 if (mode.equals("Silent")) {
 if (mc.getConnection() != null) {
 mc.getConnection().send(new ServerboundSetCarriedItemPacket(axeSlot));
-mc.getConnection().send(ServerboundInteractPacket.createAttackPacket(target, player.isShiftKeyDown()));
+mc.getConnection().send(new ServerboundInteractPacket(target.getId(), net.minecraft.world.InteractionHand.MAIN_HAND, target.position(), player.isShiftKeyDown()));
 }
 player.getInventory().setSelectedSlot(axeSlot);
 player.swing(InteractionHand.MAIN_HAND);

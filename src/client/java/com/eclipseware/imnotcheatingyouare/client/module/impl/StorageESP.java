@@ -5,8 +5,8 @@ import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.gui.GuiGraphics;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.*;
 import net.minecraft.world.level.block.state.BlockState;
@@ -23,10 +23,10 @@ public class StorageESP extends Module {
     private int lastUpdateTick = -999;
     public StorageESP() {
         super("StorageESP", Category.Render, "Highlights storage blocks like chests, barrels, and shulker boxes.");
-        HudRenderCallback.EVENT.register((guiGraphics, tickCounter) -> onRenderHUD(guiGraphics, tickCounter));
+        // HudRenderCallback.EVENT.register((guiGraphics, tickCounter) -> onRenderHUD(guiGraphics, tickCounter));
     }
 
-    private void onRenderHUD(GuiGraphics guiGraphics, Object tickDeltaObj) {
+    private void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || mc.level == null) {
             cache.clear();
             return;
@@ -64,12 +64,12 @@ public class StorageESP extends Module {
             int range = rangeSetting != null ? (int) rangeSetting.getValDouble() : 32;
 
             BlockPos playerPos = mc.player.blockPosition();
-            net.minecraft.world.level.ChunkPos playerChunk = new net.minecraft.world.level.ChunkPos(playerPos);
+            net.minecraft.world.level.ChunkPos playerChunk = new net.minecraft.world.level.ChunkPos(playerPos.getX() >> 4, playerPos.getZ() >> 4);
             int chunkRange = (range >> 4) + 1;
 
             if (mc.level.getChunkSource() != null) {
-                for (int cx = playerChunk.x - chunkRange; cx <= playerChunk.x + chunkRange; cx++) {
-                    for (int cz = playerChunk.z - chunkRange; cz <= playerChunk.z + chunkRange; cz++) {
+                for (int cx = playerChunk.x() - chunkRange; cx <= playerChunk.x() + chunkRange; cx++) {
+                    for (int cz = playerChunk.z() - chunkRange; cz <= playerChunk.z() + chunkRange; cz++) {
                         net.minecraft.world.level.chunk.LevelChunk chunk = mc.level.getChunkSource().getChunk(cx, cz, false);
                         if (chunk == null || chunk.isEmpty()) continue;
                         
@@ -129,7 +129,7 @@ public class StorageESP extends Module {
         return null;
     }
 
-    private void drawStorageBox(GuiGraphics guiGraphics, BlockPos pos, Color color, boolean fill, boolean outline, float partialTick) {
+    private void drawStorageBox(GuiGraphicsExtractor guiGraphics, BlockPos pos, Color color, boolean fill, boolean outline, float partialTick) {
         Vector3d[] corners = new Vector3d[8];
         corners[0] = RenderUtils.project2D(pos.getX(), pos.getY(), pos.getZ(), partialTick);
         corners[1] = RenderUtils.project2D(pos.getX() + 1, pos.getY(), pos.getZ(), partialTick);

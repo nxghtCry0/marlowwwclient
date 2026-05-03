@@ -9,7 +9,7 @@ import com.eclipseware.imnotcheatingyouare.client.setting.SettingsManager;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.multiplayer.ServerData;
 import org.lwjgl.glfw.GLFW;
@@ -431,9 +431,10 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
         addColorSettings(settingsManager, menu, "Primary", 155, 60, 255);
         addColorSettings(settingsManager, menu, "Secondary", 20, 20, 20);
 
-        net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
-            com.eclipseware.imnotcheatingyouare.client.ui.ArrayListHud.INSTANCE.render(guiGraphics, tickDelta.getGameTimeDeltaTicks());
-        });
+        // net.fabricmc.fabric.api.client.rendering.v1.// HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
+        //     net.minecraft.client.gui.GuiGraphicsExtractor extractor = (net.minecraft.client.gui.GuiGraphicsExtractor) (Object) guiGraphics;
+        //     com.eclipseware.imnotcheatingyouare.client.ui.ArrayListHud.INSTANCE.render(extractor, tickDelta.getGameTimeDeltaTicks());
+        // });
 
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
             for (Module m : moduleManager.modules) {
@@ -459,8 +460,8 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
         Runtime.getRuntime().addShutdownHook(saveHook);
 
         net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("config")
-                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("gui")
+            dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("config")
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("gui")
                     .executes(context -> {
                         net.minecraft.client.Minecraft.getInstance().execute(() ->
                             net.minecraft.client.Minecraft.getInstance().setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.ConfigGui())
@@ -468,7 +469,7 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
                         return 1;
                     })
                 )
-                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal("export")
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("export")
                     .executes(context -> {
                         String exp = com.eclipseware.imnotcheatingyouare.client.setting.ConfigManager.exportSpecific(moduleManager.modules);
                         net.minecraft.client.Minecraft.getInstance().keyboardHandler.setClipboard(exp);

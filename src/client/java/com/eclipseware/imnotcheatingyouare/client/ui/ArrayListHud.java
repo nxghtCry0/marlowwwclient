@@ -4,7 +4,7 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.utils.FontUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ public class ArrayListHud {
 
     private final Map<Module, Float> animMap = new HashMap<>();
 
-    public void render(GuiGraphics guiGraphics, float partialTick) {
+    public void render(GuiGraphicsExtractor guiGraphics, float partialTick) {
         Module arrayListMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("ArrayList");
         if (arrayListMod == null || !arrayListMod.isToggled()) return;
 

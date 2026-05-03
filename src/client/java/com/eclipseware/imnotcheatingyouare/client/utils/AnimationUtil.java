@@ -1,6 +1,6 @@
 package com.eclipseware.imnotcheatingyouare.client.utils;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * Comprehensive animation utility class with easing functions and rendering helpers.
@@ -146,7 +146,7 @@ public class AnimationUtil {
      * For performance, we use a simplified approach: draw the main rect, then
      * use small corner fills to approximate rounded corners.
      * 
-     * @param guiGraphics The GuiGraphics context
+     * @param guiGraphics The GuiGraphicsExtractor context
      * @param x           Left edge
      * @param y           Top edge
      * @param width       Rectangle width
@@ -154,7 +154,7 @@ public class AnimationUtil {
      * @param radius      Corner radius
      * @param color       ARGB color
      */
-    public static void drawRoundedRect(GuiGraphics guiGraphics, int x, int y, int width, int height, int radius, int color) {
+    public static void drawRoundedRect(GuiGraphicsExtractor guiGraphics, int x, int y, int width, int height, int radius, int color) {
         if (radius <= 0) {
             guiGraphics.fill(x, y, x + width, y + height, color);
             return;
@@ -169,7 +169,7 @@ public class AnimationUtil {
      * Draws a filled circle using a series of horizontal lines.
      * This is a software approximation that works well for small UI elements.
      */
-    public static void drawFilledCircle(GuiGraphics guiGraphics, int centerX, int centerY, int radius, int color) {
+    public static void drawFilledCircle(GuiGraphicsExtractor guiGraphics, int centerX, int centerY, int radius, int color) {
         for (int y = -radius; y <= radius; y++) {
             int xWidth = (int) Math.sqrt(Math.max(0, radius * radius - y * y));
             guiGraphics.fill(centerX - xWidth, centerY + y, centerX + xWidth + 1, centerY + y + 1, color);
@@ -179,7 +179,7 @@ public class AnimationUtil {
     /**
      * Draws a rounded rectangle outline (border only).
      */
-    public static void drawRoundedOutline(GuiGraphics guiGraphics, int x, int y, int width, int height, int radius, int thickness, int color) {
+    public static void drawRoundedOutline(GuiGraphicsExtractor guiGraphics, int x, int y, int width, int height, int radius, int thickness, int color) {
         if (radius <= 0) {
             guiGraphics.fill(x, y, x + width, y + thickness, color); 
             guiGraphics.fill(x, y + height - thickness, x + width, y + height, color); 
@@ -204,14 +204,14 @@ public class AnimationUtil {
     /**
      * Draws a circle outline using the difference of two filled circles.
      */
-    private static void drawCircleOutline(GuiGraphics guiGraphics, int centerX, int centerY, int radius, int thickness, int color) {
+    private static void drawCircleOutline(GuiGraphicsExtractor guiGraphics, int centerX, int centerY, int radius, int thickness, int color) {
         drawFilledCircle(guiGraphics, centerX, centerY, radius, color);
     }
 
     /**
      * Draws a vertical gradient rectangle.
      */
-    public static void drawGradientRect(GuiGraphics guiGraphics, int x, int y, int width, int height, int topColor, int bottomColor) {
+    public static void drawGradientRect(GuiGraphicsExtractor guiGraphics, int x, int y, int width, int height, int topColor, int bottomColor) {
         int segments = Math.min(height, 32);
         float segmentHeight = (float) height / segments;
         
@@ -227,7 +227,7 @@ public class AnimationUtil {
     /**
      * Draws a horizontal gradient rectangle.
      */
-    public static void drawHorizontalGradient(GuiGraphics guiGraphics, int x, int y, int width, int height, int leftColor, int rightColor) {
+    public static void drawHorizontalGradient(GuiGraphicsExtractor guiGraphics, int x, int y, int width, int height, int leftColor, int rightColor) {
         int segments = Math.min(width, 32);
         float segmentWidth = (float) width / segments;
         

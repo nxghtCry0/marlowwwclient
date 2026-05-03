@@ -6,7 +6,7 @@ import com.eclipseware.imnotcheatingyouare.client.clickgui.components.Widget;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -52,7 +52,7 @@ public class Clickgui extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         com.eclipseware.imnotcheatingyouare.client.clickgui.components.Item.context = context;
         context.fill(0, 0, context.guiWidth(), context.guiHeight(), 0x55000000);
         this.widgets.forEach(components -> components.drawScreen(context, mouseX, mouseY, delta));
@@ -108,7 +108,7 @@ public class Clickgui extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent input) {
-        this.widgets.forEach(component -> component.onKeyTyped(input.codepointAsString(), input.modifiers()));
+        this.widgets.forEach(component -> component.onKeyTyped(input.codepointAsString(), 0));
         return super.charTyped(input);
     }
 
@@ -118,7 +118,7 @@ public class Clickgui extends Screen {
     }
     
     @Override
-    public void renderBackground(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractBackground(net.minecraft.client.gui.GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
     }
 
     public final ArrayList<Widget> getComponents() {

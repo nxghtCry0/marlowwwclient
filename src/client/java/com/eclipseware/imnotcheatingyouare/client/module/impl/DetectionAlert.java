@@ -83,8 +83,8 @@ public class DetectionAlert extends Module {
             mc.execute(() -> {
                 if (rules == null) {
                     if (mc.player != null) {
-                        mc.player.displayClientMessage(
-                            Component.literal("\u00a7cYour client is disconnected from the database and does not have the latest detections or bypasses from the database!"), false
+                        mc.player.sendSystemMessage(
+                            Component.literal("\u00a7cYour client is disconnected from the database and does not have the latest detections or bypasses from the database!")
                         );
                     }
                 } else {

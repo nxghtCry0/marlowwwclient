@@ -6,8 +6,8 @@ import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.FontUtils;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.gui.GuiGraphics;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -21,10 +21,10 @@ public class ESP extends Module {
 
     public ESP() {
         super("ESP", Category.Render);
-        HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> onHudRender(guiGraphics, tickDelta));
+        // HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> onHudRender(guiGraphics, tickDelta));
     }
 
-    private void onHudRender(GuiGraphics guiGraphics, Object tickDeltaObj) {
+    private void onHudRender(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
 
         Module bypassMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Bypass");
@@ -184,11 +184,11 @@ public class ESP extends Module {
         }
     }
 
-    private void drawHLine(GuiGraphics g, int x1, int x2, int y, int thickness, int color) {
+    private void drawHLine(GuiGraphicsExtractor g, int x1, int x2, int y, int thickness, int color) {
         g.fill(x1, y, x2, y + thickness, color);
     }
 
-    private void drawVLine(GuiGraphics g, int x, int y1, int y2, int thickness, int color) {
+    private void drawVLine(GuiGraphicsExtractor g, int x, int y1, int y2, int thickness, int color) {
         g.fill(x, y1, x + thickness, y2, color);
     }
 

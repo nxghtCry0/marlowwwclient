@@ -29,7 +29,7 @@ String mode = modeSetting != null ? modeSetting.getValString() : "Swap";
 if (mode.equals("Silent")) {
 if (mc.getConnection() != null) {
 mc.getConnection().send(new ServerboundSetCarriedItemPacket(maceSlot));
-mc.getConnection().send(ServerboundInteractPacket.createAttackPacket(target, player.isShiftKeyDown()));
+mc.getConnection().send(new ServerboundInteractPacket(target.getId(), net.minecraft.world.InteractionHand.MAIN_HAND, target.position(), player.isShiftKeyDown()));
 }
 player.swing(InteractionHand.MAIN_HAND);
 player.resetAttackStrengthTicker();

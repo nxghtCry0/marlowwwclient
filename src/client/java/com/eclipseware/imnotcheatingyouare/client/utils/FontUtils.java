@@ -1,7 +1,7 @@
 package com.eclipseware.imnotcheatingyouare.client.utils;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.FontDescription;
@@ -14,17 +14,17 @@ public class FontUtils {
         return Component.literal(text);
     }
 
-    public static void drawString(GuiGraphics graphics, String text, int x, int y, int color, boolean dropShadow) {
-        graphics.drawString(Minecraft.getInstance().font, get(text), x, y, color, dropShadow);
+    public static void drawString(GuiGraphicsExtractor graphics, String text, int x, int y, int color, boolean dropShadow) {
+        graphics.text(Minecraft.getInstance().font, get(text), x, y, color, dropShadow);
     }
 
-    public static void drawCenteredString(GuiGraphics graphics, String text, int x, int y, int color) {
-        graphics.drawCenteredString(Minecraft.getInstance().font, get(text), x, y, color);
+    public static void drawCenteredString(GuiGraphicsExtractor graphics, String text, int x, int y, int color) {
+        graphics.centeredText(Minecraft.getInstance().font, get(text), x, y, color);
     }
     
-    public static void drawRightAlignedString(GuiGraphics graphics, String text, int rightX, int y, int color) {
+    public static void drawRightAlignedString(GuiGraphicsExtractor graphics, String text, int rightX, int y, int color) {
         int width = width(text);
-        graphics.drawString(Minecraft.getInstance().font, get(text), rightX - width, y, color, false);
+        graphics.text(Minecraft.getInstance().font, get(text), rightX - width, y, color, false);
     }
 
     public static int width(String text) {

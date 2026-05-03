@@ -32,7 +32,7 @@ public class GameRendererMixin {
     }
 
     @Inject(method = "bobHurt", at = @At("HEAD"), cancellable = true)
-    private void onBobHurt(PoseStack poseStack, float partialTicks, CallbackInfo ci) {
+    private void onBobHurt(net.minecraft.client.renderer.state.level.CameraRenderState renderState, PoseStack poseStack, CallbackInfo ci) {
         if (RenderOptimizer.INSTANCE != null && RenderOptimizer.INSTANCE.isToggled()) {
             Setting noHurtCam = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(RenderOptimizer.INSTANCE, "No Hurt Cam");
             if (noHurtCam != null && noHurtCam.getValBoolean()) {

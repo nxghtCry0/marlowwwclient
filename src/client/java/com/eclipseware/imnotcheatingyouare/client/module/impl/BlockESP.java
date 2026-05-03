@@ -6,8 +6,8 @@ import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.setting.SettingsManager;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.gui.GuiGraphics;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
@@ -24,7 +24,7 @@ public class BlockESP extends Module {
 
     public BlockESP() {
         super("BlockESP", Category.Render, "Highlights target blocks.");
-        HudRenderCallback.EVENT.register((guiGraphics, tickCounter) -> onRenderHUD(guiGraphics, tickCounter));
+        // HudRenderCallback.EVENT.register((guiGraphics, tickCounter) -> onRenderHUD(guiGraphics, tickCounter));
 
         addDefault("obsidian");
         addDefault("bedrock");
@@ -89,7 +89,7 @@ public class BlockESP extends Module {
         cachedBlocks.addAll(newCache);
     }
 
-    private void onRenderHUD(GuiGraphics guiGraphics, Object tickCounterObj) {
+    private void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickCounterObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
         
         float partialTick = getTickDelta(tickCounterObj);
@@ -126,7 +126,7 @@ public class BlockESP extends Module {
         }
     }
 
-    private void drawBlockBox(GuiGraphics guiGraphics, BlockPos pos, Color color, boolean fill, boolean outline, float partialTick) {
+    private void drawBlockBox(GuiGraphicsExtractor guiGraphics, BlockPos pos, Color color, boolean fill, boolean outline, float partialTick) {
         Vector3d[] corners = new Vector3d[8];
         corners[0] = RenderUtils.project2D(pos.getX(), pos.getY(), pos.getZ(), partialTick);
         corners[1] = RenderUtils.project2D(pos.getX() + 1, pos.getY(), pos.getZ(), partialTick);

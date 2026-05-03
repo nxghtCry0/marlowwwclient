@@ -5,7 +5,7 @@ import com.eclipseware.imnotcheatingyouare.client.clickgui.Clickgui;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +41,7 @@ public class ModuleButton extends Button {
     }
 
     @Override
-    public void drawScreen(GuiGraphics context, int mouseX, int mouseY, float partialTicks) {
+    public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
         java.awt.Color theme = RenderUtils.getThemeAccentColor();
         int accent = new java.awt.Color(theme.getRed(), theme.getGreen(), theme.getBlue(), 200).getRGB();
         int dark = 0xAA111111;

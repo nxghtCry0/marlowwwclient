@@ -3,7 +3,7 @@ package com.eclipseware.imnotcheatingyouare.client.clickgui.components;
 import com.eclipseware.imnotcheatingyouare.client.clickgui.Clickgui;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.ArrayList;
 
@@ -17,7 +17,7 @@ public class EnumButton extends Button {
     }
 
     @Override
-    public void drawScreen(GuiGraphics context, int mouseX, int mouseY, float partialTicks) {
+    public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
         int dark = 0x22000000;
         int hoverDark = 0x44222222;
         int fill = this.isHovering(mouseX, mouseY) ? hoverDark : dark;

@@ -7,8 +7,8 @@ import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.AnimationUtil;
 import com.eclipseware.imnotcheatingyouare.client.utils.FontUtils;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.gui.GuiGraphics;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -22,10 +22,10 @@ public class Nametags extends Module {
 
     public Nametags() {
         super("Nametags", Category.Render);
-        HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> onHudRender(guiGraphics, tickDelta));
+        // HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> onHudRender(guiGraphics, tickDelta));
     }
 
-    private void onHudRender(GuiGraphics guiGraphics, Object tickDeltaObj) {
+    private void onHudRender(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
 
         float partialTick = getTickDelta(tickDeltaObj);
@@ -93,10 +93,10 @@ public class Nametags extends Module {
                 int itemY = drawY - (mainHand.isEmpty() && offHand.isEmpty() ? 0 : 18);
 
                 if (!mainHand.isEmpty()) {
-                    guiGraphics.renderItem(mainHand, (int)proj.x - (offHand.isEmpty() ? 8 : 16), itemY - 2);
+                    guiGraphics.item(mainHand, (int)proj.x - (offHand.isEmpty() ? 8 : 16), itemY - 2);
                 }
                 if (!offHand.isEmpty()) {
-                    guiGraphics.renderItem(offHand, (int)proj.x + (mainHand.isEmpty() ? -8 : 2), itemY - 2);
+                    guiGraphics.item(offHand, (int)proj.x + (mainHand.isEmpty() ? -8 : 2), itemY - 2);
                 }
             }
         }

@@ -3,14 +3,14 @@ package com.eclipseware.imnotcheatingyouare.client.clickgui.components;
 import com.eclipseware.imnotcheatingyouare.client.clickgui.Clickgui;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Widget {
-    protected GuiGraphics context;
+    protected GuiGraphicsExtractor context;
     protected final Minecraft mc = Minecraft.getInstance();
     private final List<Item> items = new ArrayList<>();
     
@@ -41,7 +41,7 @@ public class Widget {
         this.y = this.y2 + mouseY;
     }
 
-    public void drawScreen(GuiGraphics context, int mouseX, int mouseY, float partialTicks) {
+    public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
         this.context = context;
         this.drag(mouseX, mouseY);
         
@@ -50,7 +50,7 @@ public class Widget {
         int darkBg = new java.awt.Color(secondary.getRed(), secondary.getGreen(), secondary.getBlue(), 238).getRGB();
         
         context.fill(this.x, this.y, this.x + this.width, this.y + this.height, darkBg);
-        context.drawString(mc.font, this.name, this.x + 4, this.y + 5, color, false);
+        context.text(mc.font, this.name, this.x + 4, this.y + 5, color, false);
         context.fill(this.x, this.y + this.height - 1, this.x + this.width, this.y + this.height, color);
 
         if (this.open) {

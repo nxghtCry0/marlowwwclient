@@ -7,8 +7,8 @@ import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.FriendManager;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
 import com.eclipseware.imnotcheatingyouare.client.utils.cheat.TimerUtil;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.gui.GuiGraphics;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.PacketListener;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.world.entity.Entity;
@@ -56,7 +56,7 @@ public class Backtrack extends Module {
     public Backtrack() {
         super("Backtrack", Category.Combat, "Delays entity position updates to extend hitbox window.");
         INSTANCE = this;
-        HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> renderBacktrack(guiGraphics, tickDelta));
+        // // HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> renderBacktrack(guiGraphics, tickDelta));
     }
 
     public static void queuePacket(Packet<?> packet) {
@@ -274,7 +274,7 @@ public class Backtrack extends Module {
         return target;
     }
 
-    private void renderBacktrack(GuiGraphics guiGraphics, Object tickDeltaObj) {
+    private void renderBacktrack(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || target == null) return;
 
         Setting vizSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Visualizer");
@@ -321,17 +321,17 @@ public class Backtrack extends Module {
         int ghostOutline = new Color(themeColor.getRed(), themeColor.getGreen(), themeColor.getBlue(), ghostAlpha).getRGB();
         int black = new Color(0, 0, 0, ghostAlpha).getRGB();
 
-        guiGraphics.fill(ix + 1, iy + 1, ix2 - 1, iy2 - 1, ghostFill);
+        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix + 1, iy + 1, ix2 - 1, iy2 - 1, ghostFill);
 
-        guiGraphics.fill(ix - 1, iy - 1, ix2 + 1, iy, black);
-        guiGraphics.fill(ix - 1, iy2, ix2 + 1, iy2 + 1, black);
-        guiGraphics.fill(ix - 1, iy - 1, ix, iy2 + 1, black);
-        guiGraphics.fill(ix2, iy - 1, ix2 + 1, iy2 + 1, black);
+        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix - 1, iy - 1, ix2 + 1, iy, black);
+        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix - 1, iy2, ix2 + 1, iy2 + 1, black);
+        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix - 1, iy - 1, ix, iy2 + 1, black);
+        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix2, iy - 1, ix2 + 1, iy2 + 1, black);
 
-        guiGraphics.fill(ix, iy, ix2, iy + 1, ghostOutline);
-        guiGraphics.fill(ix, iy2 - 1, ix2, iy2, ghostOutline);
-        guiGraphics.fill(ix, iy, ix + 1, iy2, ghostOutline);
-        guiGraphics.fill(ix2 - 1, iy, ix2, iy2, ghostOutline);
+        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix, iy, ix2, iy + 1, ghostOutline);
+        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix, iy2 - 1, ix2, iy2, ghostOutline);
+        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix, iy, ix + 1, iy2, ghostOutline);
+        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix2 - 1, iy, ix2, iy2, ghostOutline);
     }
 
     private float getTickDelta(Object tickDeltaObj) {

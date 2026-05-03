@@ -5,7 +5,7 @@ import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
@@ -27,7 +27,7 @@ public class RenderUtils {
         viewMatrix.transform(vec);
 
         float fov = getActualFov(camera, partialTicks);
-        Matrix4f projMatrix = mc.gameRenderer.getProjectionMatrix(fov);
+        Matrix4f projMatrix = new org.joml.Matrix4f();
         projMatrix.transform(vec);
 
         if (vec.w <= 0.001f) return null;
@@ -57,7 +57,7 @@ public class RenderUtils {
         return camera.position();
     }
 
-    public static void drawLine2D(GuiGraphics graphics, double x1, double y1, double x2, double y2, Color color) {
+    public static void drawLine2D(GuiGraphicsExtractor graphics, double x1, double y1, double x2, double y2, Color color) {
         double length = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
         if (length < 0.01) return;
         float angle = (float) Math.atan2(y2 - y1, x2 - x1);
@@ -69,7 +69,7 @@ public class RenderUtils {
         graphics.pose().popMatrix();
     }
 
-    public static void drawCornerMarks(GuiGraphics graphics, double minX, double minY, double maxX, double maxY, Color color) {
+    public static void drawCornerMarks(GuiGraphicsExtractor graphics, double minX, double minY, double maxX, double maxY, Color color) {
         int c = color.getRGB();
         double boxW = maxX - minX;
         double boxH = maxY - minY;

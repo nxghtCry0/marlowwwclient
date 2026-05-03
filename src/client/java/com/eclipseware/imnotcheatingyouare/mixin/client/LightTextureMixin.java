@@ -3,13 +3,13 @@ package com.eclipseware.imnotcheatingyouare.mixin.client;
 import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.Lightmap;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(LightTexture.class)
+@Mixin(Lightmap.class)
 public class LightTextureMixin {
 
     @Inject(method = "getBrightness", at = @At("HEAD"), cancellable = true)

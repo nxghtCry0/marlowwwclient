@@ -41,8 +41,8 @@ public class FriendProtector extends Module {
                 FriendManager.toggleFriend(name);
                 if (mc.player != null) {
                     String action = FriendManager.isFriend(name) ? "\u00a7aAdded" : "\u00a7cRemoved";
-                    mc.player.displayClientMessage(
-                        net.minecraft.network.chat.Component.literal("\u00a7d[Friends] " + action + " \u00a7f" + name), false
+                    mc.player.sendSystemMessage(
+                        net.minecraft.network.chat.Component.literal("\u00a7d[Friends] " + action + " \u00a7f" + name)
                     );
                 }
             }

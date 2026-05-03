@@ -1,11 +1,11 @@
 package com.eclipseware.imnotcheatingyouare.client.clickgui.components;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public class Item {
     protected final Minecraft mc = Minecraft.getInstance();
-    public static GuiGraphics context;
+    public static GuiGraphicsExtractor context;
     private final String name;
     protected float x;
     protected float y;
@@ -26,7 +26,7 @@ public class Item {
         this.y = y;
     }
 
-    public void drawScreen(GuiGraphics context, int mouseX, int mouseY, float partialTicks) {
+    public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
     }
 
     public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
@@ -78,7 +78,7 @@ public class Item {
     }
 
     protected void drawString(String text, double x, double y, int color) {
-        context.drawString(mc.font, text, (int) x, (int) y, color, false);
+        context.text(mc.font, text, (int) x, (int) y, color, false);
     }
 
     public boolean isHovering(int mouseX, int mouseY) {

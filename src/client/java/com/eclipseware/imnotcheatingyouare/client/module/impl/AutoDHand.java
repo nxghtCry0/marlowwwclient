@@ -62,7 +62,7 @@ public class AutoDHand extends Module {
 
         if (mc.screen == null || mc.screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen) {
             int containerId = mc.player.inventoryMenu.containerId;
-            mc.gameMode.handleInventoryMouseClick(containerId, slot, 40, net.minecraft.world.inventory.ClickType.SWAP, mc.player);
+            mc.gameMode.handleContainerInput(containerId, slot, 40, net.minecraft.world.inventory.ContainerInput.SWAP, mc.player);
         }
     }
 
