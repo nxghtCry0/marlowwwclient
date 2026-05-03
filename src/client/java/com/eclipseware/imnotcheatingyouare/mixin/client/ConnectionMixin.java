@@ -112,9 +112,15 @@ public class ConnectionMixin {
     @Inject(method = "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"), cancellable = true)
     private void onChannelRead(io.netty.channel.ChannelHandlerContext context, Packet<?> packet, CallbackInfo ci) {
         if (com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack.isActive()) {
-            com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack.queuePacket(packet);
-            ci.cancel();
-            return;
+            if (Minecraft.getInstance().player != null && Minecraft.getInstance().level != null) {
+                if (!(packet instanceof net.minecraft.network.protocol.common.ClientboundKeepAlivePacket) &&
+                    !(packet instanceof net.minecraft.network.protocol.common.ClientboundPingPacket) &&
+                    !(packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket)) {
+                    com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack.queuePacket(packet);
+                    ci.cancel();
+                    return;
+                }
+            }
         }
 
         if (packet instanceof net.minecraft.network.protocol.game.ClientboundSystemChatPacket chatPacket) {
