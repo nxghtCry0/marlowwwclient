@@ -88,6 +88,7 @@ Module autoTotem = new com.eclipseware.imnotcheatingyouare.client.module.impl.Au
 Module hitboxes = new com.eclipseware.imnotcheatingyouare.client.module.impl.Hitboxes();
 Module anchorMacro = new com.eclipseware.imnotcheatingyouare.client.module.impl.AnchorMacro();
 Module crystalAura = new com.eclipseware.imnotcheatingyouare.client.module.impl.CrystalAura();
+Module crystalHelper = new com.eclipseware.imnotcheatingyouare.client.module.impl.CrystalHelper();
 Module antibot = new com.eclipseware.imnotcheatingyouare.client.module.impl.AntiBot();
 Module teams = new com.eclipseware.imnotcheatingyouare.client.module.impl.Teams();
 Module blink = new com.eclipseware.imnotcheatingyouare.client.module.impl.BlinkModule();
@@ -143,6 +144,7 @@ moduleManager.modules.add(autoTotem);
 moduleManager.modules.add(hitboxes);
 moduleManager.modules.add(anchorMacro);
 moduleManager.modules.add(crystalAura);
+moduleManager.modules.add(crystalHelper);
 Module hitSwap = new com.eclipseware.imnotcheatingyouare.client.module.impl.HitSwap();
 moduleManager.modules.add(hitSwap);
 moduleManager.modules.add(antibot);
