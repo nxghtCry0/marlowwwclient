@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "id": "imnotcheatingyouare",
   "version": "${version}",
-  "name": "imnotcheatingyouare",
-  "description": "dont u dare steal ts",
+  "name": "Marlowwww Client",
+  "description": "Open Source Ghost Client that still uses Mods not injection yay",
   "authors": [],
   "contact": {},
   "license": "All-Rights-Reserved",
@@ -30,6 +30,6 @@
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",
-    "minecraft": ">=1.21-"
+    "minecraft": "~${minecraft_version}"
   }
 }
