@@ -480,6 +480,54 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
                     })
                 )
             );
+            dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("mc")
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("enable")
+                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("module", com.mojang.brigadier.arguments.StringArgumentType.word())
+                        .executes(context -> {
+                            String modName = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "module");
+                            Module mod = moduleManager.getModule(modName);
+                            if (mod != null) {
+                                if (!mod.isToggled()) mod.toggle();
+                                context.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("§d[EclipseWare] §aEnabled " + mod.getName()));
+                            } else {
+                                context.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("§d[EclipseWare] §cModule not found!"));
+                            }
+                            return 1;
+                        })
+                    )
+                )
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("disable")
+                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("module", com.mojang.brigadier.arguments.StringArgumentType.word())
+                        .executes(context -> {
+                            String modName = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "module");
+                            Module mod = moduleManager.getModule(modName);
+                            if (mod != null) {
+                                if (mod.isToggled()) mod.toggle();
+                                context.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("§d[EclipseWare] §cDisabled " + mod.getName()));
+                            } else {
+                                context.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("§d[EclipseWare] §cModule not found!"));
+                            }
+                            return 1;
+                        })
+                    )
+                )
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("config")
+                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("module", com.mojang.brigadier.arguments.StringArgumentType.word())
+                        .executes(context -> {
+                            String modName = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "module");
+                            Module mod = moduleManager.getModule(modName);
+                            if (mod != null) {
+                                net.minecraft.client.Minecraft.getInstance().execute(() ->
+                                    net.minecraft.client.Minecraft.getInstance().setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.ConfigGui())
+                                );
+                            } else {
+                                context.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("§d[EclipseWare] §cModule not found!"));
+                            }
+                            return 1;
+                        })
+                    )
+                )
+            );
         });
     }
 }

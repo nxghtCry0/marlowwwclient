@@ -72,10 +72,34 @@ public class Clickgui extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (verticalAmount < 0) {
-            this.widgets.forEach(component -> component.setY(component.getY() - 10));
-        } else if (verticalAmount > 0) {
-            this.widgets.forEach(component -> component.setY(component.getY() + 10));
+        long windowHandle = 0;
+        try {
+            for (java.lang.reflect.Field f : Minecraft.getInstance().getWindow().getClass().getDeclaredFields()) {
+                if (f.getType() == long.class) {
+                    f.setAccessible(true);
+                    windowHandle = f.getLong(Minecraft.getInstance().getWindow());
+                    break;
+                }
+            }
+        } catch (Exception e) {}
+        
+        boolean shiftDown = false;
+        if (windowHandle != 0) {
+            shiftDown = org.lwjgl.glfw.GLFW.glfwGetKey(windowHandle, org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT) == org.lwjgl.glfw.GLFW.GLFW_PRESS || org.lwjgl.glfw.GLFW.glfwGetKey(windowHandle, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+        }
+
+        if (shiftDown) {
+            if (verticalAmount < 0) {
+                this.widgets.forEach(component -> component.setX(component.getX() - 30));
+            } else if (verticalAmount > 0) {
+                this.widgets.forEach(component -> component.setX(component.getX() + 30));
+            }
+        } else {
+            if (verticalAmount < 0) {
+                this.widgets.forEach(component -> component.setY(component.getY() - 15));
+            } else if (verticalAmount > 0) {
+                this.widgets.forEach(component -> component.setY(component.getY() + 15));
+            }
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }

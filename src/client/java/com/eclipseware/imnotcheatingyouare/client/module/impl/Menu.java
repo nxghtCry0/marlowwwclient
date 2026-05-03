@@ -13,6 +13,7 @@ public class Menu extends Module {
     }
 
     private long keyHoldStartTime = 0;
+    private int lastSecondsLeft = -1;
 
     @Override
     public void tickKeybind() {
@@ -52,12 +53,24 @@ public class Menu extends Module {
         if (isPressed && lookingDown) {
             if (keyHoldStartTime == 0) {
                 keyHoldStartTime = System.currentTimeMillis();
-            } else if (System.currentTimeMillis() - keyHoldStartTime >= 5000) {
-                this.onKeybind();
-                keyHoldStartTime = 0;
+            } else {
+                long elapsed = System.currentTimeMillis() - keyHoldStartTime;
+                if (elapsed >= 5000) {
+                    this.onKeybind();
+                    keyHoldStartTime = 0;
+                    mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§aBypass: Menu Opened"));
+                    lastSecondsLeft = -1;
+                } else {
+                    int secondsLeft = 5 - (int)(elapsed / 1000);
+                    if (secondsLeft != lastSecondsLeft) {
+                        mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§cHold for " + secondsLeft + "s to open..."));
+                        lastSecondsLeft = secondsLeft;
+                    }
+                }
             }
         } else {
             keyHoldStartTime = 0;
+            lastSecondsLeft = -1;
         }
     }
 
