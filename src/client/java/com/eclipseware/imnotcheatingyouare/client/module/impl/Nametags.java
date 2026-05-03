@@ -22,7 +22,6 @@ public class Nametags extends Module {
 
     public Nametags() {
         super("Nametags", Category.Render);
-        // HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> onHudRender(guiGraphics, tickDelta));
     }
 
     private void onHudRender(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {

@@ -109,8 +109,6 @@ public final class GlassyDropdown<T> extends CompatAbstractWidget {
             int itemH = 14;
             int menuH = this.options.size() * itemH;
             
-            // ignored matrix
-            // ignored matrix // Draw on top
             
             guiGraphics.fill(x, menuY, x + w, menuY + menuH, GlassyTheme.PANEL_BG);
             guiGraphics.renderOutline(x, menuY, w, menuH, GlassyTheme.PANEL_BORDER_STRONG);
@@ -132,7 +130,6 @@ public final class GlassyDropdown<T> extends CompatAbstractWidget {
                 guiGraphics.drawString(font, optMsg, textX, itemY + (itemH - 9) / 2, optText, false);
             }
             
-            // ignored matrix
         } else {
             this.hoveredIndex = -1;
         }

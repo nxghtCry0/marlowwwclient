@@ -11,7 +11,7 @@ import org.lwjgl.glfw.GLFW;
 public class Menu extends Module {
     public Menu() {
         super("Menu", Category.Client, "Opens the ClickGUI.");
-        this.setKeyBind(GLFW.GLFW_KEY_RIGHT_SHIFT); // Default bind
+        this.setKeyBind(GLFW.GLFW_KEY_RIGHT_SHIFT); 
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("NewUI+", this, false));
     }
 

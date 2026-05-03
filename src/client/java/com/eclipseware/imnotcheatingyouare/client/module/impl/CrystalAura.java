@@ -93,7 +93,6 @@ public class CrystalAura extends Module {
         double r = range.getValDouble();
         Player target = getOptimalTarget(r);
         
-        // Target is permitted regardless of grounding
         if (breakTicks == 0) {
             List<EndCrystal> crystals = mc.level.getEntitiesOfClass(EndCrystal.class, mc.player.getBoundingBox().inflate(r));
             for (EndCrystal crystal : crystals) {

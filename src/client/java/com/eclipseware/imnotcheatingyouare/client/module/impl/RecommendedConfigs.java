@@ -60,7 +60,7 @@ public class RecommendedConfigs extends Module {
 
         if (fetched && currentServer != null && mc.screen == null && !currentServerConfigs.isEmpty()) {
             mc.setScreen(new ConfigRecommendationScreen(new ArrayList<>(currentServerConfigs)));
-            currentServerConfigs.clear(); // Only show once per join
+            currentServerConfigs.clear(); 
         }
     }
 
@@ -68,7 +68,6 @@ public class RecommendedConfigs extends Module {
         CompletableFuture.supplyAsync(() -> {
             List<FoundConfig> found = new ArrayList<>();
             try {
-                // Fetch the contents of the configs folder from GitHub API
                 URL apiUrl = new URL("https://api.github.com/repos/nxghtCry0/marlowwwclient/contents/configs");
                 HttpURLConnection conn = (HttpURLConnection) apiUrl.openConnection();
                 conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
@@ -87,7 +86,6 @@ public class RecommendedConfigs extends Module {
 
                     String downloadUrl = fileObj.get("download_url").getAsString();
 
-                    // Fetch the actual config file
                     URL configUrl = new URL(downloadUrl);
                     Scanner s = new Scanner(configUrl.openStream());
                     StringBuilder sb = new StringBuilder();
@@ -109,7 +107,6 @@ public class RecommendedConfigs extends Module {
                         String configName = configObj.get("name").getAsString();
                         String base64 = configObj.get("configBase64").getAsString();
                         
-                        // Parse preview info
                         String preview = "Modules: ";
                         try {
                             String rawJson = com.eclipseware.imnotcheatingyouare.client.utils.CryptoUtils.decrypt(base64);

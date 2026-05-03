@@ -76,7 +76,6 @@ public class NewClickgui extends Screen {
             catY += 28;
         }
 
-        // Load all modules so search can find anything
         for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.modules) {
             if (m.isHidden()) continue;
             GlassyToggle toggle = new GlassyToggle(0, 0, 45, 20, m::isToggled, val -> m.toggle());
@@ -149,7 +148,7 @@ public class NewClickgui extends Screen {
             int listX = startX + 121;
             int listY = startY + 20;
             int listWidth = panelWidth - 121;
-            int listHeight = panelHeight - 20 - 40; // 40 for search bar
+            int listHeight = panelHeight - 20 - 40; 
             
             if (mouseX >= listX && mouseX <= listX + listWidth && mouseY >= listY && mouseY <= listY + listHeight) {
                 int modY = listY - (int) scrollOffset;
@@ -196,7 +195,6 @@ public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmou
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         GlassyTheme.updateColors(RenderUtils.getThemeAccentColor().getRGB());
         
-        // Interpolate animations
         scrollOffset += (targetScrollOffset - scrollOffset) * 0.3f * delta;
         moduleListSlideX += (0f - moduleListSlideX) * 0.2f * delta;
         moduleListAlpha += (1f - moduleListAlpha) * 0.2f * delta;
@@ -218,12 +216,10 @@ public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmou
 
         graphics.fill(startX + 120, startY + 20, startX + 121, startY + panelHeight, 0x44FFFFFF);
         
-        // Slide category buttons
         for (GlassyButton btn : categoryButtons) {
             btn.setX((int)(startX + 10 + categorySlideX));
         }
 
-        // Category Animated Strip
         float targetY = startY + 30 + (selectedCategory.ordinal() * 28);
         if (animatedCatY == -1) animatedCatY = targetY;
         animatedCatY += (targetY - animatedCatY) * 0.3f * delta;
@@ -322,7 +318,6 @@ public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmou
                 }
                 modY += (int)currentH;
             } else if (m == expandedModule) {
-                // If expanded but animating open, keep widgets hidden until they fit
                 for (AbstractWidget w : settingWidgets) {
                     w.visible = false;
                     w.setY(-100);
@@ -330,7 +325,6 @@ public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmou
             }
         }
         
-        // Hide toggles that are filtered out
         for (Map.Entry<Module, GlassyToggle> entry : moduleToggles.entrySet()) {
             if (!modules.contains(entry.getKey())) {
                 entry.getValue().visible = false;
@@ -338,7 +332,6 @@ public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmou
             }
         }
         
-        // Draw Search Bar Divider
         graphics.fill(startX + 120, startY + panelHeight - 40, startX + panelWidth, startY + panelHeight - 39, 0x44FFFFFF);
 
         super.extractRenderState(context, mouseX, mouseY, delta);

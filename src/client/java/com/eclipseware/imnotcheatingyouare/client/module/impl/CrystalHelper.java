@@ -25,20 +25,17 @@ public class CrystalHelper extends Module {
 
         boolean isDown = mc.options.keyAttack.isDown();
 
-        // Trigger once per fresh click
         if (isDown && !wasDown) {
             if (mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK) {
                 BlockHitResult blockHit = (BlockHitResult) mc.hitResult;
                 Block block = mc.level.getBlockState(blockHit.getBlockPos()).getBlock();
 
-                // If looking at Obsidian or Bedrock, try to place an End Crystal
                 if (block == Blocks.OBSIDIAN || block == Blocks.BEDROCK) {
                     int crystalSlot = findItem(Items.END_CRYSTAL);
                     if (crystalSlot != -1) {
                         silentUseItem(crystalSlot, blockHit);
                     }
                 } 
-                // If looking at anything else (the ground), try to place Obsidian
                 else {
                     int obiSlot = findItem(Items.OBSIDIAN);
                     if (obiSlot != -1) {
@@ -54,17 +51,14 @@ public class CrystalHelper extends Module {
     private void silentUseItem(int targetSlot, BlockHitResult hitResult) {
         int oldSlot = mc.player.getInventory().getSelectedSlot();
         
-        // Swap to the target item silently if we aren't already holding it
         if (targetSlot != oldSlot) {
             mc.getConnection().send(new ServerboundSetCarriedItemPacket(targetSlot));
             mc.player.getInventory().setSelectedSlot(targetSlot);
         }
 
-        // Use the item (places the block/crystal) and swing hand
         mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
         mc.player.swing(InteractionHand.MAIN_HAND);
 
-        // Swap back to the original item silently
         if (targetSlot != oldSlot) {
             mc.player.getInventory().setSelectedSlot(oldSlot);
             mc.getConnection().send(new ServerboundSetCarriedItemPacket(oldSlot));

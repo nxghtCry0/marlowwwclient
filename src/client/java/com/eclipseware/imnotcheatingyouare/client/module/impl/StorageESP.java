@@ -23,7 +23,6 @@ public class StorageESP extends Module {
     private int lastUpdateTick = -999;
     public StorageESP() {
         super("StorageESP", Category.Render, "Highlights storage blocks like chests, barrels, and shulker boxes.");
-        // HudRenderCallback.EVENT.register((guiGraphics, tickCounter) -> onRenderHUD(guiGraphics, tickCounter));
     }
 
     private void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {

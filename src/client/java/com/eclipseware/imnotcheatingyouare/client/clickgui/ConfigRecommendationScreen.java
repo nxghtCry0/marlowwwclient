@@ -12,7 +12,7 @@ import java.util.List;
 
 public class ConfigRecommendationScreen extends Screen {
     private final List<FoundConfig> configs;
-    private boolean promptMode = true; // True when asking Yes/No, False when listing
+    private boolean promptMode = true; 
 
     public ConfigRecommendationScreen(List<FoundConfig> configs) {
         super(Component.literal("Recommended Configs"));

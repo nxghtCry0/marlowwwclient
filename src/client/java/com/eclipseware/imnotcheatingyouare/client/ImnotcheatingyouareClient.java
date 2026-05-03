@@ -435,10 +435,6 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
         addColorSettings(settingsManager, menu, "Primary", 155, 60, 255);
         addColorSettings(settingsManager, menu, "Secondary", 20, 20, 20);
 
-        // net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
-        //     net.minecraft.client.gui.GuiGraphicsExtractor extractor = (net.minecraft.client.gui.GuiGraphicsExtractor) (Object) guiGraphics;
-        //     com.eclipseware.imnotcheatingyouare.client.ui.ArrayListHud.INSTANCE.render(extractor, tickDelta.getGameTimeDeltaTicks());
-        // });
 
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
             for (Module m : moduleManager.modules) {

@@ -31,7 +31,6 @@ public class AutoDrain extends Module {
     public void onTick() {
         if (mc.player == null || mc.level == null) return;
 
-        // Spoofing eliminates the need to await swapping back, ensuring true silent aim natively.
         Setting delaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Delay (ms)");
         long delay = delaySetting != null ? (long) delaySetting.getValDouble() : 150;
         if (System.currentTimeMillis() - lastActionTime < delay) return;
