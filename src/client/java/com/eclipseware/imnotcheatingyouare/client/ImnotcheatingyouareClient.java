@@ -291,6 +291,11 @@ addColorSettings(settingsManager, storageESP, "Furnace Color", 160, 160, 160);
         settingsManager.rSetting(new Setting("Swap Back", autoShieldBreaker, true));
         settingsManager.rSetting(new Setting("Swap Back Delay (ms)", autoShieldBreaker, 100.0, 0.0, 1000.0, true));
 
+        settingsManager.rSetting(new Setting("Delay (ms)", autoWeb, 250.0, 0.0, 1000.0, true));
+        settingsManager.rSetting(new Setting("Movement Correction", autoWeb, true));
+        settingsManager.rSetting(new Setting("Smooth Rotation", autoWeb, 2.0, 1.0, 10.0, false));
+        settingsManager.rSetting(new Setting("Swap Back", autoWeb, true));
+
         java.util.ArrayList<String> kbModes = new java.util.ArrayList<>();
         kbModes.add("Pull"); kbModes.add("Upward"); kbModes.add("Horizontal"); kbModes.add("Custom");
         settingsManager.rSetting(new Setting("Mode", kbDisplacement, "Pull", kbModes));
@@ -364,7 +369,7 @@ settingsManager.rSetting(new Setting("Delay (Ticks)", pearlCatch, 4.0, 0.0, 20.0
         settingsManager.rSetting(new Setting("Delay", backtrack, 150.0, 50.0, 500.0, true));
         settingsManager.rSetting(new Setting("Chance", backtrack, 50.0, 0.0, 100.0, true));
         settingsManager.rSetting(new Setting("Attack Timeout", backtrack, 1000.0, 100.0, 5000.0, true));
-        settingsManager.rSetting(new Setting("Visualizer", backtrack, true));
+        settingsManager.rSetting(new Setting("Visualizer", backtrack, false));
 
         settingsManager.rSetting(new Setting("Crosshair Attach", tracers, true));
 
