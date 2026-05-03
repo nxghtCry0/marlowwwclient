@@ -182,6 +182,8 @@ moduleManager.modules.add(silentAimbot);
 moduleManager.modules.add(weapons);
 moduleManager.modules.add(bypassModule);
 moduleManager.modules.add(npcModule);
+Module recommendedConfigs = new com.eclipseware.imnotcheatingyouare.client.module.impl.RecommendedConfigs();
+moduleManager.modules.add(recommendedConfigs);
 
 moduleManager.modules.add(blink);
 
