@@ -27,7 +27,7 @@ public class KillAura extends Module {
     private long nextDelay = 0;
 
     public KillAura() {
-        super("KillAura", Category.Combat, "Automatically attacks entities around you.");
+        super("KillAura", Category.Blatant, "Automatically attacks entities around you.");
     }
 
     @Override

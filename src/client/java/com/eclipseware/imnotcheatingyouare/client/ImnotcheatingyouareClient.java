@@ -88,6 +88,7 @@ Module autoTotem = new com.eclipseware.imnotcheatingyouare.client.module.impl.Au
 Module hitboxes = new com.eclipseware.imnotcheatingyouare.client.module.impl.Hitboxes();
 Module anchorMacro = new com.eclipseware.imnotcheatingyouare.client.module.impl.AnchorMacro();
 Module crystalAura = new com.eclipseware.imnotcheatingyouare.client.module.impl.CrystalAura();
+Module crystalHelper = new com.eclipseware.imnotcheatingyouare.client.module.impl.CrystalHelper();
 Module antibot = new com.eclipseware.imnotcheatingyouare.client.module.impl.AntiBot();
 Module teams = new com.eclipseware.imnotcheatingyouare.client.module.impl.Teams();
 Module blink = new com.eclipseware.imnotcheatingyouare.client.module.impl.BlinkModule();
@@ -143,6 +144,7 @@ moduleManager.modules.add(autoTotem);
 moduleManager.modules.add(hitboxes);
 moduleManager.modules.add(anchorMacro);
 moduleManager.modules.add(crystalAura);
+moduleManager.modules.add(crystalHelper);
 Module hitSwap = new com.eclipseware.imnotcheatingyouare.client.module.impl.HitSwap();
 moduleManager.modules.add(hitSwap);
 moduleManager.modules.add(antibot);
@@ -180,6 +182,8 @@ moduleManager.modules.add(silentAimbot);
 moduleManager.modules.add(weapons);
 moduleManager.modules.add(bypassModule);
 moduleManager.modules.add(npcModule);
+Module recommendedConfigs = new com.eclipseware.imnotcheatingyouare.client.module.impl.RecommendedConfigs();
+moduleManager.modules.add(recommendedConfigs);
 
 moduleManager.modules.add(blink);
 
@@ -287,6 +291,11 @@ addColorSettings(settingsManager, storageESP, "Furnace Color", 160, 160, 160);
         settingsManager.rSetting(new Setting("Swap Back", autoShieldBreaker, true));
         settingsManager.rSetting(new Setting("Swap Back Delay (ms)", autoShieldBreaker, 100.0, 0.0, 1000.0, true));
 
+        settingsManager.rSetting(new Setting("Delay (ms)", autoWeb, 250.0, 0.0, 1000.0, true));
+        settingsManager.rSetting(new Setting("Movement Correction", autoWeb, true));
+        settingsManager.rSetting(new Setting("Smooth Rotation", autoWeb, 2.0, 1.0, 10.0, false));
+        settingsManager.rSetting(new Setting("Swap Back", autoWeb, true));
+
         java.util.ArrayList<String> kbModes = new java.util.ArrayList<>();
         kbModes.add("Pull"); kbModes.add("Upward"); kbModes.add("Horizontal"); kbModes.add("Custom");
         settingsManager.rSetting(new Setting("Mode", kbDisplacement, "Pull", kbModes));
@@ -360,7 +369,7 @@ settingsManager.rSetting(new Setting("Delay (Ticks)", pearlCatch, 4.0, 0.0, 20.0
         settingsManager.rSetting(new Setting("Delay", backtrack, 150.0, 50.0, 500.0, true));
         settingsManager.rSetting(new Setting("Chance", backtrack, 50.0, 0.0, 100.0, true));
         settingsManager.rSetting(new Setting("Attack Timeout", backtrack, 1000.0, 100.0, 5000.0, true));
-        settingsManager.rSetting(new Setting("Visualizer", backtrack, true));
+        settingsManager.rSetting(new Setting("Visualizer", backtrack, false));
 
         settingsManager.rSetting(new Setting("Crosshair Attach", tracers, true));
 
@@ -431,10 +440,6 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
         addColorSettings(settingsManager, menu, "Primary", 155, 60, 255);
         addColorSettings(settingsManager, menu, "Secondary", 20, 20, 20);
 
-        // net.fabricmc.fabric.api.client.rendering.v1.// HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> {
-        //     net.minecraft.client.gui.GuiGraphicsExtractor extractor = (net.minecraft.client.gui.GuiGraphicsExtractor) (Object) guiGraphics;
-        //     com.eclipseware.imnotcheatingyouare.client.ui.ArrayListHud.INSTANCE.render(extractor, tickDelta.getGameTimeDeltaTicks());
-        // });
 
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
             for (Module m : moduleManager.modules) {
@@ -476,6 +481,54 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
                         context.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("§d[EclipseWare] §7Config exported to clipboard!"));
                         return 1;
                     })
+                )
+            );
+            dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("mc")
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("enable")
+                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("module", com.mojang.brigadier.arguments.StringArgumentType.word())
+                        .executes(context -> {
+                            String modName = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "module");
+                            Module mod = moduleManager.getModule(modName);
+                            if (mod != null) {
+                                if (!mod.isToggled()) mod.toggle();
+                                context.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("§d[EclipseWare] §aEnabled " + mod.getName()));
+                            } else {
+                                context.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("§d[EclipseWare] §cModule not found!"));
+                            }
+                            return 1;
+                        })
+                    )
+                )
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("disable")
+                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("module", com.mojang.brigadier.arguments.StringArgumentType.word())
+                        .executes(context -> {
+                            String modName = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "module");
+                            Module mod = moduleManager.getModule(modName);
+                            if (mod != null) {
+                                if (mod.isToggled()) mod.toggle();
+                                context.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("§d[EclipseWare] §cDisabled " + mod.getName()));
+                            } else {
+                                context.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("§d[EclipseWare] §cModule not found!"));
+                            }
+                            return 1;
+                        })
+                    )
+                )
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("config")
+                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("module", com.mojang.brigadier.arguments.StringArgumentType.word())
+                        .executes(context -> {
+                            String modName = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "module");
+                            Module mod = moduleManager.getModule(modName);
+                            if (mod != null) {
+                                net.minecraft.client.Minecraft.getInstance().execute(() ->
+                                    net.minecraft.client.Minecraft.getInstance().setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.ConfigGui())
+                                );
+                            } else {
+                                context.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("§d[EclipseWare] §cModule not found!"));
+                            }
+                            return 1;
+                        })
+                    )
                 )
             );
         });

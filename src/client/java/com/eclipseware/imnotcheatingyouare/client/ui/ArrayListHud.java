@@ -4,7 +4,7 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.utils.FontUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.DrawContext;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ public class ArrayListHud {
 
     private final Map<Module, Float> animMap = new HashMap<>();
 
-    public void render(GuiGraphicsExtractor guiGraphics, float partialTick) {
+    public void render(DrawContext DrawContext, float partialTick) {
         Module arrayListMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("ArrayList");
         if (arrayListMod == null || !arrayListMod.isToggled()) return;
 
@@ -95,13 +95,13 @@ public class ArrayListHud {
             int bgBottomY = (i == activeMods.size() - 1) ? drawY + rectHeight - 1 : drawY + rectHeight;
 
             if (isRight) {
-                guiGraphics.fill(drawX + 1, bgTopY, drawX + rectWidth - 2, bgBottomY, currentBg);
+                DrawContext.fill(drawX + 1, bgTopY, drawX + rectWidth - 2, bgBottomY, currentBg);
                 
-                if (i == 0) guiGraphics.fill(drawX, drawY, drawX + rectWidth, drawY + 1, currentAccent);
+                if (i == 0) DrawContext.fill(drawX, drawY, drawX + rectWidth, drawY + 1, currentAccent);
                 
-                guiGraphics.fill(drawX + rectWidth - 2, bgTopY, drawX + rectWidth, bgBottomY, currentAccent);
+                DrawContext.fill(drawX + rectWidth - 2, bgTopY, drawX + rectWidth, bgBottomY, currentAccent);
                 
-                guiGraphics.fill(drawX, bgTopY, drawX + 1, drawY + rectHeight - 1, currentAccent);
+                DrawContext.fill(drawX, bgTopY, drawX + 1, drawY + rectHeight - 1, currentAccent);
                 
                 if (i < activeMods.size() - 1) {
                     Module nextM = activeMods.get(i + 1);
@@ -112,19 +112,19 @@ public class ArrayListHud {
                     if (drawX != nextDrawX) {
                         int minX = Math.min(drawX, nextDrawX);
                         int maxX = Math.max(drawX, nextDrawX);
-                        guiGraphics.fill(minX, drawY + rectHeight - 1, maxX + 1, drawY + rectHeight, currentAccent);
+                        DrawContext.fill(minX, drawY + rectHeight - 1, maxX + 1, drawY + rectHeight, currentAccent);
                     }
                 } else {
-                    guiGraphics.fill(drawX, drawY + rectHeight - 1, drawX + rectWidth, drawY + rectHeight, currentAccent);
+                    DrawContext.fill(drawX, drawY + rectHeight - 1, drawX + rectWidth, drawY + rectHeight, currentAccent);
                 }
             } else {
-                guiGraphics.fill(drawX + 2, bgTopY, drawX + rectWidth - 1, bgBottomY, currentBg);
+                DrawContext.fill(drawX + 2, bgTopY, drawX + rectWidth - 1, bgBottomY, currentBg);
                 
-                if (i == 0) guiGraphics.fill(drawX, drawY, drawX + rectWidth, drawY + 1, currentAccent);
+                if (i == 0) DrawContext.fill(drawX, drawY, drawX + rectWidth, drawY + 1, currentAccent);
                 
-                guiGraphics.fill(drawX, bgTopY, drawX + 2, bgBottomY, currentAccent);
+                DrawContext.fill(drawX, bgTopY, drawX + 2, bgBottomY, currentAccent);
                 
-                guiGraphics.fill(drawX + rectWidth - 1, bgTopY, drawX + rectWidth, drawY + rectHeight - 1, currentAccent);
+                DrawContext.fill(drawX + rectWidth - 1, bgTopY, drawX + rectWidth, drawY + rectHeight - 1, currentAccent);
                 
                 if (i < activeMods.size() - 1) {
                     Module nextM = activeMods.get(i + 1);
@@ -138,14 +138,14 @@ public class ArrayListHud {
                     if (thisRight != nextRight) {
                         int minX = Math.min(thisRight, nextRight);
                         int maxX = Math.max(thisRight, nextRight);
-                        guiGraphics.fill(minX - 1, drawY + rectHeight - 1, maxX, drawY + rectHeight, currentAccent);
+                        DrawContext.fill(minX - 1, drawY + rectHeight - 1, maxX, drawY + rectHeight, currentAccent);
                     }
                 } else {
-                    guiGraphics.fill(drawX, drawY + rectHeight - 1, drawX + rectWidth, drawY + rectHeight, currentAccent);
+                    DrawContext.fill(drawX, drawY + rectHeight - 1, drawX + rectWidth, drawY + rectHeight, currentAccent);
                 }
             }
             
-            FontUtils.drawString(guiGraphics, name, drawX + 4, drawY + 3, textColor, true);
+            FontUtils.drawString(DrawContext, name, drawX + 4, drawY + 3, textColor, true);
 
             currentY += 14 * anim;
         }

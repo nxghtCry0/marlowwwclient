@@ -1,6 +1,6 @@
 package com.eclipseware.imnotcheatingyouare.client.clickgui.components;
 
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.DrawContext;
 
 public class Button extends Item {
     private boolean state;
@@ -11,7 +11,7 @@ public class Button extends Item {
     }
 
     @Override
-    public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
+    public void drawScreen(DrawContext context, int mouseX, int mouseY, float partialTicks) {
     }
 
     @Override

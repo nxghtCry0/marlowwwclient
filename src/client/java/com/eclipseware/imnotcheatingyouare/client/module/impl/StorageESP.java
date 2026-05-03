@@ -6,7 +6,7 @@ import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.*;
 import net.minecraft.world.level.block.state.BlockState;
@@ -23,10 +23,9 @@ public class StorageESP extends Module {
     private int lastUpdateTick = -999;
     public StorageESP() {
         super("StorageESP", Category.Render, "Highlights storage blocks like chests, barrels, and shulker boxes.");
-        // HudRenderCallback.EVENT.register((guiGraphics, tickCounter) -> onRenderHUD(guiGraphics, tickCounter));
     }
 
-    private void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
+    private void onRenderHUD(DrawContext DrawContext, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || mc.level == null) {
             cache.clear();
             return;
@@ -92,8 +91,8 @@ public class StorageESP extends Module {
         for (CachedBlock cb : cache) {
             Vector3d screenPos = RenderUtils.project2D(cb.pos.getX() + 0.5, cb.pos.getY() + 0.5, cb.pos.getZ() + 0.5, partialTick);
             if (screenPos != null && screenPos.z > 0 && screenPos.z < 1.0) {
-                if (showTracers) RenderUtils.drawLine2D(guiGraphics, screenCenterX, screenCenterY, screenPos.x, screenPos.y, cb.color);
-                if (doFill || doOutline) drawStorageBox(guiGraphics, cb.pos, cb.color, doFill, doOutline, partialTick);
+                if (showTracers) RenderUtils.drawLine2D(DrawContext, screenCenterX, screenCenterY, screenPos.x, screenPos.y, cb.color);
+                if (doFill || doOutline) drawStorageBox(DrawContext, cb.pos, cb.color, doFill, doOutline, partialTick);
             }
         }
     }
@@ -129,7 +128,7 @@ public class StorageESP extends Module {
         return null;
     }
 
-    private void drawStorageBox(GuiGraphicsExtractor guiGraphics, BlockPos pos, Color color, boolean fill, boolean outline, float partialTick) {
+    private void drawStorageBox(DrawContext DrawContext, BlockPos pos, Color color, boolean fill, boolean outline, float partialTick) {
         Vector3d[] corners = new Vector3d[8];
         corners[0] = RenderUtils.project2D(pos.getX(), pos.getY(), pos.getZ(), partialTick);
         corners[1] = RenderUtils.project2D(pos.getX() + 1, pos.getY(), pos.getZ(), partialTick);
@@ -153,11 +152,11 @@ public class StorageESP extends Module {
         if (behind) return;
 
         if (fill) {
-            guiGraphics.fill((int)minX, (int)minY, (int)maxX, (int)maxY,
+            DrawContext.fill((int)minX, (int)minY, (int)maxX, (int)maxY,
                 new Color(color.getRed(), color.getGreen(), color.getBlue(), 35).getRGB());
         }
         if (outline) {
-            RenderUtils.drawCornerMarks(guiGraphics, minX, minY, maxX, maxY, color);
+            RenderUtils.drawCornerMarks(DrawContext, minX, minY, maxX, maxY, color);
         }
     }
 

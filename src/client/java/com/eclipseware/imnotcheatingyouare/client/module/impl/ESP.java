@@ -7,7 +7,7 @@ import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.FontUtils;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -21,10 +21,9 @@ public class ESP extends Module {
 
     public ESP() {
         super("ESP", Category.Render);
-        // HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> onHudRender(guiGraphics, tickDelta));
     }
 
-    private void onHudRender(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
+    private void onHudRender(DrawContext DrawContext, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
 
         Module bypassMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Bypass");
@@ -112,7 +111,7 @@ public class ESP extends Module {
             int t = outlineThickness;
 
             if (doFill) {
-                guiGraphics.fill(ix + t, iy + t, ix2 - t, iy2 - t, fc);
+                DrawContext.fill(ix + t, iy + t, ix2 - t, iy2 - t, fc);
             }
 
             if (useCorner && !useFull) {
@@ -123,36 +122,36 @@ public class ESP extends Module {
                 ch = Math.max(ch, 3);
 
                 if (doBorder) {
-                    drawHLine(guiGraphics, ix - 1, ix + cw + 1, iy - 1, t + 2, black);
-                    drawVLine(guiGraphics, ix - 1, iy - 1, iy + ch + 1, t + 2, black);
-                    drawHLine(guiGraphics, ix2 - cw - 1, ix2 + 1, iy - 1, t + 2, black);
-                    drawVLine(guiGraphics, ix2 - t - 1, iy - 1, iy + ch + 1, t + 2, black);
-                    drawHLine(guiGraphics, ix - 1, ix + cw + 1, iy2 - t - 1, t + 2, black);
-                    drawVLine(guiGraphics, ix - 1, iy2 - ch - 1, iy2 + 1, t + 2, black);
-                    drawHLine(guiGraphics, ix2 - cw - 1, ix2 + 1, iy2 - t - 1, t + 2, black);
-                    drawVLine(guiGraphics, ix2 - t - 1, iy2 - ch - 1, iy2 + 1, t + 2, black);
+                    drawHLine(DrawContext, ix - 1, ix + cw + 1, iy - 1, t + 2, black);
+                    drawVLine(DrawContext, ix - 1, iy - 1, iy + ch + 1, t + 2, black);
+                    drawHLine(DrawContext, ix2 - cw - 1, ix2 + 1, iy - 1, t + 2, black);
+                    drawVLine(DrawContext, ix2 - t - 1, iy - 1, iy + ch + 1, t + 2, black);
+                    drawHLine(DrawContext, ix - 1, ix + cw + 1, iy2 - t - 1, t + 2, black);
+                    drawVLine(DrawContext, ix - 1, iy2 - ch - 1, iy2 + 1, t + 2, black);
+                    drawHLine(DrawContext, ix2 - cw - 1, ix2 + 1, iy2 - t - 1, t + 2, black);
+                    drawVLine(DrawContext, ix2 - t - 1, iy2 - ch - 1, iy2 + 1, t + 2, black);
                 }
 
-                drawHLine(guiGraphics, ix, ix + cw, iy, t, oc);
-                drawVLine(guiGraphics, ix, iy, iy + ch, t, oc);
-                drawHLine(guiGraphics, ix2 - cw, ix2, iy, t, oc);
-                drawVLine(guiGraphics, ix2 - t, iy, iy + ch, t, oc);
-                drawHLine(guiGraphics, ix, ix + cw, iy2 - t, t, oc);
-                drawVLine(guiGraphics, ix, iy2 - ch, iy2, t, oc);
-                drawHLine(guiGraphics, ix2 - cw, ix2, iy2 - t, t, oc);
-                drawVLine(guiGraphics, ix2 - t, iy2 - ch, iy2, t, oc);
+                drawHLine(DrawContext, ix, ix + cw, iy, t, oc);
+                drawVLine(DrawContext, ix, iy, iy + ch, t, oc);
+                drawHLine(DrawContext, ix2 - cw, ix2, iy, t, oc);
+                drawVLine(DrawContext, ix2 - t, iy, iy + ch, t, oc);
+                drawHLine(DrawContext, ix, ix + cw, iy2 - t, t, oc);
+                drawVLine(DrawContext, ix, iy2 - ch, iy2, t, oc);
+                drawHLine(DrawContext, ix2 - cw, ix2, iy2 - t, t, oc);
+                drawVLine(DrawContext, ix2 - t, iy2 - ch, iy2, t, oc);
             } else {
                 if (doBorder) {
-                    drawHLine(guiGraphics, ix - 1, ix2 + 1, iy - 1, t + 2, black);
-                    drawHLine(guiGraphics, ix - 1, ix2 + 1, iy2 - t - 1, t + 2, black);
-                    drawVLine(guiGraphics, ix - 1, iy - 1, iy2 + 1, t + 2, black);
-                    drawVLine(guiGraphics, ix2 - t - 1, iy - 1, iy2 + 1, t + 2, black);
+                    drawHLine(DrawContext, ix - 1, ix2 + 1, iy - 1, t + 2, black);
+                    drawHLine(DrawContext, ix - 1, ix2 + 1, iy2 - t - 1, t + 2, black);
+                    drawVLine(DrawContext, ix - 1, iy - 1, iy2 + 1, t + 2, black);
+                    drawVLine(DrawContext, ix2 - t - 1, iy - 1, iy2 + 1, t + 2, black);
                 }
 
-                drawHLine(guiGraphics, ix, ix2, iy, t, oc);
-                drawHLine(guiGraphics, ix, ix2, iy2 - t, t, oc);
-                drawVLine(guiGraphics, ix, iy, iy2, t, oc);
-                drawVLine(guiGraphics, ix2 - t, iy, iy2, t, oc);
+                drawHLine(DrawContext, ix, ix2, iy, t, oc);
+                drawHLine(DrawContext, ix, ix2, iy2 - t, t, oc);
+                drawVLine(DrawContext, ix, iy, iy2, t, oc);
+                drawVLine(DrawContext, ix2 - t, iy, iy2, t, oc);
             }
 
             if (showHealth) {
@@ -163,8 +162,8 @@ public class ESP extends Module {
                 int barX = ix - 5 - (doBorder ? 2 : 0);
                 int barW = 3;
 
-                guiGraphics.fill(barX, iy, barX + barW, iy2, new Color(0, 0, 0, (int)(alpha * 140)).getRGB());
-                guiGraphics.fill(barX, iy2 - barH, barX + barW, iy2,
+                DrawContext.fill(barX, iy, barX + barW, iy2, new Color(0, 0, 0, (int)(alpha * 140)).getRGB());
+                DrawContext.fill(barX, iy2 - barH, barX + barW, iy2,
                     new Color(hpColor.getRed(), hpColor.getGreen(), hpColor.getBlue(), oa).getRGB());
             }
 
@@ -175,20 +174,20 @@ public class ESP extends Module {
                 int textWidth = FontUtils.width(name + distStr);
                 int textX = (int)(minX + rectW / 2 - textWidth / 2);
                 int textY = iy - 12 - (doBorder ? 2 : 0);
-                guiGraphics.fill(textX - 2, textY - 1, textX + textWidth + 2, textY + 10,
+                DrawContext.fill(textX - 2, textY - 1, textX + textWidth + 2, textY + 10,
                     new Color(0, 0, 0, (int)(alpha * 150)).getRGB());
-                FontUtils.drawString(guiGraphics, name, textX, textY, outlineColor.getRGB(), false);
-                FontUtils.drawString(guiGraphics, distStr, textX + FontUtils.width(name), textY,
+                FontUtils.drawString(DrawContext, name, textX, textY, outlineColor.getRGB(), false);
+                FontUtils.drawString(DrawContext, distStr, textX + FontUtils.width(name), textY,
                     new Color(200, 200, 200, oa).getRGB(), false);
             }
         }
     }
 
-    private void drawHLine(GuiGraphicsExtractor g, int x1, int x2, int y, int thickness, int color) {
+    private void drawHLine(DrawContext g, int x1, int x2, int y, int thickness, int color) {
         g.fill(x1, y, x2, y + thickness, color);
     }
 
-    private void drawVLine(GuiGraphicsExtractor g, int x, int y1, int y2, int thickness, int color) {
+    private void drawVLine(DrawContext g, int x, int y1, int y2, int thickness, int color) {
         g.fill(x, y1, x + thickness, y2, color);
     }
 

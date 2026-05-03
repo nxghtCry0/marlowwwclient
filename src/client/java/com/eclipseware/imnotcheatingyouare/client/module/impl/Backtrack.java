@@ -8,7 +8,7 @@ import com.eclipseware.imnotcheatingyouare.client.utils.FriendManager;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
 import com.eclipseware.imnotcheatingyouare.client.utils.cheat.TimerUtil;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.network.PacketListener;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.world.entity.Entity;
@@ -54,9 +54,8 @@ public class Backtrack extends Module {
     private int currentChance = 0;
 
     public Backtrack() {
-        super("Backtrack", Category.Combat, "Delays entity position updates to extend hitbox window.");
+        super("Backtrack", Category.Blatant, "Delays entity position updates to extend hitbox window.");
         INSTANCE = this;
-        // // HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> renderBacktrack(guiGraphics, tickDelta));
     }
 
     public static void queuePacket(Packet<?> packet) {
@@ -274,7 +273,7 @@ public class Backtrack extends Module {
         return target;
     }
 
-    private void renderBacktrack(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
+    private void renderBacktrack(DrawContext DrawContext, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || target == null) return;
 
         Setting vizSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Visualizer");
@@ -316,22 +315,22 @@ public class Backtrack extends Module {
         int ix = (int) minX, iy = (int) minY, ix2 = (int) maxX, iy2 = (int) maxY;
 
         Color themeColor = RenderUtils.getThemeAccentColor();
-        int ghostAlpha = 100;
-        int ghostFill = new Color(themeColor.getRed(), themeColor.getGreen(), themeColor.getBlue(), 25).getRGB();
+        int ghostAlpha = 16;
+        int ghostFill = new Color(themeColor.getRed(), themeColor.getGreen(), themeColor.getBlue(), 10).getRGB();
         int ghostOutline = new Color(themeColor.getRed(), themeColor.getGreen(), themeColor.getBlue(), ghostAlpha).getRGB();
         int black = new Color(0, 0, 0, ghostAlpha).getRGB();
 
-        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix + 1, iy + 1, ix2 - 1, iy2 - 1, ghostFill);
+        ((net.minecraft.client.gui.DrawContext) DrawContext).fill(ix + 1, iy + 1, ix2 - 1, iy2 - 1, ghostFill);
 
-        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix - 1, iy - 1, ix2 + 1, iy, black);
-        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix - 1, iy2, ix2 + 1, iy2 + 1, black);
-        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix - 1, iy - 1, ix, iy2 + 1, black);
-        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix2, iy - 1, ix2 + 1, iy2 + 1, black);
+        ((net.minecraft.client.gui.DrawContext) DrawContext).fill(ix - 1, iy - 1, ix2 + 1, iy, black);
+        ((net.minecraft.client.gui.DrawContext) DrawContext).fill(ix - 1, iy2, ix2 + 1, iy2 + 1, black);
+        ((net.minecraft.client.gui.DrawContext) DrawContext).fill(ix - 1, iy - 1, ix, iy2 + 1, black);
+        ((net.minecraft.client.gui.DrawContext) DrawContext).fill(ix2, iy - 1, ix2 + 1, iy2 + 1, black);
 
-        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix, iy, ix2, iy + 1, ghostOutline);
-        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix, iy2 - 1, ix2, iy2, ghostOutline);
-        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix, iy, ix + 1, iy2, ghostOutline);
-        ((net.minecraft.client.gui.GuiGraphicsExtractor) guiGraphics).fill(ix2 - 1, iy, ix2, iy2, ghostOutline);
+        ((net.minecraft.client.gui.DrawContext) DrawContext).fill(ix, iy, ix2, iy + 1, ghostOutline);
+        ((net.minecraft.client.gui.DrawContext) DrawContext).fill(ix, iy2 - 1, ix2, iy2, ghostOutline);
+        ((net.minecraft.client.gui.DrawContext) DrawContext).fill(ix, iy, ix + 1, iy2, ghostOutline);
+        ((net.minecraft.client.gui.DrawContext) DrawContext).fill(ix2 - 1, iy, ix2, iy2, ghostOutline);
     }
 
     private float getTickDelta(Object tickDeltaObj) {

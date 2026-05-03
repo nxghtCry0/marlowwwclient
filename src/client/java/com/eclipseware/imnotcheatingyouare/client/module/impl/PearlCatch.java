@@ -37,7 +37,7 @@ public class PearlCatch extends Module {
         
         com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(pearlSlot);
         active = true;
-        ticksElapsed = 0; // Tick 0: We just selected pearl natively
+        ticksElapsed = 0; 
     }
 
     @Override
@@ -53,7 +53,6 @@ public class PearlCatch extends Module {
 
         ticksElapsed++;
         
-        // Tick 1: Throw pearl
         if (ticksElapsed == 1) {
             mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
             mc.player.swing(InteractionHand.MAIN_HAND);
@@ -62,12 +61,10 @@ public class PearlCatch extends Module {
         Setting delaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Delay (Ticks)");
         int delay = delaySetting != null ? (int) delaySetting.getValDouble() : 5;
 
-        // Tick Delay+1: Switch to Wind Charge
         if (ticksElapsed == delay + 1) {
             com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(windChargeSlot);
         }
         
-        // Tick Delay+2: Fire wind charge and restore
         if (ticksElapsed >= delay + 2) {
             mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
             mc.player.swing(InteractionHand.MAIN_HAND);

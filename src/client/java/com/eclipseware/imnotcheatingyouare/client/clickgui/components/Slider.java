@@ -4,7 +4,7 @@ import com.eclipseware.imnotcheatingyouare.client.clickgui.Clickgui;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.DrawContext;
 import org.lwjgl.glfw.GLFW;
 
 import java.awt.Color;
@@ -20,7 +20,7 @@ public class Slider extends Button {
     }
 
     @Override
-    public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
+    public void drawScreen(DrawContext context, int mouseX, int mouseY, float partialTicks) {
         if (this.isDragging) {
             this.dragSetting(mouseX, mouseY);
         }

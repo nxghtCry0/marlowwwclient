@@ -3,7 +3,7 @@ package com.eclipseware.imnotcheatingyouare.client.clickgui.components;
 import com.eclipseware.imnotcheatingyouare.client.clickgui.Clickgui;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.DrawContext;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.HashMap;
@@ -46,7 +46,7 @@ public class BindButton extends Button {
     }
 
     @Override
-    public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
+    public void drawScreen(DrawContext context, int mouseX, int mouseY, float partialTicks) {
         int dark = 0x22000000;
         int hoverDark = 0x44222222;
         int fill = this.isHovering(mouseX, mouseY) ? hoverDark : dark;

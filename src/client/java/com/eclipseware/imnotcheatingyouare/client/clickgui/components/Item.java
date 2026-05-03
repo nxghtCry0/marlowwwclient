@@ -1,11 +1,11 @@
 package com.eclipseware.imnotcheatingyouare.client.clickgui.components;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.DrawContext;
 
 public class Item {
     protected final Minecraft mc = Minecraft.getInstance();
-    public static GuiGraphicsExtractor context;
+    public static DrawContext context;
     private final String name;
     protected float x;
     protected float y;
@@ -26,7 +26,7 @@ public class Item {
         this.y = y;
     }
 
-    public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
+    public void drawScreen(DrawContext context, int mouseX, int mouseY, float partialTicks) {
     }
 
     public void mouseClicked(int mouseX, int mouseY, int mouseButton) {

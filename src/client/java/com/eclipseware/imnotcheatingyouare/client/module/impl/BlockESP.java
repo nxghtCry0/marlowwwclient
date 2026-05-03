@@ -7,7 +7,7 @@ import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.setting.SettingsManager;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
@@ -24,7 +24,6 @@ public class BlockESP extends Module {
 
     public BlockESP() {
         super("BlockESP", Category.Render, "Highlights target blocks.");
-        // HudRenderCallback.EVENT.register((guiGraphics, tickCounter) -> onRenderHUD(guiGraphics, tickCounter));
 
         addDefault("obsidian");
         addDefault("bedrock");
@@ -89,7 +88,7 @@ public class BlockESP extends Module {
         cachedBlocks.addAll(newCache);
     }
 
-    private void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickCounterObj) {
+    private void onRenderHUD(DrawContext DrawContext, Object tickCounterObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
         
         float partialTick = getTickDelta(tickCounterObj);
@@ -114,19 +113,19 @@ public class BlockESP extends Module {
             
             if (screenPos != null && screenPos.z > 0 && screenPos.z < 1.0) {
                 if (showTracers) {
-                    RenderUtils.drawLine2D(guiGraphics,
+                    RenderUtils.drawLine2D(DrawContext,
                         mc.getWindow().getGuiScaledWidth() / 2.0,
                         mc.getWindow().getGuiScaledHeight() / 2.0,
                         screenPos.x, screenPos.y, color);
                 }
                 if (doFill || doOutline) {
-                    drawBlockBox(guiGraphics, pos, color, doFill, doOutline, partialTick);
+                    drawBlockBox(DrawContext, pos, color, doFill, doOutline, partialTick);
                 }
             }
         }
     }
 
-    private void drawBlockBox(GuiGraphicsExtractor guiGraphics, BlockPos pos, Color color, boolean fill, boolean outline, float partialTick) {
+    private void drawBlockBox(DrawContext DrawContext, BlockPos pos, Color color, boolean fill, boolean outline, float partialTick) {
         Vector3d[] corners = new Vector3d[8];
         corners[0] = RenderUtils.project2D(pos.getX(), pos.getY(), pos.getZ(), partialTick);
         corners[1] = RenderUtils.project2D(pos.getX() + 1, pos.getY(), pos.getZ(), partialTick);
@@ -150,14 +149,14 @@ public class BlockESP extends Module {
         if (behind) return;
 
         if (fill) {
-            guiGraphics.fill((int)minX, (int)minY, (int)maxX, (int)maxY, new Color(color.getRed(), color.getGreen(), color.getBlue(), 40).getRGB());
+            DrawContext.fill((int)minX, (int)minY, (int)maxX, (int)maxY, new Color(color.getRed(), color.getGreen(), color.getBlue(), 40).getRGB());
         }
         if (outline) {
             int c = color.getRGB();
-            guiGraphics.fill((int)minX, (int)minY, (int)maxX, (int)minY + 1, c);
-            guiGraphics.fill((int)minX, (int)maxY, (int)maxX, (int)maxY + 1, c);
-            guiGraphics.fill((int)minX, (int)minY, (int)minX + 1, (int)maxY, c);
-            guiGraphics.fill((int)maxX, (int)minY, (int)maxX + 1, (int)maxY + 1, c);
+            DrawContext.fill((int)minX, (int)minY, (int)maxX, (int)minY + 1, c);
+            DrawContext.fill((int)minX, (int)maxY, (int)maxX, (int)maxY + 1, c);
+            DrawContext.fill((int)minX, (int)minY, (int)minX + 1, (int)maxY, c);
+            DrawContext.fill((int)maxX, (int)minY, (int)maxX + 1, (int)maxY + 1, c);
         }
     }
 

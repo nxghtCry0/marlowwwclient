@@ -3,14 +3,14 @@ package com.eclipseware.imnotcheatingyouare.client.clickgui.components;
 import com.eclipseware.imnotcheatingyouare.client.clickgui.Clickgui;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.DrawContext;
 
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Widget {
-    protected GuiGraphicsExtractor context;
+    protected DrawContext context;
     protected final Minecraft mc = Minecraft.getInstance();
     private final List<Item> items = new ArrayList<>();
     
@@ -41,7 +41,7 @@ public class Widget {
         this.y = this.y2 + mouseY;
     }
 
-    public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
+    public void drawScreen(DrawContext context, int mouseX, int mouseY, float partialTicks) {
         this.context = context;
         this.drag(mouseX, mouseY);
         

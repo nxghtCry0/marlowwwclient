@@ -6,7 +6,7 @@ import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
@@ -18,10 +18,9 @@ public class Tracers extends Module {
 
     public Tracers() {
         super("Tracers", Category.Render);
-        // HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> onHudRender(guiGraphics, tickDelta));
     }
 
-    private void onHudRender(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
+    private void onHudRender(DrawContext DrawContext, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
 
         float partialTick = getTickDelta(tickDeltaObj);
@@ -70,7 +69,7 @@ public class Tracers extends Module {
                 new Color(themeColor.getRed(), themeColor.getGreen(), themeColor.getBlue(), (int)(alpha * 180)) :
                 new Color(255, 85, 85, (int)(alpha * 180));
 
-            RenderUtils.drawLine2D(guiGraphics, startX, startY, endProj.x, endProj.y, color);
+            RenderUtils.drawLine2D(DrawContext, startX, startY, endProj.x, endProj.y, color);
         }
     }
 

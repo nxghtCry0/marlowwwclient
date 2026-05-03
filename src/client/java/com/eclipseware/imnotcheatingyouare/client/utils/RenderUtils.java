@@ -5,7 +5,7 @@ import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3d;
@@ -57,7 +57,7 @@ public class RenderUtils {
         return camera.position();
     }
 
-    public static void drawLine2D(GuiGraphicsExtractor graphics, double x1, double y1, double x2, double y2, Color color) {
+    public static void drawLine2D(DrawContext graphics, double x1, double y1, double x2, double y2, Color color) {
         double length = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
         if (length < 0.01) return;
         float angle = (float) Math.atan2(y2 - y1, x2 - x1);
@@ -69,7 +69,7 @@ public class RenderUtils {
         graphics.pose().popMatrix();
     }
 
-    public static void drawCornerMarks(GuiGraphicsExtractor graphics, double minX, double minY, double maxX, double maxY, Color color) {
+    public static void drawCornerMarks(DrawContext graphics, double minX, double minY, double maxX, double maxY, Color color) {
         int c = color.getRGB();
         double boxW = maxX - minX;
         double boxH = maxY - minY;

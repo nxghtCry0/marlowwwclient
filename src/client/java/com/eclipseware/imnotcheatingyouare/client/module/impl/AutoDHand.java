@@ -12,7 +12,7 @@ public class AutoDHand extends Module {
     private boolean swapped = false;
 
     public AutoDHand() {
-        super("AutoDHand", Category.Combat, "Automatically swaps to a totem if above a crystal.");
+        super("AutoDHand", Category.Crystal, "Automatically swaps to a totem if above a crystal.");
     }
 
     @Override

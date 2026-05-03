@@ -33,7 +33,7 @@ public class PearlBind extends Module {
         if (pearlSlot != -1) {
             originalSlot = com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.getSelectedSlot();
             com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(pearlSlot);
-            phase = 1; // Wait 1 tick for packet to send
+            phase = 1; 
         } else {
             setToggled(false);
         }
@@ -44,12 +44,10 @@ public class PearlBind extends Module {
         if (mc.player == null) return;
         
         if (phase == 1) {
-            // Tick 1: Pearl is selected, send use packet natively
             mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
             mc.player.swing(InteractionHand.MAIN_HAND);
-            phase = 2; // Wait another tick
+            phase = 2; 
         } else if (phase == 2) {
-            // Tick 2: Swap back
             com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(originalSlot);
             setToggled(false);
             phase = 0;

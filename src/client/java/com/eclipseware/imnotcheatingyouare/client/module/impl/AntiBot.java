@@ -8,7 +8,7 @@ public class AntiBot extends Module {
     public static AntiBot INSTANCE;
 
     public AntiBot() {
-        super("AntiBot", Category.Combat, "Prevents combat modules from targeting server bots/NPCs.");
+        super("AntiBot", Category.Misc, "Prevents combat modules from targeting server bots/NPCs.");
         INSTANCE = this;
     }
 

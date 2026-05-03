@@ -76,7 +76,7 @@ public class AutoWeb extends Module {
         if (yawDiff > 5f || pitchDiff > 5f) return;
 
         ModuleUtils.switchToSlot(webSlot);
-        ModuleUtils.placeBlockPacket(currentTarget.below(), Direction.UP);
+        ModuleUtils.placeBlockPacket(currentTarget, Direction.UP);
         mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
         lastActionTime = System.currentTimeMillis();
         currentTarget = null;
@@ -104,13 +104,13 @@ public class AutoWeb extends Module {
 
         BlockPos feetBlock = target.blockPosition();
         BlockState state = mc.level.getBlockState(feetBlock);
-        if (!state.isAir()) return null;
+        if (!state.canBeReplaced()) return null;
 
         BlockPos support = feetBlock.below();
         if (mc.level.getBlockState(support).isAir()) return null;
 
         Vec3 eyes = mc.player.getEyePosition();
-        if (!RotationManager.hasLineOfSight(eyes, support.getCenter())) return null;
+        if (!RotationManager.hasLineOfSight(eyes, feetBlock.getCenter())) return null;
 
         return feetBlock;
     }

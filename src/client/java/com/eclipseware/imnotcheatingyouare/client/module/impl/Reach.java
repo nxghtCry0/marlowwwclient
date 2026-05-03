@@ -15,7 +15,7 @@ public class Reach extends Module {
     private static final double BASE_BLOCK  = 4.5;
 
     public Reach() {
-        super("Reach", Category.Combat, "Slightly increases your interaction range.");
+        super("Reach", Category.Blatant, "Slightly increases your interaction range.");
     }
 
     @Override

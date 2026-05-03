@@ -40,7 +40,7 @@ public class ModuleUtils {
         if (selectedField != null) {
             try { return selectedField.getInt(mc.player.getInventory()); } catch (Exception ignored) {}
         }
-        return 0; // Fallback
+        return 0; 
     }
 
     public static void switchToSlot(int slot) {

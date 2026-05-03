@@ -6,7 +6,7 @@ import com.eclipseware.imnotcheatingyouare.client.clickgui.components.Widget;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -52,10 +52,23 @@ public class Clickgui extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(DrawContext context, int mouseX, int mouseY, float delta) {
         com.eclipseware.imnotcheatingyouare.client.clickgui.components.Item.context = context;
         context.fill(0, 0, context.guiWidth(), context.guiHeight(), 0x55000000);
         this.widgets.forEach(components -> components.drawScreen(context, mouseX, mouseY, delta));
+        
+        for (Widget widget : this.widgets) {
+            for (com.eclipseware.imnotcheatingyouare.client.clickgui.components.Item item : widget.getItems()) {
+                if (item instanceof ModuleButton mb) {
+                    if (mb.isHovering(mouseX, mouseY) && mb.getModule().getDescription() != null && !mb.getModule().getDescription().isEmpty()) {
+                        String desc = mb.getModule().getDescription();
+                        int textW = com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.width(desc);
+                        context.fill(mouseX + 5, mouseY - 15, mouseX + 9 + textW, mouseY - 1, 0xAA000000);
+                        com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.drawString(context, desc, mouseX + 7, mouseY - 12, -1, false);
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -72,10 +85,34 @@ public class Clickgui extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (verticalAmount < 0) {
-            this.widgets.forEach(component -> component.setY(component.getY() - 10));
-        } else if (verticalAmount > 0) {
-            this.widgets.forEach(component -> component.setY(component.getY() + 10));
+        long windowHandle = 0;
+        try {
+            for (java.lang.reflect.Field f : Minecraft.getInstance().getWindow().getClass().getDeclaredFields()) {
+                if (f.getType() == long.class) {
+                    f.setAccessible(true);
+                    windowHandle = f.getLong(Minecraft.getInstance().getWindow());
+                    break;
+                }
+            }
+        } catch (Exception e) {}
+        
+        boolean shiftDown = false;
+        if (windowHandle != 0) {
+            shiftDown = org.lwjgl.glfw.GLFW.glfwGetKey(windowHandle, org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT) == org.lwjgl.glfw.GLFW.GLFW_PRESS || org.lwjgl.glfw.GLFW.glfwGetKey(windowHandle, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+        }
+
+        if (shiftDown) {
+            if (verticalAmount < 0) {
+                this.widgets.forEach(component -> component.setX(component.getX() - 30));
+            } else if (verticalAmount > 0) {
+                this.widgets.forEach(component -> component.setX(component.getX() + 30));
+            }
+        } else {
+            if (verticalAmount < 0) {
+                this.widgets.forEach(component -> component.setY(component.getY() - 15));
+            } else if (verticalAmount > 0) {
+                this.widgets.forEach(component -> component.setY(component.getY() + 15));
+            }
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
@@ -118,7 +155,7 @@ public class Clickgui extends Screen {
     }
     
     @Override
-    public void extractBackground(net.minecraft.client.gui.GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    public void extractBackground(net.minecraft.client.gui.DrawContext context, int mouseX, int mouseY, float delta) {
     }
 
     public final ArrayList<Widget> getComponents() {

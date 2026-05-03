@@ -10,6 +10,7 @@ import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Items;
 
+import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -17,6 +18,7 @@ public class AutoTotem extends Module {
     private static final int MIN_DURATION_MS = 5;
     private static final int MAX_DURATION_MS = 175;
 
+    private final Setting modeSetting;
     private final Setting durationMs;
     private volatile boolean sequenceRunning = false;
     private volatile long lastPopMs = 0L;
@@ -24,6 +26,13 @@ public class AutoTotem extends Module {
     public AutoTotem() {
         super("AutoTotem", Category.Crystal, "Re-equips a totem right after a pop with a timed inventory macro.");
         setSubCategory("Crystal PvP");
+
+        ArrayList<String> modes = new ArrayList<>();
+        modes.add("Blatant");
+        modes.add("Hover");
+        modes.add("Inventory");
+        modeSetting = new Setting("Mode", this, "Blatant", modes);
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(modeSetting);
 
         durationMs = new Setting("Duration (ms)", this, 45.0, MIN_DURATION_MS, MAX_DURATION_MS, true);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(durationMs);
@@ -35,14 +44,109 @@ public class AutoTotem extends Module {
         lastPopMs = 0L;
     }
 
-    public void onLocalTotemPop() {
-        if (!isToggled() || mc.player == null || mc.gameMode == null) return;
+    @Override
+    public void onTick() {
+        String mode = modeSetting.getValString();
+        if ("Hover".equalsIgnoreCase(mode)) {
+            tickHoverMode();
+        } else if ("Inventory".equalsIgnoreCase(mode)) {
+            tickInventoryMode();
+        }
+    }
 
-        long now = System.currentTimeMillis();
-        if (sequenceRunning || now - lastPopMs < 50L) return;
+    private void tickInventoryMode() {
+        if (mc.player == null || mc.gameMode == null)
+            return;
+        if (!(mc.screen instanceof InventoryScreen))
+            return;
+
+        // Already have a totem in offhand
+        if (mc.player.getOffhandItem().is(Items.TOTEM_OF_UNDYING))
+            return;
 
         int totemSlot = findTotemSlot();
-        if (totemSlot == -1) return;
+        if (totemSlot == -1)
+            return;
+
+        mc.gameMode.handleContainerInput(
+                mc.player.inventoryMenu.containerId,
+                totemSlot,
+                40,
+                ContainerInput.SWAP,
+                mc.player);
+    }
+
+    private void tickHoverMode() {
+        if (mc.player == null || mc.gameMode == null)
+            return;
+
+        // Hover mode: only works when inventory screen is open
+        if (!(mc.screen instanceof InventoryScreen invScreen))
+            return;
+
+        // Already have a totem in offhand, no need to swap
+        if (mc.player.getOffhandItem().is(Items.TOTEM_OF_UNDYING))
+            return;
+
+        // Get the slot the player is currently hovering over
+        Slot hoveredSlot = getHoveredSlot(invScreen);
+        if (hoveredSlot == null)
+            return;
+
+        // Check if the hovered slot contains a totem
+        if (!hoveredSlot.hasItem() || !hoveredSlot.getItem().is(Items.TOTEM_OF_UNDYING))
+            return;
+
+        // Perform the swap to offhand (slot 40 = offhand)
+        int slotIndex = hoveredSlot.index;
+        // Convert to container slot id
+        int containerSlot = hoveredSlot.index;
+        // We need the actual slot number in the container
+        for (int i = 0; i < invScreen.getMenu().slots.size(); i++) {
+            if (invScreen.getMenu().getSlot(i) == hoveredSlot) {
+                containerSlot = i;
+                break;
+            }
+        }
+
+        mc.gameMode.handleContainerInput(
+                mc.player.inventoryMenu.containerId,
+                containerSlot,
+                40,
+                ContainerInput.SWAP,
+                mc.player);
+    }
+
+    private Slot getHoveredSlot(InventoryScreen screen) {
+        try {
+            // AbstractContainerScreen has a "hoveredSlot" field
+            for (java.lang.reflect.Field field : AbstractContainerScreen.class.getDeclaredFields()) {
+                if (field.getType() == Slot.class) {
+                    field.setAccessible(true);
+                    return (Slot) field.get(screen);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    public void onLocalTotemPop() {
+        if (!isToggled() || mc.player == null || mc.gameMode == null)
+            return;
+
+        // Only run pop logic in Pop mode
+        String mode = modeSetting.getValString();
+        if (!"Blatant".equalsIgnoreCase(mode))
+            return;
+
+        long now = System.currentTimeMillis();
+        if (sequenceRunning || now - lastPopMs < 50L)
+            return;
+
+        int totemSlot = findTotemSlot();
+        if (totemSlot == -1)
+            return;
 
         lastPopMs = now;
         int requestedDuration = clampDuration((int) Math.round(durationMs.getValDouble()));
@@ -59,7 +163,8 @@ public class AutoTotem extends Module {
         long swapAtNanos = totalNanos / 2L;
 
         try {
-            if (findTotemSlot() == -1) return;
+            if (findTotemSlot() == -1)
+                return;
 
             executeOnClientThread(() -> {
                 if (mc.player != null && !(mc.screen instanceof InventoryScreen)) {
@@ -84,12 +189,16 @@ public class AutoTotem extends Module {
     }
 
     private void performMouseSwapToOffhand(int totemSlot) {
-        if (mc.player == null || mc.gameMode == null) return;
-        if (!(mc.screen instanceof InventoryScreen invScreen)) return;
-        if (totemSlot < 0 || totemSlot >= invScreen.getMenu().slots.size()) return;
+        if (mc.player == null || mc.gameMode == null)
+            return;
+        if (!(mc.screen instanceof InventoryScreen invScreen))
+            return;
+        if (totemSlot < 0 || totemSlot >= invScreen.getMenu().slots.size())
+            return;
 
         moveCursorToSlot(invScreen, invScreen.getMenu().getSlot(totemSlot));
-        mc.gameMode.handleContainerInput(mc.player.inventoryMenu.containerId, totemSlot, 40, net.minecraft.world.inventory.ContainerInput.SWAP, mc.player);
+        mc.gameMode.handleContainerInput(mc.player.inventoryMenu.containerId, totemSlot, 40,
+                net.minecraft.world.inventory.ContainerInput.SWAP, mc.player);
     }
 
     private void moveCursorToSlot(InventoryScreen screen, Slot slot) {
@@ -123,7 +232,8 @@ public class AutoTotem extends Module {
     }
 
     private int findTotemSlot() {
-        if (mc.player == null) return -1;
+        if (mc.player == null)
+            return -1;
 
         for (int i = 0; i < 9; i++) {
             if (mc.player.getInventory().getItem(i).is(Items.TOTEM_OF_UNDYING)) {
@@ -158,7 +268,8 @@ public class AutoTotem extends Module {
     }
 
     private void sleep(int ms) {
-        if (ms <= 0) return;
+        if (ms <= 0)
+            return;
         try {
             Thread.sleep(ms);
         } catch (InterruptedException ignored) {
@@ -173,7 +284,8 @@ public class AutoTotem extends Module {
     private void sleepUntil(long targetNanos) {
         while (true) {
             long remainingNanos = targetNanos - System.nanoTime();
-            if (remainingNanos <= 0L) return;
+            if (remainingNanos <= 0L)
+                return;
 
             long sleepMillis = remainingNanos / 1_000_000L;
             if (sleepMillis > 1L) {

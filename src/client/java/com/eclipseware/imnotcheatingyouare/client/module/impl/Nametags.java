@@ -8,7 +8,7 @@ import com.eclipseware.imnotcheatingyouare.client.utils.AnimationUtil;
 import com.eclipseware.imnotcheatingyouare.client.utils.FontUtils;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -22,10 +22,9 @@ public class Nametags extends Module {
 
     public Nametags() {
         super("Nametags", Category.Render);
-        // HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> onHudRender(guiGraphics, tickDelta));
     }
 
-    private void onHudRender(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
+    private void onHudRender(DrawContext DrawContext, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
 
         float partialTick = getTickDelta(tickDeltaObj);
@@ -74,17 +73,17 @@ public class Nametags extends Module {
             int drawX = (int) proj.x - totalWidth / 2;
             int drawY = (int) proj.y - 10;
 
-            AnimationUtil.drawRoundedRect(guiGraphics, drawX - 3, drawY - 2, totalWidth + 6, 14, 3,
+            AnimationUtil.drawRoundedRect(DrawContext, drawX - 3, drawY - 2, totalWidth + 6, 14, 3,
                 new Color(10, 10, 10, bgAlpha).getRGB());
 
-            FontUtils.drawString(guiGraphics, name, drawX, drawY,
+            FontUtils.drawString(DrawContext, name, drawX, drawY,
                 new Color(themeColor.getRed(), themeColor.getGreen(), themeColor.getBlue(), textAlpha).getRGB(), false);
             if (!hpStr.isEmpty()) {
                 Color hpColor = entity instanceof LivingEntity l ? RenderUtils.getHealthColor(l.getHealth() / l.getMaxHealth()) : Color.WHITE;
-                FontUtils.drawString(guiGraphics, hpStr, drawX + nameWidth, drawY,
+                FontUtils.drawString(DrawContext, hpStr, drawX + nameWidth, drawY,
                     new Color(hpColor.getRed(), hpColor.getGreen(), hpColor.getBlue(), textAlpha).getRGB(), false);
             }
-            FontUtils.drawString(guiGraphics, distStr, drawX + nameWidth + hpWidth, drawY,
+            FontUtils.drawString(DrawContext, distStr, drawX + nameWidth + hpWidth, drawY,
                 new Color(180, 180, 180, textAlpha).getRGB(), false);
 
             if (entity instanceof LivingEntity living) {
@@ -93,10 +92,18 @@ public class Nametags extends Module {
                 int itemY = drawY - (mainHand.isEmpty() && offHand.isEmpty() ? 0 : 18);
 
                 if (!mainHand.isEmpty()) {
-                    guiGraphics.item(mainHand, (int)proj.x - (offHand.isEmpty() ? 8 : 16), itemY - 2);
+                    int mainX = (int)proj.x - (offHand.isEmpty() ? 8 : 16);
+                    DrawContext.item(mainHand, mainX, itemY - 2);
+                    if (mainHand.getCount() > 1) {
+                        FontUtils.drawString(DrawContext, String.valueOf(mainHand.getCount()), mainX + 8, itemY + 6, -1, true);
+                    }
                 }
                 if (!offHand.isEmpty()) {
-                    guiGraphics.item(offHand, (int)proj.x + (mainHand.isEmpty() ? -8 : 2), itemY - 2);
+                    int offX = (int)proj.x + (mainHand.isEmpty() ? -8 : 2);
+                    DrawContext.item(offHand, offX, itemY - 2);
+                    if (offHand.getCount() > 1) {
+                        FontUtils.drawString(DrawContext, String.valueOf(offHand.getCount()), offX + 8, itemY + 6, -1, true);
+                    }
                 }
             }
         }

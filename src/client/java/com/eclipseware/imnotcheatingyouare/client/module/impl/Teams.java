@@ -8,7 +8,7 @@ public class Teams extends Module {
     public static Teams INSTANCE;
 
     public Teams() {
-        super("Teams", Category.Combat, "Prevents combat modules from hitting team members.");
+        super("Teams", Category.Misc, "Prevents combat modules from hitting team members.");
         INSTANCE = this;
     }
 
