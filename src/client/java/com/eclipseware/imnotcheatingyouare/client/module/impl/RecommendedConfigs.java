@@ -95,12 +95,36 @@ public class RecommendedConfigs extends Module {
                     JsonObject configObj = JsonParser.parseString(sb.toString()).getAsJsonObject();
                     if (!configObj.has("server") || !configObj.has("name") || !configObj.has("configBase64")) continue;
 
-                    String serverGlob = configObj.get("server").getAsString().toLowerCase();
-                    boolean matchesServer = false;
-                    if (serverGlob.startsWith("*")) {
-                        matchesServer = normalizedIp.endsWith(serverGlob.substring(1)) || normalizedIp.equals(serverGlob.substring(1));
+                    JsonElement serverElement = configObj.get("server");
+                    List<String> serverGlobs = new ArrayList<>();
+                    if (serverElement.isJsonArray()) {
+                        for (JsonElement el : serverElement.getAsJsonArray()) {
+                            serverGlobs.add(el.getAsString().toLowerCase());
+                        }
                     } else {
-                        matchesServer = normalizedIp.equals(serverGlob);
+                        String rawServer = serverElement.getAsString().toLowerCase();
+                        if (rawServer.contains(",")) {
+                            for (String part : rawServer.split(",")) {
+                                serverGlobs.add(part.trim());
+                            }
+                        } else {
+                            serverGlobs.add(rawServer);
+                        }
+                    }
+
+                    boolean matchesServer = false;
+                    for (String serverGlob : serverGlobs) {
+                        if (serverGlob.startsWith("*")) {
+                            if (normalizedIp.endsWith(serverGlob.substring(1)) || normalizedIp.equals(serverGlob.substring(1))) {
+                                matchesServer = true;
+                                break;
+                            }
+                        } else {
+                            if (normalizedIp.equals(serverGlob)) {
+                                matchesServer = true;
+                                break;
+                            }
+                        }
                     }
 
                     if (matchesServer) {
