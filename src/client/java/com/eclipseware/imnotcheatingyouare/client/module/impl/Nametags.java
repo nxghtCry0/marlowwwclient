@@ -92,10 +92,18 @@ public class Nametags extends Module {
                 int itemY = drawY - (mainHand.isEmpty() && offHand.isEmpty() ? 0 : 18);
 
                 if (!mainHand.isEmpty()) {
-                    guiGraphics.item(mainHand, (int)proj.x - (offHand.isEmpty() ? 8 : 16), itemY - 2);
+                    int mainX = (int)proj.x - (offHand.isEmpty() ? 8 : 16);
+                    guiGraphics.item(mainHand, mainX, itemY - 2);
+                    if (mainHand.getCount() > 1) {
+                        FontUtils.drawString(guiGraphics, String.valueOf(mainHand.getCount()), mainX + 8, itemY + 6, -1, true);
+                    }
                 }
                 if (!offHand.isEmpty()) {
-                    guiGraphics.item(offHand, (int)proj.x + (mainHand.isEmpty() ? -8 : 2), itemY - 2);
+                    int offX = (int)proj.x + (mainHand.isEmpty() ? -8 : 2);
+                    guiGraphics.item(offHand, offX, itemY - 2);
+                    if (offHand.getCount() > 1) {
+                        FontUtils.drawString(guiGraphics, String.valueOf(offHand.getCount()), offX + 8, itemY + 6, -1, true);
+                    }
                 }
             }
         }

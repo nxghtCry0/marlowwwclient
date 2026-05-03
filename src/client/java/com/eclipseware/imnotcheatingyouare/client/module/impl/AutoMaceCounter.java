@@ -12,6 +12,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.MaceItem;
+import net.minecraft.world.item.WindChargeItem;
 import net.minecraft.world.phys.Vec3;
 
 public class AutoMaceCounter extends Module {
@@ -52,7 +53,8 @@ public class AutoMaceCounter extends Module {
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity instanceof Player target && target != mc.player && target.isAlive()) {
                 double dist = mc.player.distanceTo(target);
-                if (dist <= maxDist && target.getY() - mc.player.getY() >= 1.0) {
+                boolean isFallingThreat = target.getDeltaMovement().y < -0.15 || target.fallDistance > 1.2f;
+                if (dist <= maxDist && target.getY() - mc.player.getY() >= 1.0 && isFallingThreat) {
                     if (target.getMainHandItem().getItem() instanceof MaceItem || target.getOffhandItem().getItem() instanceof MaceItem) {
                         if (dist < minDistance) {
                             minDistance = dist;
@@ -64,7 +66,7 @@ public class AutoMaceCounter extends Module {
         }
 
         if (bestTarget != null) {
-            Vec3 aimPoint = bestTarget.getEyePosition();
+            Vec3 aimPoint = predictAimPoint(bestTarget);
             Vec3 eyes = mc.player.getEyePosition();
             double diffX = aimPoint.x - eyes.x;
             double diffY = aimPoint.y - eyes.y;
@@ -105,10 +107,25 @@ public class AutoMaceCounter extends Module {
     private int findWindCharge() {
         for (int i = 0; i < 9; i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
-            if (stack.getItem() instanceof net.minecraft.world.item.WindChargeItem) {
+            if (stack.getItem() instanceof WindChargeItem) {
                 return i;
             }
         }
         return -1;
+    }
+
+    private Vec3 predictAimPoint(Player target) {
+        Vec3 current = target.getEyePosition();
+        Vec3 velocity = target.getDeltaMovement();
+        Vec3 myEyes = mc.player.getEyePosition();
+        double dist = myEyes.distanceTo(current);
+
+        // Wind charge is fairly quick, so a short lead window gives better consistency.
+        double leadTime = Math.min(0.35, dist / 20.0);
+        Vec3 predicted = current.add(velocity.scale(leadTime));
+
+        double clampY = target.getY() + target.getBbHeight();
+        if (predicted.y > clampY) predicted = new Vec3(predicted.x, clampY, predicted.z);
+        return predicted;
     }
 }
