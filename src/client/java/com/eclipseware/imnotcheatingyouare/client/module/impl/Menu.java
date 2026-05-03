@@ -58,14 +58,7 @@ public class Menu extends Module {
                 if (elapsed >= 5000) {
                     this.onKeybind();
                     keyHoldStartTime = 0;
-                    mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§aBypass: Menu Opened"));
                     lastSecondsLeft = -1;
-                } else {
-                    int secondsLeft = 5 - (int)(elapsed / 1000);
-                    if (secondsLeft != lastSecondsLeft) {
-                        mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§cHold for " + secondsLeft + "s to open..."));
-                        lastSecondsLeft = secondsLeft;
-                    }
                 }
             }
         } else {
