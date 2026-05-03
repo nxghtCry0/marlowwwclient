@@ -57,31 +57,34 @@ Build artifacts are generated in `build/libs/`. Use the main jar artifact, not t
 ## Feature Catalog (66 Modules)
 
 ### Combat
-- `AimAssist` | `AnchorMacro` | `AntiBot` | `AttributeSwap`
-- `AutoDHand` | `AutoDrain` | `AutoMace` | `AutoMaceCounter`
-- `AutoShieldBreaker` | `AutoTotem` | `AutoWeb` | `AutoWindcharge`
-- `Backtrack` | `BlinkModule` (`Blink`) | `BreachSwap` | `CrystalAura`
-- `HitSelect` | `HitSwap` | `Hitboxes` | `JumpReset`
-- `KillAura` | `KnockbackDisplacement` | `LungeAssist` | `PearlBind`
-- `PearlCatch` | `ShieldDrain` | `SilentAim` | `SilentAimbot`
-- `Teams` | `Triggerbot` | `WTap` | `Weapons`
+- `AimAssist` | `AttributeSwap` | `AutoDrain` | `AutoMace`
+- `AutoMaceCounter` | `AutoShieldBreaker` | `AutoTotem` | `AutoWeb`
+- `AutoWindcharge` | `BreachSwap` | `HitSelect` | `HitSwap`
+- `Hitboxes` | `JumpReset` | `KnockbackDisplacement` | `LungeAssist`
+- `PearlBind` | `PearlCatch` | `ShieldDrain` | `SilentAim`
+- `SilentAimbot` | `Triggerbot` | `WTap` | `Weapons`
+
+### Crystal
+- `AnchorMacro` | `AutoDHand` | `CrystalAura` | `CrystalHelper`
+
+### Blatant
+- `Backtrack` | `BlinkModule` (`Blink`) | `KillAura` | `Reach`
 
 ### Movement
 - `AutoWalk` | `AutoSprint` | `BoatFly` | `ElytraBoost`
 - `Flight` | `Freecam` | `GUIMove` | `NoJumpDelay`
 - `Scaffold`
 
-### Render and Visuals
+### Render
 - `ArrayListMod` | `BlockESP` | `DetectionAlert` | `ESP`
 - `Fullbright` | `HandView` | `LowFire` | `Menu`
 - `NameProtect` | `Nametags` | `NoParticles` | `NoTotemPop`
-- `Reach` | `RenderOptimizer` | `StorageESP` | `Theme`
-- `Tracers` | `Xray`
+- `RenderOptimizer` | `StorageESP` | `Theme` | `Xray`
 
-### World and Utility
-- `AntiTranslationKey` | `AutoClicker` | `AutoSign` | `Automine`
-- `BridgeAssist` | `Bypass` | `Configurator` | `FastPlace`
-- `FriendProtector` | `NPC`
+### Misc & World
+- `AntiBot` | `AntiTranslationKey` | `AutoClicker` | `Automine`
+- `AutoSign` | `BridgeAssist` | `Bypass` | `Configurator`
+- `FastPlace` | `FriendProtector` | `NPC` | `Teams`
 
 ## Additional Systems
 

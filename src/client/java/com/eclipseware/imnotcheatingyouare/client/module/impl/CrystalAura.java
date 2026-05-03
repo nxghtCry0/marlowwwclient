@@ -96,7 +96,7 @@ public class CrystalAura extends Module {
 
         double r = range.getValDouble();
         Player target = getOptimalTarget(r);
-
+        
         if (breakTicks == 0) {
             List<EndCrystal> crystals = mc.level.getEntitiesOfClass(EndCrystal.class,
                     mc.player.getBoundingBox().inflate(r));

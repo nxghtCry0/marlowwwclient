@@ -21,7 +21,6 @@ public class ESP extends Module {
 
     public ESP() {
         super("ESP", Category.Render);
-        // HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> onHudRender(guiGraphics, tickDelta));
     }
 
     private void onHudRender(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {

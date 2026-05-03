@@ -1,0 +1,3 @@
+# Configs!
+Marlowww Client has a custom config system that works by loading base 64ified JSON config files via clipboard. This makes it easy to share configs and to load them into the client.
+This area controls the automated config finder, the mod checks if the server you are playing on has any configs in this folder, if it does, it asks if you want to load it. This is to allow for easy config loading, and making sure bans are kept low.

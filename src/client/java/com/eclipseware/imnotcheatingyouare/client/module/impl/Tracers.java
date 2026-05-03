@@ -18,7 +18,6 @@ public class Tracers extends Module {
 
     public Tracers() {
         super("Tracers", Category.Render);
-        // HudRenderCallback.EVENT.register((guiGraphics, tickDelta) -> onHudRender(guiGraphics, tickDelta));
     }
 
     private void onHudRender(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {

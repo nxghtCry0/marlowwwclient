@@ -24,7 +24,6 @@ public class BlockESP extends Module {
 
     public BlockESP() {
         super("BlockESP", Category.Render, "Highlights target blocks.");
-        // HudRenderCallback.EVENT.register((guiGraphics, tickCounter) -> onRenderHUD(guiGraphics, tickCounter));
 
         addDefault("obsidian");
         addDefault("bedrock");
