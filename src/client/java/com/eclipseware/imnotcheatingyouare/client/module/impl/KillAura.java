@@ -40,6 +40,7 @@ public class KillAura extends Module {
     public void onTick() {
         if (mc.player == null || mc.level == null) return;
         if (mc.player.isDeadOrDying()) return;
+        if (mc.player.isBlocking()) return;
 
         double range = getSettingDouble("Range");
         boolean modernMode = getSettingCombo("Combat System").equalsIgnoreCase("Modern (1.9+)");

@@ -24,7 +24,11 @@
 "FastPlaceMixin",
 "BlockBehaviourMixin",
 "MovementCorrectionMixin",
-"EntityMixin"
+"EntityMixin",
+"GuiMixin",
+"ChatScreenMixin",
+"VisGraphMixin",
+"MouseMixin"
 ],
 "injectors": {
 "defaultRequire": 1

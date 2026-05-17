@@ -60,6 +60,7 @@ public final class GlassyIntSlider extends CompatSliderButton {
 
     @Override
     protected void applyValue() {
+        this.value = Mth.clamp(this.value, 0.0D, 1.0D);
         int raw = (int)Math.round(this.min + (this.max - this.min) * this.value);
         int stepped = (this.step <= 1) ? raw : ((int)Math.round((double)raw / this.step) * this.step);
         int clamped = clamp(stepped, this.min, this.max);

@@ -33,6 +33,10 @@ if (!mc.options.keyAttack.isDown()) {
 target = null;
 return;
 }
+if (mc.player.isBlocking()) {
+target = null;
+return;
+}
 chooseTarget();
 if (target == null) return;
 AABB box = target.getBoundingBox();

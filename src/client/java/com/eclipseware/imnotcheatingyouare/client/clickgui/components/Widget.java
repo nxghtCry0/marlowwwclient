@@ -39,6 +39,13 @@ public class Widget {
         }
         this.x = this.x2 + mouseX;
         this.y = this.y2 + mouseY;
+        
+        if (mc.getWindow() != null) {
+            if (this.x < 0) this.x = 0;
+            if (this.y < 0) this.y = 0;
+            if (this.x + this.width > mc.getWindow().getGuiScaledWidth()) this.x = mc.getWindow().getGuiScaledWidth() - this.width;
+            if (this.y + this.height > mc.getWindow().getGuiScaledHeight()) this.y = mc.getWindow().getGuiScaledHeight() - this.height;
+        }
     }
 
     public void drawScreen(DrawContext context, int mouseX, int mouseY, float partialTicks) {

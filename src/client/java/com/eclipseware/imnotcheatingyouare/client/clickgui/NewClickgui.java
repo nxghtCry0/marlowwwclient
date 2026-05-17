@@ -171,8 +171,11 @@ public class NewClickgui extends Screen {
                 
                 for (Module m : modules) {
                 if (mouseY >= modY && mouseY <= modY + 35) {
-                    expandedModule = (expandedModule == m) ? null : m;
-                    rebuildSettingWidgets();
+                    List<Setting> mSets = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingsByMod(m);
+                    if (mSets != null && !mSets.isEmpty()) {
+                        expandedModule = (expandedModule == m) ? null : m;
+                        rebuildSettingWidgets();
+                    }
                     return true;
                 }
                 modY += 35;
@@ -286,7 +289,9 @@ public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmou
                 }
 
                 if (modY >= listY && modY < listY + listHeight) {
-                    graphics.drawString(this.font, Component.literal(m.getName() + (m == expandedModule ? " \u00a77[-]" : " \u00a77[+]")), listX + 10, modY + 6, GlassyTheme.TEXT, false);
+                    List<Setting> mSets = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingsByMod(m);
+                    String suffix = (mSets != null && !mSets.isEmpty()) ? (m == expandedModule ? " \u00a77[-]" : " \u00a77[+]") : "";
+                    graphics.drawString(this.font, Component.literal(m.getName() + suffix), listX + 10, modY + 6, GlassyTheme.TEXT, false);
                     String desc = m.getDescription();
                     if (desc.length() > 60) desc = desc.substring(0, 57) + "...";
                     graphics.drawString(this.font, Component.literal(desc), listX + 10, modY + 18, GlassyTheme.TEXT_MUTED, false);

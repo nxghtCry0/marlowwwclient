@@ -58,6 +58,7 @@ Module lungeAssist = new com.eclipseware.imnotcheatingyouare.client.module.impl.
 Module autoMace = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoMace();
 Module pearlCatch = new com.eclipseware.imnotcheatingyouare.client.module.impl.PearlCatch();
 Module jumpReset = new com.eclipseware.imnotcheatingyouare.client.module.impl.JumpReset();
+Module pearlGrapple = new com.eclipseware.imnotcheatingyouare.client.module.impl.PearlGrapple();
 
 Module autoClicker = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoClicker();
 Module fastPlace = new com.eclipseware.imnotcheatingyouare.client.module.impl.FastPlace();
@@ -115,6 +116,7 @@ moduleManager.modules.add(lungeAssist);
 moduleManager.modules.add(autoMace);
 moduleManager.modules.add(pearlCatch);
 moduleManager.modules.add(jumpReset);
+moduleManager.modules.add(pearlGrapple);
 
 moduleManager.modules.add(autoClicker);
 moduleManager.modules.add(fastPlace);
@@ -450,6 +452,7 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
             }
 
             com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.tick();
+            com.eclipseware.imnotcheatingyouare.client.utils.SpoofManager.onTick();
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
