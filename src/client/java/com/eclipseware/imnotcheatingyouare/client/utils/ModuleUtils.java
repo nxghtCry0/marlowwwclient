@@ -43,11 +43,22 @@ public class ModuleUtils {
         return 0; 
     }
 
+    public static void setClientSlot(int slot) {
+        if (mc.player == null) return;
+        setupReflection();
+        if (selectedField != null) {
+            try { selectedField.setInt(mc.player.getInventory(), slot); } catch (Exception ignored) {}
+        }
+    }
+
     public static void switchToSlot(int slot) {
         if (mc.player == null) return;
         setupReflection();
         if (selectedField != null) {
             try { selectedField.setInt(mc.player.getInventory(), slot); } catch (Exception ignored) {}
+        }
+        if (mc.getConnection() != null) {
+            mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
         }
     }
     

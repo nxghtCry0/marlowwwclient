@@ -49,20 +49,10 @@ public class CrystalHelper extends Module {
     }
 
     private void silentUseItem(int targetSlot, BlockHitResult hitResult) {
-        int oldSlot = mc.player.getInventory().getSelectedSlot();
-        
-        if (targetSlot != oldSlot) {
-            mc.getConnection().send(new ServerboundSetCarriedItemPacket(targetSlot));
-            mc.player.getInventory().setSelectedSlot(targetSlot);
-        }
-
-        mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
-        mc.player.swing(InteractionHand.MAIN_HAND);
-
-        if (targetSlot != oldSlot) {
-            mc.player.getInventory().setSelectedSlot(oldSlot);
-            mc.getConnection().send(new ServerboundSetCarriedItemPacket(oldSlot));
-        }
+        com.eclipseware.imnotcheatingyouare.client.utils.SpoofManager.silentUse(targetSlot, () -> {
+            mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
+            mc.player.swing(InteractionHand.MAIN_HAND);
+        });
     }
 
     private int findItem(Item item) {

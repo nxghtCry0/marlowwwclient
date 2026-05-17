@@ -40,6 +40,7 @@ public class JumpReset extends Module {
 
     public void onKnockback() {
         if (!isToggled() || mc.player == null) return;
+        if (mc.player.isBlocking()) return;
         
         if (System.currentTimeMillis() - lastHitTime < 50) return;
 

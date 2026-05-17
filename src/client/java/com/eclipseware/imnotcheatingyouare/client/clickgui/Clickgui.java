@@ -108,10 +108,15 @@ public class Clickgui extends Screen {
                 this.widgets.forEach(component -> component.setX(component.getX() + 30));
             }
         } else {
-            if (verticalAmount < 0) {
-                this.widgets.forEach(component -> component.setY(component.getY() - 15));
-            } else if (verticalAmount > 0) {
-                this.widgets.forEach(component -> component.setY(component.getY() + 15));
+            for (Widget component : this.widgets) {
+                float totalHeight = component.isOpen() ? component.getItems().size() * 15f + 20f : 0f; // Approx height
+                if (mouseX >= component.getX() && mouseX <= component.getX() + component.getWidth() && mouseY >= component.getY() && mouseY <= component.getY() + component.getHeight() + totalHeight) {
+                    if (verticalAmount < 0) {
+                        component.setY(component.getY() - 15);
+                    } else if (verticalAmount > 0) {
+                        component.setY(component.getY() + 15);
+                    }
+                }
             }
         }
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);

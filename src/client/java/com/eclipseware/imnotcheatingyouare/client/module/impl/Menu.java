@@ -15,8 +15,9 @@ public class Menu extends Module {
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("NewUI+", this, false));
     }
 
-    private long keyHoldStartTime = 0;
-    private int lastSecondsLeft = -1;
+    private int pressCount = 0;
+    private boolean wasPressed = false;
+    private long lastPressTime = 0;
 
     @Override
     public void tickKeybind() {
@@ -51,23 +52,18 @@ public class Menu extends Module {
             isPressed = org.lwjgl.glfw.GLFW.glfwGetKey(windowHandle, this.getKeyBind()) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
         }
 
-        boolean lookingDown = mc.player.getXRot() > 75.0f;
-
-        if (isPressed && lookingDown) {
-            if (keyHoldStartTime == 0) {
-                keyHoldStartTime = System.currentTimeMillis();
-            } else {
-                long elapsed = System.currentTimeMillis() - keyHoldStartTime;
-                if (elapsed >= 5000) {
-                    this.onKeybind();
-                    keyHoldStartTime = 0;
-                    lastSecondsLeft = -1;
-                }
+        if (isPressed && !wasPressed) {
+            if (System.currentTimeMillis() - lastPressTime > 3000) {
+                pressCount = 0;
             }
-        } else {
-            keyHoldStartTime = 0;
-            lastSecondsLeft = -1;
+            pressCount++;
+            lastPressTime = System.currentTimeMillis();
+            if (pressCount >= 5) {
+                this.onKeybind();
+                pressCount = 0;
+            }
         }
+        wasPressed = isPressed;
     }
 
     @Override
