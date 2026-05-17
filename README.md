@@ -2,7 +2,7 @@
 My main account, @nxght_Cry0 on discord was TERMINATED!
 The only official account of mine is now @firefox.lol
 
-# Marlow Client 2.0.0
+# Marlow Client 2.2.0
 
 Marlow Client is an open-source Fabric client focused on combat automation, movement utilities, rendering tools, and quality-of-life systems for PvP-oriented gameplay. Newly rewritten and rearchitected for Minecraft 26.1.2.
 
