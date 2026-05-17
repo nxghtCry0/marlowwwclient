@@ -103,28 +103,12 @@ This repository currently includes both `LICENSE.txt` and `GNU-LICENSE.md`, and 
 
 ## Git History
 
-```text
-* d8043f3 feat: implement global SpoofManager to secure 100% undetected hotbar manipulation
-* a728a6c chore: bump mod_version to 2.1.2 in gradle.properties
-* b3e89bb Support multi servers & add Misha's config
-*   895c7ec Merge branch 'main' of https://github.com/nxghtCry0/marlowwwclient
-|\  
-| *   f62cfec Merge pull request #9 from rytentodev/fix-a-ton-of-bugs-and-add-hover-info-and-add-nametags-count
-| |\  
-| | * 25c05d9 1. (ADD) nametags show item count - for example they're holding gaps and u can see how many they have
-* | | 8a44f3b Rewrite aimassist and fix some bad styling on my part
-|/ /  
-* |   054658c Merge pull request #8 from rytentodev/fix-crystal-aura-anchor-macro-auto-totem
-|\ \  
-| * \   d1c644d Merge branch 'main' into fix-crystal-aura-anchor-macro-auto-totem
-| |\ \  
-| |/ /  
-|/| /   
-| |/    
-* | bdaa9dd clean new codebase
-* | 2f3857e fix a bug with backtrack that stops you from joining servers
-* | 5d1dafb feat: implement custom glassy UI component library and modular click gui system
-* | 793b27d Finish cloud configs (ima change this later)
-* | 46fc8fd feat: add ConfigRecommendationScreen for browsing and loading server-specific cloud configs
-* | 221e53b feat: add LegitSword configuration file
-```
+<a href="https://github.com/nxghtCry0/marlowwwclient/commits/main">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github-readme-activity-graph.vercel.app/graph?username=nxghtCry0&theme=react-dark&hide_border=true&area=true&custom_title=Marlowww%20Client%20Commit%20Activity" />
+    <source media="(prefers-color-scheme: light)" srcset="https://github-readme-activity-graph.vercel.app/graph?username=nxghtCry0&theme=github&hide_border=true&area=true&custom_title=Marlowww%20Client%20Commit%20Activity" />
+    <img alt="Marlowww Client Commit Activity" src="https://github-readme-activity-graph.vercel.app/graph?username=nxghtCry0&theme=react-dark&hide_border=true&area=true&custom_title=Marlowww%20Client%20Commit%20Activity" />
+  </picture>
+</a>
+
+*(Note: Displays recent 31-day commit activity. For a deeply detailed repository branch graph, consider installing the [Repobeats](https://repobeats.axiom.co/) GitHub App!)*
