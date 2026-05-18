@@ -28,7 +28,8 @@
 "GuiMixin",
 "ChatScreenMixin",
 "VisGraphMixin",
-"MouseMixin"
+"MouseMixin",
+"TitleScreenMixin"
 ],
 "injectors": {
 "defaultRequire": 1
