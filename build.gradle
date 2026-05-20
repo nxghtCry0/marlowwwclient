@@ -23,6 +23,8 @@ loom {
     runs {
         client {
             vmArg "--enable-native-access=ALL-UNNAMED"
+            vmArg "-Doshi.os.windows.perfos.disabled=true"
+            vmArg "-Dorg.joml.unsafe=false"
         }
     }
 }
@@ -72,9 +74,14 @@ tasks.withType(JavaCompile).configureEach {
     // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
     // If Javadoc is generated, this must be specified in that task too.
     it.options.encoding = "UTF-8"
+    it.options.compilerArgs << "-Xlint:deprecation"
     if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
         it.options.release.set(targetJavaVersion)
     }
+}
+
+tasks.withType(JavaExec).configureEach {
+    jvmArgs("--enable-native-access=ALL-UNNAMED", "-Doshi.os.windows.perfos.disabled=true", "-Dorg.joml.unsafe=false")
 }
 
 java {
@@ -111,3 +118,5 @@ publishing {
         // retrieving dependencies.
     }
 }
+
+

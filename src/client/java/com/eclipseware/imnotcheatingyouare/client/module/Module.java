@@ -57,6 +57,8 @@ public class Module {
     public void onDisable() {}
     
     public void onTick() {}
+ 
+    public void onRenderHUD(net.minecraft.client.gui.GuiGraphicsExtractor guiGraphics, Object tickDelta) {}
 
     public void onKeybind() {
         this.toggle();

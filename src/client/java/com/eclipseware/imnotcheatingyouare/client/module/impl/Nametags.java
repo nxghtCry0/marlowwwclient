@@ -24,7 +24,10 @@ public class Nametags extends Module {
         super("Nametags", Category.Render);
     }
 
-    private void onHudRender(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
+    private static final Vector3d projVec = new Vector3d();
+
+    @Override
+    public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
 
         float partialTick = getTickDelta(tickDeltaObj);
@@ -51,8 +54,9 @@ public class Nametags extends Module {
             double ey = net.minecraft.util.Mth.lerp(partialTick, entity.yo, entity.getY()) + entity.getBbHeight() + 0.4;
             double ez = net.minecraft.util.Mth.lerp(partialTick, entity.zo, entity.getZ());
 
-            Vector3d proj = RenderUtils.project2D(ex, ey, ez, partialTick);
-            if (proj == null || proj.z <= 0 || proj.z >= 1.0) continue;
+            if (!RenderUtils.project2D(ex, ey, ez, partialTick, projVec)) continue;
+            if (projVec.z <= 0 || projVec.z >= 1.0) continue;
+            Vector3d proj = projVec;
 
             float alpha = Math.max(0.3f, 1.0f - (float)(dist / 64.0));
             int bgAlpha = (int)(alpha * 180);

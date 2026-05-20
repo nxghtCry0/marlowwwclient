@@ -19,6 +19,19 @@ public class Slider extends Button {
         this.width = 15;
     }
 
+    private double lastValue = Double.NaN;
+    private String cachedDisplayString = null;
+
+    private String getDisplayString() {
+        double currentVal = this.setting.getValDouble();
+        if (cachedDisplayString == null || currentVal != lastValue) {
+            lastValue = currentVal;
+            String valStr = this.setting.onlyInt() ? String.valueOf((int) currentVal) : String.valueOf(currentVal);
+            cachedDisplayString = this.getName() + " " + net.minecraft.ChatFormatting.GRAY + valStr;
+        }
+        return cachedDisplayString;
+    }
+
     @Override
     public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
         if (this.isDragging) {
@@ -34,15 +47,11 @@ public class Slider extends Button {
         float length = this.x + ((float) this.width) * this.partialMultiplier();
         if (length > this.x) {
             java.awt.Color theme = RenderUtils.getThemeAccentColor();
-            int accent = new java.awt.Color(theme.getRed(), theme.getGreen(), theme.getBlue(), 120).getRGB();
+            int accent = (theme.getRGB() & 0x00FFFFFF) | (120 << 24);
             context.fill((int)this.x, (int)this.y, (int)length, (int)(this.y + this.height), accent);
         }
 
-        String val = String.valueOf(this.setting.getValDouble());
-        if (this.setting.onlyInt()) {
-            val = String.valueOf((int)this.setting.getValDouble());
-        }
-        drawString(this.getName() + " " + ChatFormatting.GRAY + val, this.x + 2.3f, this.y - 1.7f + 6, -1);
+        drawString(getDisplayString(), this.x + 2.3f, this.y - 1.7f + 6, -1);
     }
 
     @Override

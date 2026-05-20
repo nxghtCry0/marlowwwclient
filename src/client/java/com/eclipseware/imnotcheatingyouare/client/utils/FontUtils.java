@@ -10,8 +10,21 @@ import net.minecraft.resources.Identifier;
 public class FontUtils {
     public static final Identifier VERDANA = Identifier.parse("imnotcheatingyouare:verdana");
 
+    private static final java.util.Map<String, Component> componentCache = new java.util.LinkedHashMap<String, Component>(256, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(java.util.Map.Entry<String, Component> eldest) {
+            return size() > 1024;
+        }
+    };
+
     public static Component get(String text) {
-        return Component.literal(text);
+        if (text == null) return Component.empty();
+        Component cached = componentCache.get(text);
+        if (cached == null) {
+            cached = Component.literal(text);
+            componentCache.put(text, cached);
+        }
+        return cached;
     }
 
     public static void drawString(GuiGraphicsExtractor graphics, String text, int x, int y, int color, boolean dropShadow) {
@@ -28,6 +41,7 @@ public class FontUtils {
     }
 
     public static int width(String text) {
-        return Minecraft.getInstance().font.width(get(text));
+        if (text == null) return 0;
+        return Minecraft.getInstance().font.width(text);
     }
 }

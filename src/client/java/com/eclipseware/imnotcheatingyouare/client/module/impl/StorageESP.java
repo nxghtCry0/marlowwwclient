@@ -25,7 +25,16 @@ public class StorageESP extends Module {
         super("StorageESP", Category.Render, "Highlights storage blocks like chests, barrels, and shulker boxes.");
     }
 
-    private void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
+    private static final Vector3d projVec = new Vector3d();
+    private static final Vector3d[] storageProjBuffer = new Vector3d[8];
+    static {
+        for (int i = 0; i < 8; i++) {
+            storageProjBuffer[i] = new Vector3d();
+        }
+    }
+
+    @Override
+    public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || mc.level == null) {
             cache.clear();
             return;
@@ -89,10 +98,11 @@ public class StorageESP extends Module {
         double screenCenterY = mc.getWindow().getGuiScaledHeight() / 2.0;
 
         for (CachedBlock cb : cache) {
-            Vector3d screenPos = RenderUtils.project2D(cb.pos.getX() + 0.5, cb.pos.getY() + 0.5, cb.pos.getZ() + 0.5, partialTick);
-            if (screenPos != null && screenPos.z > 0 && screenPos.z < 1.0) {
-                if (showTracers) RenderUtils.drawLine2D(guiGraphics, screenCenterX, screenCenterY, screenPos.x, screenPos.y, cb.color);
-                if (doFill || doOutline) drawStorageBox(guiGraphics, cb.pos, cb.color, doFill, doOutline, partialTick);
+            if (RenderUtils.project2D(cb.pos.getX() + 0.5, cb.pos.getY() + 0.5, cb.pos.getZ() + 0.5, partialTick, projVec)) {
+                if (projVec.z > 0 && projVec.z < 1.0) {
+                    if (showTracers) RenderUtils.drawLine2D(guiGraphics, screenCenterX, screenCenterY, projVec.x, projVec.y, cb.color);
+                    if (doFill || doOutline) drawStorageBox(guiGraphics, cb.pos, cb.color, doFill, doOutline, partialTick);
+                }
             }
         }
     }
@@ -129,24 +139,29 @@ public class StorageESP extends Module {
     }
 
     private void drawStorageBox(GuiGraphicsExtractor guiGraphics, BlockPos pos, Color color, boolean fill, boolean outline, float partialTick) {
-        Vector3d[] corners = new Vector3d[8];
-        corners[0] = RenderUtils.project2D(pos.getX(), pos.getY(), pos.getZ(), partialTick);
-        corners[1] = RenderUtils.project2D(pos.getX() + 1, pos.getY(), pos.getZ(), partialTick);
-        corners[2] = RenderUtils.project2D(pos.getX(), pos.getY() + 1, pos.getZ(), partialTick);
-        corners[3] = RenderUtils.project2D(pos.getX() + 1, pos.getY() + 1, pos.getZ(), partialTick);
-        corners[4] = RenderUtils.project2D(pos.getX(), pos.getY(), pos.getZ() + 1, partialTick);
-        corners[5] = RenderUtils.project2D(pos.getX() + 1, pos.getY(), pos.getZ() + 1, partialTick);
-        corners[6] = RenderUtils.project2D(pos.getX(), pos.getY() + 1, pos.getZ() + 1, partialTick);
-        corners[7] = RenderUtils.project2D(pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1, partialTick);
+        int x = pos.getX();
+        int y = pos.getY();
+        int z = pos.getZ();
 
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
-        double maxX = Double.MIN_VALUE, maxY = Double.MIN_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
         boolean behind = true;
-        for (Vector3d v : corners) {
-            if (v != null && v.z > 0 && v.z < 1.0) {
-                behind = false;
-                minX = Math.min(minX, v.x); minY = Math.min(minY, v.y);
-                maxX = Math.max(maxX, v.x); maxY = Math.max(maxY, v.y);
+
+        for (int i = 0; i < 8; i++) {
+            double cx = x + ((i & 1) == 0 ? 0 : 1);
+            double cy = y + ((i & 2) == 0 ? 0 : 1);
+            double cz = z + ((i & 4) == 0 ? 0 : 1);
+
+            if (RenderUtils.project2D(cx, cy, cz, partialTick, storageProjBuffer[i])) {
+                if (storageProjBuffer[i].z > 0 && storageProjBuffer[i].z < 1.0) {
+                    behind = false;
+                    double px = storageProjBuffer[i].x;
+                    double py = storageProjBuffer[i].y;
+                    minX = Math.min(minX, px);
+                    minY = Math.min(minY, py);
+                    maxX = Math.max(maxX, px);
+                    maxY = Math.max(maxY, py);
+                }
             }
         }
         if (behind) return;

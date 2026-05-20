@@ -20,6 +20,8 @@ public class ArrayListHud {
     public double y = 5;
 
     private final Map<Module, Float> animMap = new HashMap<>();
+    private final List<Module> activeMods = new ArrayList<>();
+    private final Map<Module, Integer> widthCache = new HashMap<>();
 
     public void render(GuiGraphicsExtractor guiGraphics, float partialTick) {
         Module arrayListMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("ArrayList");
@@ -47,7 +49,7 @@ public class ArrayListHud {
             b = (int) ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(arrayListMod, "Blue").getValDouble();
         }
         
-        List<Module> activeMods = new ArrayList<>();
+        activeMods.clear();
         
         for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.modules) {
             if (m.isHidden()) continue;
@@ -62,7 +64,11 @@ public class ArrayListHud {
             }
         }
 
-        activeMods.sort(Comparator.comparingInt(m -> -FontUtils.width(m.getName())));
+        activeMods.sort((m1, m2) -> {
+            int w1 = widthCache.computeIfAbsent(m1, m -> FontUtils.width(m.getName()));
+            int w2 = widthCache.computeIfAbsent(m2, m -> FontUtils.width(m.getName()));
+            return Integer.compare(w2, w1);
+        });
 
         double currentY = startY;
         int screenWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
@@ -71,7 +77,7 @@ public class ArrayListHud {
             Module m = activeMods.get(i);
             float anim = animMap.get(m);
             String name = m.getName();
-            int textWidth = FontUtils.width(name);
+            int textWidth = widthCache.computeIfAbsent(m, mod -> FontUtils.width(mod.getName()));
             int rectWidth = textWidth + 8;
             
             boolean isRight = alignment.equals("Right");
@@ -87,9 +93,10 @@ public class ArrayListHud {
             
             int alpha = Math.max(0, Math.min(255, (int)(255 * anim)));
             int bgAlpha = Math.max(0, Math.min(255, (int)(140 * anim))); 
-            int currentBg = new Color(15, 15, 15, bgAlpha).getRGB();
-            int currentAccent = new Color(r, g, b, alpha).getRGB();
-            int textColor = new Color(255, 255, 255, alpha).getRGB();
+            
+            int currentBg = (bgAlpha << 24) | (15 << 16) | (15 << 8) | 15;
+            int currentAccent = (alpha << 24) | (r << 16) | (g << 8) | b;
+            int textColor = (alpha << 24) | 0xFFFFFF;
 
             int bgTopY = (i == 0) ? drawY + 1 : drawY;
             int bgBottomY = (i == activeMods.size() - 1) ? drawY + rectHeight - 1 : drawY + rectHeight;
@@ -106,7 +113,7 @@ public class ArrayListHud {
                 if (i < activeMods.size() - 1) {
                     Module nextM = activeMods.get(i + 1);
                     float nextAnim = animMap.get(nextM);
-                    int nextRectWidth = FontUtils.width(nextM.getName()) + 8;
+                    int nextRectWidth = widthCache.computeIfAbsent(nextM, mod -> FontUtils.width(mod.getName())) + 8;
                     int nextDrawX = (int)(screenWidth - nextRectWidth + (1.0f - nextAnim) * 30f);
                     
                     if (drawX != nextDrawX) {
@@ -129,7 +136,7 @@ public class ArrayListHud {
                 if (i < activeMods.size() - 1) {
                     Module nextM = activeMods.get(i + 1);
                     float nextAnim = animMap.get(nextM);
-                    int nextRectWidth = FontUtils.width(nextM.getName()) + 8;
+                    int nextRectWidth = widthCache.computeIfAbsent(nextM, mod -> FontUtils.width(mod.getName())) + 8;
                     int nextDrawX = (int)(x + (1.0f - nextAnim) * -30f);
                     
                     int thisRight = drawX + rectWidth;

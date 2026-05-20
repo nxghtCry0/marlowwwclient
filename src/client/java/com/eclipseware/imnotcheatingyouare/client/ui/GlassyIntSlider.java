@@ -23,6 +23,7 @@ public final class GlassyIntSlider extends CompatSliderButton {
     private double animValue;
     private final double defaultValue01;
     private final int defaultValue;
+    private long lastRenderTime = 0;
 
     public GlassyIntSlider(int x, int y, int width, int height, IntSupplier getter, IntConsumer setter, int min, int max, int step, IntFunction<Component> label, int defaultValue) {
         super(x, y, width, height, Component.empty(), 0.0D);
@@ -73,8 +74,15 @@ public final class GlassyIntSlider extends CompatSliderButton {
 
     @Override
     public void renderWidget(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        double speed = this.isHovered ? 0.55D : 0.3D;
-        this.animValue = Mth.lerp(speed, this.animValue, this.value);
+        long now = System.currentTimeMillis();
+        if (lastRenderTime == 0) lastRenderTime = now;
+        float timeDelta = Math.min(0.1f, (now - lastRenderTime) / 1000f);
+        lastRenderTime = now;
+
+        double speed = this.isHovered ? 20.0D : 12.0D;
+        float factor = 1f - (float)Math.exp(-speed * timeDelta);
+        this.animValue = this.animValue + (this.value - this.animValue) * factor;
+
         renderGlassySlider(guiGraphics, mouseX, mouseY, getX(), getY(), getWidth(), getHeight(), this.animValue, this.defaultValue01, getMessage(), this.active, this.isHovered);
     }
 
@@ -104,7 +112,6 @@ public final class GlassyIntSlider extends CompatSliderButton {
     }
     
     private static boolean isShiftDown() {
-        Window window = Minecraft.getInstance().getWindow();
         return false;
     }
     

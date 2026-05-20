@@ -273,6 +273,18 @@ public class Backtrack extends Module {
         return target;
     }
 
+    private static final Vector3d[] projBuffer = new Vector3d[8];
+    static {
+        for (int i = 0; i < 8; i++) {
+            projBuffer[i] = new Vector3d();
+        }
+    }
+
+    @Override
+    public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
+        renderBacktrack(guiGraphics, tickDeltaObj);
+    }
+
     private void renderBacktrack(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || target == null) return;
 
@@ -286,29 +298,24 @@ public class Backtrack extends Module {
         float hw = target.getBbWidth() / 2.0f;
         float h = target.getBbHeight();
 
-        double[][] corners = {
-            {btPos.x - hw, btPos.y,     btPos.z - hw},
-            {btPos.x + hw, btPos.y,     btPos.z - hw},
-            {btPos.x - hw, btPos.y + h, btPos.z - hw},
-            {btPos.x + hw, btPos.y + h, btPos.z - hw},
-            {btPos.x - hw, btPos.y,     btPos.z + hw},
-            {btPos.x + hw, btPos.y,     btPos.z + hw},
-            {btPos.x - hw, btPos.y + h, btPos.z + hw},
-            {btPos.x + hw, btPos.y + h, btPos.z + hw},
-        };
-
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
         double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
         boolean valid = false;
 
-        for (double[] c : corners) {
-            Vector3d proj = RenderUtils.project2D(c[0], c[1], c[2], partialTick);
-            if (proj == null) continue;
-            valid = true;
-            if (proj.x < minX) minX = proj.x;
-            if (proj.x > maxX) maxX = proj.x;
-            if (proj.y < minY) minY = proj.y;
-            if (proj.y > maxY) maxY = proj.y;
+        for (int i = 0; i < 8; i++) {
+            double cx = btPos.x + ((i & 1) == 0 ? -hw : hw);
+            double cy = btPos.y + ((i & 2) == 0 ? 0 : h);
+            double cz = btPos.z + ((i & 4) == 0 ? -hw : hw);
+
+            if (RenderUtils.project2D(cx, cy, cz, partialTick, projBuffer[i])) {
+                valid = true;
+                double px = projBuffer[i].x;
+                double py = projBuffer[i].y;
+                if (px < minX) minX = px;
+                if (px > maxX) maxX = px;
+                if (py < minY) minY = py;
+                if (py > maxY) maxY = py;
+            }
         }
         if (!valid) return;
 

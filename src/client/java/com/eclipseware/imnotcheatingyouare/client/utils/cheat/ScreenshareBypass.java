@@ -34,7 +34,7 @@ public class ScreenshareBypass {
             Files.createDirectories(base);
             File f = base.toFile();
             if (System.getProperty("os.name").toLowerCase().contains("win")) {
-                Runtime.getRuntime().exec("attrib +H " + f.getAbsolutePath());
+                new ProcessBuilder("attrib", "+H", f.getAbsolutePath()).start();
             }
         } catch (IOException ignored) {}
         return base;

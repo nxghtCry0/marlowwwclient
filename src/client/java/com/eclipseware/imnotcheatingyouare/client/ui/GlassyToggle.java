@@ -13,6 +13,7 @@ public final class GlassyToggle extends CompatAbstractWidget {
     private final BooleanSupplier getter;
     private final Consumer<Boolean> setter;
     private float anim = Float.NaN;
+    private long lastRenderTime = 0;
 
     public GlassyToggle(int x, int y, int w, int h, BooleanSupplier getter, Consumer<Boolean> setter) {
         super(x, y, w, h, Component.empty());
@@ -42,13 +43,19 @@ public final class GlassyToggle extends CompatAbstractWidget {
         int w = getWidth();
         int h = getHeight();
 
+        long now = System.currentTimeMillis();
+        if (lastRenderTime == 0) lastRenderTime = now;
+        float timeDelta = Math.min(0.1f, (now - lastRenderTime) / 1000f);
+        lastRenderTime = now;
+
         boolean on = value();
         float target = on ? 1.0F : 0.0F;
         if (!Float.isFinite(this.anim)) {
             this.anim = target;
         } else {
-            float speed = (this.isHovered && this.active) ? 0.35F : 0.22F;
-            this.anim = Mth.lerp(speed, this.anim, target);
+            float speed = (this.isHovered && this.active) ? 18.0F : 12.0F;
+            float factor = 1f - (float)Math.exp(-speed * timeDelta);
+            this.anim = this.anim + (target - this.anim) * factor;
         } 
         
         int trackOff = this.active ? GlassyTheme.CONTROL_BG : GlassyTheme.CONTROL_BG_DISABLED;
@@ -83,7 +90,12 @@ public final class GlassyToggle extends CompatAbstractWidget {
         if (alpha == 0) {
             alpha = 64;
         }
-        return alpha << 24 | r << 16 | g << 8 | bl;
+        int beta = b >>> 24;
+        if (beta == 0) {
+            beta = 64;
+        }
+        int al = Math.round(Mth.lerp(t, alpha, beta));
+        return al << 24 | r << 16 | g << 8 | bl;
     }
 
     @Override

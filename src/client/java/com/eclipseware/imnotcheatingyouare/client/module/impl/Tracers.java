@@ -20,7 +20,11 @@ public class Tracers extends Module {
         super("Tracers", Category.Render);
     }
 
-    private void onHudRender(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
+    private static final Vector3d playerProj = new Vector3d();
+    private static final Vector3d entityProj = new Vector3d();
+
+    @Override
+    public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
 
         float partialTick = getTickDelta(tickDeltaObj);
@@ -39,10 +43,9 @@ public class Tracers extends Module {
             double px = net.minecraft.util.Mth.lerp(partialTick, mc.player.xo, mc.player.getX());
             double py = net.minecraft.util.Mth.lerp(partialTick, mc.player.yo, mc.player.getY()) + mc.player.getEyeHeight();
             double pz = net.minecraft.util.Mth.lerp(partialTick, mc.player.zo, mc.player.getZ());
-            Vector3d playerPos = RenderUtils.project2D(px, py, pz, partialTick);
-            if (playerPos == null) return;
-            startX = playerPos.x;
-            startY = playerPos.y;
+            if (!RenderUtils.project2D(px, py, pz, partialTick, playerProj)) return;
+            startX = playerProj.x;
+            startY = playerProj.y;
         }
 
         Color themeColor = RenderUtils.getThemeAccentColor();
@@ -61,15 +64,15 @@ public class Tracers extends Module {
             double ey = net.minecraft.util.Mth.lerp(partialTick, entity.yo, entity.getY()) + entity.getBbHeight() / 2.0;
             double ez = net.minecraft.util.Mth.lerp(partialTick, entity.zo, entity.getZ());
 
-            Vector3d endProj = RenderUtils.project2D(ex, ey, ez, partialTick);
-            if (endProj == null || endProj.z <= 0 || endProj.z >= 1.0) continue;
+            if (!RenderUtils.project2D(ex, ey, ez, partialTick, entityProj)) continue;
+            if (entityProj.z <= 0 || entityProj.z >= 1.0) continue;
 
             float alpha = Math.max(0.25f, 1.0f - (float)(dist / 64.0));
             Color color = isPlayer ?
                 new Color(themeColor.getRed(), themeColor.getGreen(), themeColor.getBlue(), (int)(alpha * 180)) :
                 new Color(255, 85, 85, (int)(alpha * 180));
 
-            RenderUtils.drawLine2D(guiGraphics, startX, startY, endProj.x, endProj.y, color);
+            RenderUtils.drawLine2D(guiGraphics, startX, startY, entityProj.x, entityProj.y, color);
         }
     }
 

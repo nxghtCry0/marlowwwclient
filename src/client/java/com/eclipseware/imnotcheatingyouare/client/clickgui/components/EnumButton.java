@@ -16,6 +16,18 @@ public class EnumButton extends Button {
         this.width = 15;
     }
 
+    private String lastValString = null;
+    private String cachedDisplayString = null;
+
+    private String getDisplayString() {
+        String currentVal = this.setting.getValString();
+        if (cachedDisplayString == null || !currentVal.equals(lastValString)) {
+            lastValString = currentVal;
+            cachedDisplayString = this.setting.getName() + " " + net.minecraft.ChatFormatting.GRAY + currentVal;
+        }
+        return cachedDisplayString;
+    }
+
     @Override
     public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
         int dark = 0x22000000;
@@ -23,7 +35,7 @@ public class EnumButton extends Button {
         int fill = this.isHovering(mouseX, mouseY) ? hoverDark : dark;
 
         context.fill((int)this.x, (int)this.y, (int)(this.x + this.width), (int)(this.y + this.height), fill);
-        drawString(this.setting.getName() + " " + ChatFormatting.GRAY + this.setting.getValString(), this.x + 2.3f, this.y - 1.7f + 6, -1);
+        drawString(getDisplayString(), this.x + 2.3f, this.y - 1.7f + 6, -1);
     }
 
     @Override

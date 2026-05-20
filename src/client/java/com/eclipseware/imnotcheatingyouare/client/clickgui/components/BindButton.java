@@ -45,6 +45,18 @@ public class BindButton extends Button {
         return str.toUpperCase();
     }
 
+    private int lastKeyBind = -2;
+    private String cachedDisplayString = null;
+
+    private String getDisplayString() {
+        int currentBind = this.module.getKeyBind();
+        if (cachedDisplayString == null || currentBind != lastKeyBind) {
+            lastKeyBind = currentBind;
+            cachedDisplayString = "Bind " + net.minecraft.ChatFormatting.GRAY + getKeyName(currentBind);
+        }
+        return cachedDisplayString;
+    }
+
     @Override
     public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
         int dark = 0x22000000;
@@ -56,7 +68,7 @@ public class BindButton extends Button {
         if (this.isListening) {
             drawString("Listening...", this.x + 2.3f, this.y - 1.7f + 6, -1);
         } else {
-            drawString("Bind " + ChatFormatting.GRAY + getKeyName(this.module.getKeyBind()), this.x + 2.3f, this.y - 1.7f + 6, -1);
+            drawString(getDisplayString(), this.x + 2.3f, this.y - 1.7f + 6, -1);
         }
     }
 

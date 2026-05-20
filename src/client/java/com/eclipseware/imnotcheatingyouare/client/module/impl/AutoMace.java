@@ -36,6 +36,7 @@ public class AutoMace extends Module {
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Only Axe", this, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Auto Switch Mace", this, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Stay On Mace", this, false));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Swing Prevention", this, true));
     }
 
     @Override

@@ -6,13 +6,11 @@ import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.FontUtils;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.AABB;
 import org.joml.Vector3d;
 
 import java.awt.Color;
@@ -23,7 +21,15 @@ public class ESP extends Module {
         super("ESP", Category.Render);
     }
 
-    private void onHudRender(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
+    private static final Vector3d[] projBuffer = new Vector3d[8];
+    static {
+        for (int i = 0; i < 8; i++) {
+            projBuffer[i] = new Vector3d();
+        }
+    }
+
+    @Override
+    public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
 
         Module bypassMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Bypass");
@@ -49,7 +55,6 @@ public class ESP extends Module {
         boolean doBorder = borderSetting == null || borderSetting.getValBoolean();
 
         boolean useCorner = mode.equals("Outline") || mode.equals("Hybrid");
-        boolean useFull = mode.equals("2D") || mode.equals("3D") || mode.equals("Hybrid");
         Setting cornerGapSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Corner Gap");
         float cornerGap = cornerGapSetting != null ? (float) cornerGapSetting.getValDouble() : 50f;
 
@@ -71,29 +76,24 @@ public class ESP extends Module {
             float hw = entity.getBbWidth() / 2.0f;
             float h = entity.getBbHeight();
 
-            double[][] corners = {
-                {x - hw, y,     z - hw},
-                {x + hw, y,     z - hw},
-                {x - hw, y + h, z - hw},
-                {x + hw, y + h, z - hw},
-                {x - hw, y,     z + hw},
-                {x + hw, y,     z + hw},
-                {x - hw, y + h, z + hw},
-                {x + hw, y + h, z + hw},
-            };
-
             double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
             double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
             boolean valid = false;
 
-            for (double[] c : corners) {
-                Vector3d proj = RenderUtils.project2D(c[0], c[1], c[2], partialTick);
-                if (proj == null) continue;
-                valid = true;
-                if (proj.x < minX) minX = proj.x;
-                if (proj.x > maxX) maxX = proj.x;
-                if (proj.y < minY) minY = proj.y;
-                if (proj.y > maxY) maxY = proj.y;
+            for (int i = 0; i < 8; i++) {
+                double cx = x + ((i & 1) == 0 ? -hw : hw);
+                double cy = y + ((i & 2) == 0 ? 0 : h);
+                double cz = z + ((i & 4) == 0 ? -hw : hw);
+
+                if (RenderUtils.project2D(cx, cy, cz, partialTick, projBuffer[i])) {
+                    valid = true;
+                    double px = projBuffer[i].x;
+                    double py = projBuffer[i].y;
+                    if (px < minX) minX = px;
+                    if (px > maxX) maxX = px;
+                    if (py < minY) minY = py;
+                    if (py > maxY) maxY = py;
+                }
             }
             if (!valid) continue;
 
@@ -101,20 +101,17 @@ public class ESP extends Module {
             float rectH = (float)(maxY - minY);
             float alpha = Math.max(0.3f, 1.0f - (float)(dist / 64.0));
             int oa = (int)(alpha * 255);
-            int fa = (int)(alpha * 35);
             Color outlineColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), oa);
-            Color fillColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), fa);
             int black = new Color(0, 0, 0, oa).getRGB();
             int oc = outlineColor.getRGB();
-            int fc = fillColor.getRGB();
             int ix = (int) minX, iy = (int) minY, ix2 = (int) maxX, iy2 = (int) maxY;
             int t = outlineThickness;
 
             if (doFill) {
-                guiGraphics.fill(ix + t, iy + t, ix2 - t, iy2 - t, fc);
+                guiGraphics.fill(ix + t, iy + t, ix2 - t, iy2 - t, new Color(0, 0, 0, 35).getRGB());
             }
 
-            if (useCorner && !useFull) {
+            if (useCorner) {
                 float gapPct = Math.min(1f, Math.max(0f, cornerGap / 100f));
                 int cw = (int)(rectW * (1f - gapPct) / 2f);
                 int ch = (int)(rectH * (1f - gapPct) / 2f);
@@ -122,36 +119,16 @@ public class ESP extends Module {
                 ch = Math.max(ch, 3);
 
                 if (doBorder) {
-                    drawHLine(guiGraphics, ix - 1, ix + cw + 1, iy - 1, t + 2, black);
-                    drawVLine(guiGraphics, ix - 1, iy - 1, iy + ch + 1, t + 2, black);
-                    drawHLine(guiGraphics, ix2 - cw - 1, ix2 + 1, iy - 1, t + 2, black);
-                    drawVLine(guiGraphics, ix2 - t - 1, iy - 1, iy + ch + 1, t + 2, black);
-                    drawHLine(guiGraphics, ix - 1, ix + cw + 1, iy2 - t - 1, t + 2, black);
-                    drawVLine(guiGraphics, ix - 1, iy2 - ch - 1, iy2 + 1, t + 2, black);
-                    drawHLine(guiGraphics, ix2 - cw - 1, ix2 + 1, iy2 - t - 1, t + 2, black);
-                    drawVLine(guiGraphics, ix2 - t - 1, iy2 - ch - 1, iy2 + 1, t + 2, black);
+                    drawCornerBox(guiGraphics, ix - 1, iy - 1, ix2 + 1, iy2 + 1, cw + 1, ch + 1, 1, black);
+                    drawCornerBox(guiGraphics, ix + t, iy + t, ix2 - t, iy2 - t, cw - t, ch - t, 1, black);
                 }
-
-                drawHLine(guiGraphics, ix, ix + cw, iy, t, oc);
-                drawVLine(guiGraphics, ix, iy, iy + ch, t, oc);
-                drawHLine(guiGraphics, ix2 - cw, ix2, iy, t, oc);
-                drawVLine(guiGraphics, ix2 - t, iy, iy + ch, t, oc);
-                drawHLine(guiGraphics, ix, ix + cw, iy2 - t, t, oc);
-                drawVLine(guiGraphics, ix, iy2 - ch, iy2, t, oc);
-                drawHLine(guiGraphics, ix2 - cw, ix2, iy2 - t, t, oc);
-                drawVLine(guiGraphics, ix2 - t, iy2 - ch, iy2, t, oc);
+                drawCornerBox(guiGraphics, ix, iy, ix2, iy2, cw, ch, t, oc);
             } else {
                 if (doBorder) {
-                    drawHLine(guiGraphics, ix - 1, ix2 + 1, iy - 1, t + 2, black);
-                    drawHLine(guiGraphics, ix - 1, ix2 + 1, iy2 - t - 1, t + 2, black);
-                    drawVLine(guiGraphics, ix - 1, iy - 1, iy2 + 1, t + 2, black);
-                    drawVLine(guiGraphics, ix2 - t - 1, iy - 1, iy2 + 1, t + 2, black);
+                    drawBox(guiGraphics, ix - 1, iy - 1, ix2 + 1, iy2 + 1, 1, black);
+                    drawBox(guiGraphics, ix + t, iy + t, ix2 - t, iy2 - t, 1, black);
                 }
-
-                drawHLine(guiGraphics, ix, ix2, iy, t, oc);
-                drawHLine(guiGraphics, ix, ix2, iy2 - t, t, oc);
-                drawVLine(guiGraphics, ix, iy, iy2, t, oc);
-                drawVLine(guiGraphics, ix2 - t, iy, iy2, t, oc);
+                drawBox(guiGraphics, ix, iy, ix2, iy2, t, oc);
             }
 
             if (showHealth) {
@@ -159,36 +136,48 @@ public class ESP extends Module {
                 float pct = Math.min(1f, Math.max(0f, le.getHealth() / Math.max(1f, maxHp)));
                 Color hpColor = RenderUtils.getHealthColor(pct);
                 int barH = (int)(rectH * pct);
-                int barX = ix - 5 - (doBorder ? 2 : 0);
-                int barW = 3;
+                int barX = ix - 6;
 
-                guiGraphics.fill(barX, iy, barX + barW, iy2, new Color(0, 0, 0, (int)(alpha * 140)).getRGB());
-                guiGraphics.fill(barX, iy2 - barH, barX + barW, iy2,
+                guiGraphics.fill(barX - 1, iy - 1, barX + 2, iy2 + 1, new Color(0, 0, 0, (int)(alpha * 160)).getRGB());
+                guiGraphics.fill(barX, iy2 - barH, barX + 1, iy2,
                     new Color(hpColor.getRed(), hpColor.getGreen(), hpColor.getBlue(), oa).getRGB());
             }
 
             if (showNames) {
                 String name = entity.getName().getString();
                 double d = Math.round(dist * 10.0) / 10.0;
-                String distStr = " " + d + "m";
-                int textWidth = FontUtils.width(name + distStr);
+                String distStr = " [" + d + "m]";
+                String fullText = name + distStr;
+                int textWidth = FontUtils.width(fullText);
                 int textX = (int)(minX + rectW / 2 - textWidth / 2);
-                int textY = iy - 12 - (doBorder ? 2 : 0);
-                guiGraphics.fill(textX - 2, textY - 1, textX + textWidth + 2, textY + 10,
-                    new Color(0, 0, 0, (int)(alpha * 150)).getRGB());
-                FontUtils.drawString(guiGraphics, name, textX, textY, outlineColor.getRGB(), false);
-                FontUtils.drawString(guiGraphics, distStr, textX + FontUtils.width(name), textY,
-                    new Color(200, 200, 200, oa).getRGB(), false);
+                int textY = iy - 12;
+
+                guiGraphics.fill(textX - 3, textY - 2, textX + textWidth + 3, textY + 9, new Color(0, 0, 0, (int)(alpha * 120)).getRGB());
+                FontUtils.drawString(guiGraphics, name, textX, textY, Color.WHITE.getRGB(), true);
+                FontUtils.drawString(guiGraphics, distStr, textX + FontUtils.width(name), textY, new Color(200, 200, 200, oa).getRGB(), true);
             }
         }
     }
 
-    private void drawHLine(GuiGraphicsExtractor g, int x1, int x2, int y, int thickness, int color) {
-        g.fill(x1, y, x2, y + thickness, color);
+    private void drawBox(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int thickness, int color) {
+        g.fill(x1, y1, x2, y1 + thickness, color);
+        g.fill(x1, y2 - thickness, x2, y2, color);
+        g.fill(x1, y1 + thickness, x1 + thickness, y2 - thickness, color);
+        g.fill(x2 - thickness, y1 + thickness, x2, y2 - thickness, color);
     }
 
-    private void drawVLine(GuiGraphicsExtractor g, int x, int y1, int y2, int thickness, int color) {
-        g.fill(x, y1, x + thickness, y2, color);
+    private void drawCornerBox(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int cw, int ch, int thickness, int color) {
+        g.fill(x1, y1, x1 + cw, y1 + thickness, color);
+        g.fill(x1, y1 + thickness, x1 + thickness, y1 + ch, color);
+
+        g.fill(x2 - cw, y1, x2, y1 + thickness, color);
+        g.fill(x2 - thickness, y1 + thickness, x2, y1 + ch, color);
+
+        g.fill(x1, y2 - thickness, x1 + cw, y2, color);
+        g.fill(x1, y2 - ch, x1 + thickness, y2 - thickness, color);
+
+        g.fill(x2 - cw, y2 - thickness, x2, y2, color);
+        g.fill(x2 - thickness, y2 - ch, x2, y2 - thickness, color);
     }
 
     public boolean shouldGlow() {

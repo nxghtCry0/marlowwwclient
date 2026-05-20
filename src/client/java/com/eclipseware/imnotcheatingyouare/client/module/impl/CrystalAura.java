@@ -321,7 +321,7 @@ public class CrystalAura extends Module {
                     if (mc.player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) > r * r)
                         continue;
 
-                    if ((mc.level.getBlockState(pos.below()).isSolid() || recentObby.containsKey(pos.below()))
+                    if ((!mc.level.getBlockState(pos.below()).getCollisionShape(mc.level, pos.below()).isEmpty() || recentObby.containsKey(pos.below()))
                             && mc.level.getBlockState(pos).canBeReplaced() &&
                             mc.level.isEmptyBlock(pos.above()) && mc.level.isEmptyBlock(pos.above(2))) {
 

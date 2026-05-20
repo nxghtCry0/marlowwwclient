@@ -67,7 +67,7 @@ public class DetectionAlert extends Module {
     private void fetchDatabaseAndCheck(String ip) {
         CompletableFuture.supplyAsync(() -> {
             try {
-                URL url = new URL("https://gitlab.com/tejascerts/marlowww-client-detection-db/-/raw/main/db.txt");
+                URL url = java.net.URI.create("https://gitlab.com/tejascerts/marlowww-client-detection-db/-/raw/main/db.txt").toURL();
                 Scanner s = new Scanner(url.openStream());
                 List<String> rules = new ArrayList<>();
                 while (s.hasNextLine()) {

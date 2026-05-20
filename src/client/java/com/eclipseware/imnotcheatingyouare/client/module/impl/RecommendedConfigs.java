@@ -68,7 +68,7 @@ public class RecommendedConfigs extends Module {
         CompletableFuture.supplyAsync(() -> {
             List<FoundConfig> found = new ArrayList<>();
             try {
-                URL apiUrl = new URL("https://api.github.com/repos/nxghtCry0/marlowwwclient/contents/configs");
+                URL apiUrl = java.net.URI.create("https://api.github.com/repos/nxghtCry0/marlowwwclient/contents/configs").toURL();
                 HttpURLConnection conn = (HttpURLConnection) apiUrl.openConnection();
                 conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
                 if (conn.getResponseCode() != 200) return found;
@@ -86,7 +86,7 @@ public class RecommendedConfigs extends Module {
 
                     String downloadUrl = fileObj.get("download_url").getAsString();
 
-                    URL configUrl = new URL(downloadUrl);
+                    URL configUrl = java.net.URI.create(downloadUrl).toURL();
                     Scanner s = new Scanner(configUrl.openStream());
                     StringBuilder sb = new StringBuilder();
                     while (s.hasNextLine()) sb.append(s.nextLine());

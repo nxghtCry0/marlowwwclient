@@ -27,6 +27,13 @@ public class GuiMixin {
 
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void onExtractRenderState(GuiGraphicsExtractor guiGraphics, DeltaTracker tickDelta, CallbackInfo ci) {
+        if (ImnotcheatingyouareClient.INSTANCE != null && ImnotcheatingyouareClient.INSTANCE.moduleManager != null) {
+            for (com.eclipseware.imnotcheatingyouare.client.module.Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.modules) {
+                if (m.isToggled()) {
+                    m.onRenderHUD(guiGraphics, tickDelta);
+                }
+            }
+        }
         com.eclipseware.imnotcheatingyouare.client.ui.ArrayListHud.INSTANCE.render(guiGraphics, tickDelta.getGameTimeDeltaTicks());
     }
 }

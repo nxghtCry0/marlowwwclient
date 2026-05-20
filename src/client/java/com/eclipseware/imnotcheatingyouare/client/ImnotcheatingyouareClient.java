@@ -56,6 +56,7 @@ Module breachSwap = new com.eclipseware.imnotcheatingyouare.client.module.impl.B
 
 Module lungeAssist = new com.eclipseware.imnotcheatingyouare.client.module.impl.LungeAssist();
 Module autoMace = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoMace();
+Module autoElytraSwap = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoElytraSwap();
 Module pearlCatch = new com.eclipseware.imnotcheatingyouare.client.module.impl.PearlCatch();
 Module jumpReset = new com.eclipseware.imnotcheatingyouare.client.module.impl.JumpReset();
 Module pearlGrapple = new com.eclipseware.imnotcheatingyouare.client.module.impl.PearlGrapple();
@@ -114,6 +115,7 @@ moduleManager.modules.add(breachSwap);
 
 moduleManager.modules.add(lungeAssist);
 moduleManager.modules.add(autoMace);
+moduleManager.modules.add(autoElytraSwap);
 moduleManager.modules.add(pearlCatch);
 moduleManager.modules.add(jumpReset);
 moduleManager.modules.add(pearlGrapple);
@@ -435,6 +437,20 @@ settingsManager.rSetting(new Setting("Tracers", blockESP, true));
 settingsManager.rSetting(new Setting("Fill", blockESP, true));
 settingsManager.rSetting(new Setting("Outline", blockESP, true));
 
+        java.util.ArrayList<String> combatSystems = new java.util.ArrayList<>();
+        combatSystems.add("Modern (1.9+)");
+        combatSystems.add("1.8.9");
+        settingsManager.rSetting(new Setting("Combat System", killAura, "Modern (1.9+)", combatSystems));
+        settingsManager.rSetting(new Setting("Range", killAura, 4.0, 1.0, 6.0, false));
+        settingsManager.rSetting(new Setting("Criticals Only", killAura, false));
+        settingsManager.rSetting(new Setting("Turn Speed", killAura, 180.0, 10.0, 180.0, false));
+        settingsManager.rSetting(new Setting("Movement Correction", killAura, true));
+        settingsManager.rSetting(new Setting("Target Players", killAura, true));
+        settingsManager.rSetting(new Setting("Target Mobs", killAura, false));
+        settingsManager.rSetting(new Setting("Target Animals", killAura, false));
+        settingsManager.rSetting(new Setting("Modern Delay (Ticks)", killAura, 0.0, 0.0, 5.0, true));
+        settingsManager.rSetting(new Setting("1.8.9 Min CPS", killAura, 8.0, 1.0, 20.0, true));
+        settingsManager.rSetting(new Setting("1.8.9 Max CPS", killAura, 12.0, 1.0, 20.0, true));
 
         Module menu = new com.eclipseware.imnotcheatingyouare.client.module.impl.Menu();
         moduleManager.modules.add(menu);

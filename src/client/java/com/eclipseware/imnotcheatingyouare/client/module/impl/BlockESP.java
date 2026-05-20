@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Vector3d;
@@ -20,7 +21,19 @@ import java.util.Set;
 
 public class BlockESP extends Module {
 
+    private static final record CachedBlock(BlockPos pos, Color color, String name) {}
     private final Set<String> defaultBlocks = new HashSet<>();
+    private final Set<Block> resolvedTargetBlocks = new HashSet<>();
+    private final java.util.List<CachedBlock> cachedBlocks = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private long lastCacheTick = 0;
+
+    private static final Vector3d projVec = new Vector3d();
+    private static final Vector3d[] boxProjBuffer = new Vector3d[8];
+    static {
+        for (int i = 0; i < 8; i++) {
+            boxProjBuffer[i] = new Vector3d();
+        }
+    }
 
     public BlockESP() {
         super("BlockESP", Category.Render, "Highlights target blocks.");
@@ -49,8 +62,19 @@ public class BlockESP extends Module {
         return s != null && s.getValBoolean();
     }
 
-    private final java.util.List<BlockPos> cachedBlocks = new java.util.concurrent.CopyOnWriteArrayList<>();
-    private long lastCacheTick = 0;
+    private void updateResolvedBlocks() {
+        resolvedTargetBlocks.clear();
+        for (String id : defaultBlocks) {
+            if (isBlockEnabled(id)) {
+                Block block = BuiltInRegistries.BLOCK.get(Identifier.parse("minecraft:" + id))
+                        .map(net.minecraft.core.Holder::value)
+                        .orElse(null);
+                if (block != null) {
+                    resolvedTargetBlocks.add(block);
+                }
+            }
+        }
+    }
 
     @Override
     public void onTick() {
@@ -63,11 +87,17 @@ public class BlockESP extends Module {
         if (mc.player.tickCount - lastCacheTick < 10) return;
         lastCacheTick = mc.player.tickCount;
 
+        updateResolvedBlocks();
+        if (resolvedTargetBlocks.isEmpty()) {
+            cachedBlocks.clear();
+            return;
+        }
+
         Setting rangeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Range");
         int range = rangeSetting != null ? (int) rangeSetting.getValDouble() : 32;
 
         BlockPos playerPos = mc.player.blockPosition();
-        java.util.List<BlockPos> newCache = new java.util.ArrayList<>();
+        java.util.List<CachedBlock> newCache = new java.util.ArrayList<>();
 
         for (int x = -range; x <= range; x++) {
             for (int y = -range; y <= range; y++) {
@@ -75,10 +105,11 @@ public class BlockESP extends Module {
                     BlockPos pos = playerPos.offset(x, y, z);
                     BlockState state = mc.level.getBlockState(pos);
                     Block block = state.getBlock();
-                    String blockName = BuiltInRegistries.BLOCK.getKey(block).getPath();
                     
-                    if (defaultBlocks.contains(blockName) && isBlockEnabled(blockName)) {
-                        newCache.add(pos);
+                    if (resolvedTargetBlocks.contains(block)) {
+                        String blockName = BuiltInRegistries.BLOCK.getKey(block).getPath();
+                        Color color = getColorForBlock(blockName);
+                        newCache.add(new CachedBlock(pos, color, blockName));
                     }
                 }
             }
@@ -88,7 +119,8 @@ public class BlockESP extends Module {
         cachedBlocks.addAll(newCache);
     }
 
-    private void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickCounterObj) {
+    @Override
+    public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickCounterObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
         
         float partialTick = getTickDelta(tickCounterObj);
@@ -103,47 +135,49 @@ public class BlockESP extends Module {
         
         if (!showTracers && !doFill && !doOutline) return;
         
-        for (BlockPos pos : cachedBlocks) {
-            BlockState state = mc.level.getBlockState(pos);
-            String blockName = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();
-            if (!defaultBlocks.contains(blockName) || !isBlockEnabled(blockName)) continue;
+        for (CachedBlock cb : cachedBlocks) {
+            if (!isBlockEnabled(cb.name)) continue;
             
-            Color color = getColorForBlock(blockName);
-            Vector3d screenPos = RenderUtils.project2D(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, partialTick);
-            
-            if (screenPos != null && screenPos.z > 0 && screenPos.z < 1.0) {
-                if (showTracers) {
-                    RenderUtils.drawLine2D(guiGraphics,
-                        mc.getWindow().getGuiScaledWidth() / 2.0,
-                        mc.getWindow().getGuiScaledHeight() / 2.0,
-                        screenPos.x, screenPos.y, color);
-                }
-                if (doFill || doOutline) {
-                    drawBlockBox(guiGraphics, pos, color, doFill, doOutline, partialTick);
+            if (RenderUtils.project2D(cb.pos.getX() + 0.5, cb.pos.getY() + 0.5, cb.pos.getZ() + 0.5, partialTick, projVec)) {
+                if (projVec.z > 0 && projVec.z < 1.0) {
+                    if (showTracers) {
+                        RenderUtils.drawLine2D(guiGraphics,
+                            mc.getWindow().getGuiScaledWidth() / 2.0,
+                            mc.getWindow().getGuiScaledHeight() / 2.0,
+                            projVec.x, projVec.y, cb.color);
+                    }
+                    if (doFill || doOutline) {
+                        drawBlockBox(guiGraphics, cb.pos, cb.color, doFill, doOutline, partialTick);
+                    }
                 }
             }
         }
     }
 
     private void drawBlockBox(GuiGraphicsExtractor guiGraphics, BlockPos pos, Color color, boolean fill, boolean outline, float partialTick) {
-        Vector3d[] corners = new Vector3d[8];
-        corners[0] = RenderUtils.project2D(pos.getX(), pos.getY(), pos.getZ(), partialTick);
-        corners[1] = RenderUtils.project2D(pos.getX() + 1, pos.getY(), pos.getZ(), partialTick);
-        corners[2] = RenderUtils.project2D(pos.getX(), pos.getY() + 1, pos.getZ(), partialTick);
-        corners[3] = RenderUtils.project2D(pos.getX() + 1, pos.getY() + 1, pos.getZ(), partialTick);
-        corners[4] = RenderUtils.project2D(pos.getX(), pos.getY(), pos.getZ() + 1, partialTick);
-        corners[5] = RenderUtils.project2D(pos.getX() + 1, pos.getY(), pos.getZ() + 1, partialTick);
-        corners[6] = RenderUtils.project2D(pos.getX(), pos.getY() + 1, pos.getZ() + 1, partialTick);
-        corners[7] = RenderUtils.project2D(pos.getX() + 1, pos.getY() + 1, pos.getZ() + 1, partialTick);
+        int x = pos.getX();
+        int y = pos.getY();
+        int z = pos.getZ();
 
         double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
-        double maxX = Double.MIN_VALUE, maxY = Double.MIN_VALUE;
+        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
         boolean behind = true;
-        for (Vector3d v : corners) {
-            if (v != null && v.z > 0 && v.z < 1.0) {
-                behind = false;
-                minX = Math.min(minX, v.x); minY = Math.min(minY, v.y);
-                maxX = Math.max(maxX, v.x); maxY = Math.max(maxY, v.y);
+
+        for (int i = 0; i < 8; i++) {
+            double cx = x + ((i & 1) == 0 ? 0 : 1);
+            double cy = y + ((i & 2) == 0 ? 0 : 1);
+            double cz = z + ((i & 4) == 0 ? 0 : 1);
+
+            if (RenderUtils.project2D(cx, cy, cz, partialTick, boxProjBuffer[i])) {
+                if (boxProjBuffer[i].z > 0 && boxProjBuffer[i].z < 1.0) {
+                    behind = false;
+                    double px = boxProjBuffer[i].x;
+                    double py = boxProjBuffer[i].y;
+                    minX = Math.min(minX, px);
+                    minY = Math.min(minY, py);
+                    maxX = Math.max(maxX, px);
+                    maxY = Math.max(maxY, py);
+                }
             }
         }
         if (behind) return;

@@ -15,42 +15,37 @@ import java.awt.Color;
 
 public class RenderUtils {
     private static final Minecraft mc = Minecraft.getInstance();
-    private static java.lang.reflect.Method getFovMethod;
+    private static final org.joml.Vector4f transformVec = new org.joml.Vector4f();
 
     public static Vector3d project2D(double x, double y, double z, float partialTicks) {
+        Vector3d out = new Vector3d();
+        if (project2D(x, y, z, partialTicks, out)) {
+            return out;
+        }
+        return null;
+    }
+
+    public static boolean project2D(double x, double y, double z, float partialTicks, Vector3d out) {
         Camera camera = mc.gameRenderer.getMainCamera();
-        Vec3 camPos = getCameraPos(camera);
+        if (camera == null) return false;
+        Vec3 camPos = camera.position();
+        
+        Matrix4f combinedMatrix = camera.getViewRotationProjectionMatrix(new Matrix4f());
 
-        Vector4f vec = new Vector4f((float)(x - camPos.x), (float)(y - camPos.y), (float)(z - camPos.z), 1.0f);
+        transformVec.set((float)(x - camPos.x), (float)(y - camPos.y), (float)(z - camPos.z), 1.0f);
+        combinedMatrix.transform(transformVec);
 
-        Matrix4f viewMatrix = new Matrix4f().rotation(camera.rotation()).invert();
-        viewMatrix.transform(vec);
-
-        float fov = getActualFov(camera, partialTicks);
-        Matrix4f projMatrix = new org.joml.Matrix4f();
-        projMatrix.transform(vec);
-
-        if (vec.w <= 0.001f) return null;
-        vec.div(vec.w);
+        if (transformVec.w <= 0.001f) return false;
+        transformVec.div(transformVec.w);
 
         double screenWidth = mc.getWindow().getGuiScaledWidth();
         double screenHeight = mc.getWindow().getGuiScaledHeight();
-        double screenX = (screenWidth / 2.0) * (vec.x() + 1.0);
-        double screenY = (screenHeight / 2.0) * (1.0 - vec.y());
 
-        return new Vector3d(screenX, screenY, vec.z());
-    }
+        double screenX = (screenWidth / 2.0) * (transformVec.x + 1.0);
+        double screenY = (screenHeight / 2.0) * (1.0 - transformVec.y);
 
-    private static float getActualFov(Camera camera, float partialTicks) {
-        try {
-            if (getFovMethod == null) {
-                getFovMethod = mc.gameRenderer.getClass().getDeclaredMethod("getFov", Camera.class, float.class, boolean.class);
-                getFovMethod.setAccessible(true);
-            }
-            return (float) getFovMethod.invoke(mc.gameRenderer, camera, partialTicks, true);
-        } catch (Exception e) {
-            return mc.options.fov().get().floatValue();
-        }
+        out.set(screenX, screenY, transformVec.z);
+        return true;
     }
 
     private static Vec3 getCameraPos(Camera camera) {

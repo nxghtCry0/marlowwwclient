@@ -43,7 +43,7 @@ public class ModuleButton extends Button {
     @Override
     public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
         java.awt.Color theme = RenderUtils.getThemeAccentColor();
-        int accent = new java.awt.Color(theme.getRed(), theme.getGreen(), theme.getBlue(), 200).getRGB();
+        int accent = (theme.getRGB() & 0x00FFFFFF) | (200 << 24);
         int dark = 0xAA111111;
         int hoverDark = 0xCC222222;
 

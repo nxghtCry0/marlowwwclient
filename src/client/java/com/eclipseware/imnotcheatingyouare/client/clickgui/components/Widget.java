@@ -54,7 +54,8 @@ public class Widget {
         
         int color = RenderUtils.getThemeAccentColor().getRGB();
         java.awt.Color secondary = RenderUtils.getThemeSecondaryColor();
-        int darkBg = new java.awt.Color(secondary.getRed(), secondary.getGreen(), secondary.getBlue(), 238).getRGB();
+        int secondaryRGB = secondary.getRGB();
+        int darkBg = (secondaryRGB & 0x00FFFFFF) | (238 << 24);
         
         context.fill(this.x, this.y, this.x + this.width, this.y + this.height, darkBg);
         context.text(mc.font, this.name, this.x + 4, this.y + 5, color, false);
@@ -62,7 +63,7 @@ public class Widget {
 
         if (this.open) {
             float totalItemHeight = this.getTotalItemHeight();
-            int itemsBg = new java.awt.Color(secondary.getRed(), secondary.getGreen(), secondary.getBlue(), 153).getRGB();
+            int itemsBg = (secondaryRGB & 0x00FFFFFF) | (153 << 24);
             context.fill(this.x, this.y + this.height, this.x + this.width, (int)(this.y + this.height + totalItemHeight), itemsBg);
             
             float currentY = this.y + this.height;

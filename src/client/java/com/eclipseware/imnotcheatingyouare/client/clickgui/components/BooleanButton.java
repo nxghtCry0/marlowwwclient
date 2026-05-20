@@ -17,7 +17,7 @@ public class BooleanButton extends Button {
     @Override
     public void drawScreen(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
         java.awt.Color theme = RenderUtils.getThemeAccentColor();
-        int accent = new java.awt.Color(theme.getRed(), theme.getGreen(), theme.getBlue(), 120).getRGB();
+        int accent = (theme.getRGB() & 0x00FFFFFF) | (120 << 24);
         int dark = 0x22000000;
         int hoverDark = 0x44222222;
 
