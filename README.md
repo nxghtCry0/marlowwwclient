@@ -1,4 +1,10 @@
 # IMPORTANT!
+Join the Discord!
+https://discord.gg/kiwihome
+Download releases or get early access here!
+❤️
+
+
 My main account, @nxght_Cry0 on discord was TERMINATED!
 The only official account of mine is now @firefox.lol
 
