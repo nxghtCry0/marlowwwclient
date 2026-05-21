@@ -27,6 +27,11 @@ import java.util.Random;
 public class AimAssist extends Module {
     private Entity target;
     private final Random random = new Random();
+    private int aimTicks = 0;
+    private Entity lastTarget = null;
+    private double startAimMult = 1.0;
+    private double midAimMult = 1.0;
+    private double endAimMult = 1.0;
 
     public AimAssist() {
         super("AimAssist", Category.Combat, "Automatically aims at entities with Grim AC v3 bypass.");
@@ -48,6 +53,8 @@ public class AimAssist extends Module {
     @Override
     public void onDisable() {
         target = null;
+        lastTarget = null;
+        aimTicks = 0;
         MouseAimHelper.clearAimRate();
     }
 
@@ -58,6 +65,8 @@ public class AimAssist extends Module {
         Setting clickAimSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Click Aim");
         if (clickAimSetting != null && clickAimSetting.getValBoolean() && !mc.options.keyAttack.isDown()) {
             target = null;
+            lastTarget = null;
+            aimTicks = 0;
             MouseAimHelper.clearAimRate();
             return;
         }
@@ -65,6 +74,8 @@ public class AimAssist extends Module {
         Setting weaponOnlySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Weapon Only");
         if (mc.screen != null || (weaponOnlySetting != null && weaponOnlySetting.getValBoolean() && !isHoldingWeapon())) {
             target = null;
+            lastTarget = null;
+            aimTicks = 0;
             MouseAimHelper.clearAimRate();
             return;
         }
@@ -72,9 +83,23 @@ public class AimAssist extends Module {
         updateTarget();
 
         if (target == null) {
+            lastTarget = null;
+            aimTicks = 0;
             MouseAimHelper.clearAimRate();
             return;
         }
+
+        if (target != lastTarget) {
+            lastTarget = target;
+            aimTicks = 0;
+            startAimMult = 0.2 + Math.random() * 0.3;
+            midAimMult = 0.8 + Math.random() * 0.4;
+            endAimMult = 0.3 + Math.random() * 0.3;
+        }
+
+        aimTicks++;
+        double tAim = Math.min(aimTicks / 10.0, 1.0);
+        double aimBezierMult = (1.0 - tAim) * (1.0 - tAim) * startAimMult + 2.0 * (1.0 - tAim) * tAim * midAimMult + tAim * tAim * endAimMult;
 
         Setting bodyTargetSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Target Area");
         String bodyTarget = bodyTargetSetting != null ? bodyTargetSetting.getValString() : "Body";
@@ -95,11 +120,12 @@ public class AimAssist extends Module {
 
         Setting speedSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Aim Speed");
         float speed = speedSetting != null ? (float) speedSetting.getValDouble() : 5.0f;
+        speed *= aimBezierMult;
 
         Setting maxDeltaSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Max Rotation Delta");
         float maxDelta = maxDeltaSetting != null ? (float) maxDeltaSetting.getValDouble() : 2.5f;
+        maxDelta *= aimBezierMult;
 
-        // Yaw calculation
         double targetYaw = Math.toDegrees(Math.atan2(deltaZ, deltaX)) - 90;
         if (noise > 0.0) {
             targetYaw += (random.nextFloat() - 0.5f) * noise * 2.0;
@@ -113,7 +139,6 @@ public class AimAssist extends Module {
             toRotateYaw = Math.copySign(maxDelta, toRotateYaw);
         }
 
-        // Pitch calculation
         double horizontalDist = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
         double targetPitch = -Math.toDegrees(Math.atan2(deltaY, horizontalDist));
         if (noise > 0.0) {
@@ -128,8 +153,6 @@ public class AimAssist extends Module {
             toRotatePitch = Math.copySign(maxDelta, toRotatePitch);
         }
 
-        // Feed to hardware mouse simulator! 
-        // toRotateYaw and toRotatePitch are the desired degrees of rotation for THIS TICK (50ms).
         MouseAimHelper.setAimRate(toRotateYaw, toRotatePitch);
     }
 
@@ -192,6 +215,6 @@ public class AimAssist extends Module {
         if (mc.player == null) return false;
         net.minecraft.world.item.Item item = mc.player.getMainHandItem().getItem();
         String name = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item).getPath().toLowerCase();
-        return name.contains("sword") || name.contains("axe");
+        return name.contains("sword") || name.contains("axe") || name.contains("mace");
     }
 }

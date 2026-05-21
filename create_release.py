@@ -11,14 +11,14 @@ if not token:
 
 owner = "nxghtCry0"
 repo = "marlowwwclient"
-tag = "v2.3.0"
-name = "Marlow Client v2.3.0"
+tag = "v2.3.1"
+name = "Marlow Client v2.3.1"
 
 try:
     with open("CHANGELOG.md", "r", encoding="utf-8") as f:
         body = f.read()
 except FileNotFoundError:
-    body = "Release version 2.3.0"
+    body = "Release version 2.3.1"
 
 data = {
     "tag_name": tag,
@@ -48,8 +48,8 @@ except Exception as e:
     print(f"Failed to create release: {e}")
     sys.exit(1)
 
-file_path = "build/libs/im-not-cheating-you-are-2.3.0.jar"
-file_name = "im-not-cheating-you-are-2.3.0.jar"
+file_path = "build/libs/im-not-cheating-you-are-2.3.1.jar"
+file_name = "im-not-cheating-you-are-2.3.1.jar"
 upload_uri = f"{upload_url}?name={file_name}"
 
 print(f"Uploading asset to {upload_uri}")

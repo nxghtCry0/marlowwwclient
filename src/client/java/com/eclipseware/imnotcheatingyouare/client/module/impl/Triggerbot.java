@@ -34,6 +34,12 @@ public class Triggerbot extends Module {
     }
 
     @Override
+    public void onEnable() {
+        tickCounter = 0;
+        currentTargetDelay = 0;
+    }
+
+    @Override
     public void onTick() {
         if (mc.player == null || mc.level == null) return;
 
@@ -79,12 +85,13 @@ public class Triggerbot extends Module {
             if (hitSelectMod != null && hitSelectMod.isToggled() &&
                 hitSelectMod instanceof HitSelect hs && !hs.canAttack(target)) return;
 
-            Setting simulateClick = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Simulate Mouse Click");
-            if (simulateClick != null && simulateClick.getValBoolean()) {
+            Setting clickStyle = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Click Style");
+            if (clickStyle != null && clickStyle.getValString().equalsIgnoreCase("Virtual")) {
                 pressAttackKey();
             } else {
-                mc.gameMode.attack(mc.player, target);
                 mc.player.swing(InteractionHand.MAIN_HAND);
+                mc.gameMode.attack(mc.player, target);
+                mc.player.resetAttackStrengthTicker();
             }
 
             lastAttackMs = System.currentTimeMillis();
@@ -121,8 +128,21 @@ public class Triggerbot extends Module {
         Setting bypassSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Packet Bypass");
         if (bypassSetting != null && bypassSetting.getValBoolean()) runPacketBypass();
 
-        mc.gameMode.attack(mc.player, target);
-        mc.player.swing(InteractionHand.MAIN_HAND);
+        Setting clickStyle = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Click Style");
+        if (clickStyle != null && clickStyle.getValString().equalsIgnoreCase("Virtual")) {
+            pressAttackKey();
+        } else {
+            mc.player.swing(InteractionHand.MAIN_HAND);
+            mc.gameMode.attack(mc.player, target);
+            mc.player.resetAttackStrengthTicker();
+        }
+
+        Setting minSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Min Delay (Ticks)");
+        Setting maxSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Max Delay (Ticks)");
+        int min = minSetting != null ? (int) minSetting.getValDouble() : 1;
+        int max = maxSetting != null ? (int) maxSetting.getValDouble() : 4;
+        if (min > max) { int t = min; min = max; max = t; }
+        currentTargetDelay = min + (int) (Math.random() * ((max - min) + 1));
         
         tickCounter = 0;
     }
@@ -167,7 +187,7 @@ public class Triggerbot extends Module {
         if (weaponsOnlySetting != null && weaponsOnlySetting.getValBoolean()) {
             net.minecraft.world.item.Item mainHand = mc.player.getMainHandItem().getItem();
             String name = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(mainHand).getPath();
-            if (!name.contains("sword") && !name.contains("axe")) {
+            if (!name.contains("sword") && !name.contains("axe") && !name.contains("mace")) {
                 return false;
             }
         }

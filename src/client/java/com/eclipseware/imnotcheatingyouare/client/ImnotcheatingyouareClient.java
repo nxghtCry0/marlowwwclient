@@ -268,6 +268,11 @@ addColorSettings(settingsManager, storageESP, "Furnace Color", 160, 160, 160);
         settingsManager.rSetting(new Setting("Wait Ticks", wTap, 0.0, 0.0, 10.0, true));
         settingsManager.rSetting(new Setting("Action Ticks", wTap, 1.0, 1.0, 5.0, true));
 
+        java.util.ArrayList<String> tbModes = new java.util.ArrayList<>();
+        tbModes.add("Legit"); tbModes.add("Blatant");
+        settingsManager.rSetting(new Setting("Mode", triggerbot, "Legit", tbModes));
+        settingsManager.rSetting(new Setting("Packet Bypass", triggerbot, false));
+
         java.util.ArrayList<String> tbClickStyles = new java.util.ArrayList<>();
         tbClickStyles.add("Virtual"); tbClickStyles.add("Direct");
         settingsManager.rSetting(new Setting("Click Style", triggerbot, "Virtual", tbClickStyles));

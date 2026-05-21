@@ -1,3 +1,21 @@
+# Marlow Client v2.3.1 - The Humanization & Triggerbot Update
+
+## 🚀 Major Features & Fixes
+
+### **Triggerbot Detection & Functionality Overhaul**
+- **Correct Setting Lookup:** Fixed a settings key issue where the Triggerbot checked for the non-existent "Simulate Mouse Click" instead of "Click Style" (Virtual/Direct).
+- **Attack Packet Order Correction:** Adjusted the Direct click style attack logic to swing the player's hand before performing the attack, ensuring perfect alignment with the vanilla packet structure.
+- **Cooldown Synchronization:** Added a reset call to the player's attack strength ticker after direct attacks, preventing zero-damage hits caused by client-server desync.
+- **Mode & Bypass Controls:** Registered the missing "Mode" (Legit/Blatant) and "Packet Bypass" settings for the Triggerbot in the client initialization loop.
+- **Weapon Support:** Integrated the Mace (1.21) into the weapon filter checks for both Triggerbot and AimAssist modules.
+- **State Resetting:** Ensured internal tick and delay trackers are completely reset upon module activation.
+
+### **Bezier-Curve Humanized Timing**
+- **Click Delay Humanization:** Added randomized quadratic Bezier curve scaling to ClickConsistency, ensuring AutoClicker delays are continuously varied and humanized over click streaks.
+- **Aim Assist Smoothing:** Scaled Aim Assist speed and rotation limit deltas dynamically via quadratic Bezier curves, easing rotations in and out based on continuous lock time to bypass anti-cheat checks.
+
+---
+
 # Marlow Client v2.3.0 - The Performance & Combat Update
 
 ## 🚀 Major Features & Fixes

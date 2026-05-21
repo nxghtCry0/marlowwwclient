@@ -3,19 +3,6 @@ package com.eclipseware.imnotcheatingyouare.client.utils.cheat;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-/**
- * Click Consistency / CPS humanisation.
- *
- * Anticheats track:
- *   - CPS variance (too consistent = bot)
- *   - Inter-click timing distribution (should follow a roughly Gaussian curve)
- *   - Burst patterns (clicking exactly every N ms is flagged)
- *
- * This class produces humanised click timings by:
- *   1. Adding Gaussian jitter to the base delay
- *   2. Occasionally inserting a "misclick gap" (simulates human hesitation)
- *   3. Tracking a rolling CPS window so we never exceed a configured cap
- */
 public class ClickConsistency {
 
     private static final int   WINDOW_MS   = 1000;
@@ -27,41 +14,52 @@ public class ClickConsistency {
     private static final double MISCLICK_PROB = 0.04;
     private static final int    MISCLICK_EXTRA_MS = 120;
 
-    /**
-     * Returns true if it's safe to click right now without exceeding maxCPS
-     * and without producing a suspicious timing pattern.
-     *
-     * @param baseDelayMs  nominal ms between clicks
-     * @param maxCPS       hard cap (e.g. 14)
-     */
+    private static int clickStreak = 0;
+    private static long lastClickTime = 0L;
+    private static double startMult = 1.0;
+    private static double midMult = 1.0;
+    private static double endMult = 1.0;
+
     public static boolean shouldClick(long baseDelayMs, int maxCPS) {
         long now = System.currentTimeMillis();
         pruneWindow(now);
 
         if (clicks.size() >= maxCPS) return false;
 
-        long lastClick = clicks.isEmpty() ? 0L : clicks.peekLast();
-        long elapsed   = now - lastClick;
+        if (now - lastClickTime > 600L) {
+            clickStreak = 0;
+            startMult = 1.1 + Math.random() * 0.25;
+            midMult = 0.85 + Math.random() * 0.15;
+            endMult = 1.0 + Math.random() * 0.2;
+        }
+
+        double t = Math.min(clickStreak / 8.0, 1.0);
+        double bezierMult = (1.0 - t) * (1.0 - t) * startMult + 2.0 * (1.0 - t) * t * midMult + t * t * endMult;
 
         double jitter = JITTER_MEAN + JITTER_STDDEV * gaussian();
-        long   needed = (long) (baseDelayMs + jitter);
+        long   needed = (long) (baseDelayMs * bezierMult + jitter);
 
         if (Math.random() < MISCLICK_PROB) needed += MISCLICK_EXTRA_MS;
+
+        long lastClick = clicks.isEmpty() ? 0L : clicks.peekLast();
+        long elapsed   = now - lastClick;
 
         if (elapsed < needed) return false;
 
         clicks.addLast(now);
+        lastClickTime = now;
+        clickStreak++;
         return true;
     }
 
-    /** Register an external click (e.g. real mouse press) so CPS tracking stays accurate. */
     public static void registerClick() {
         long now = System.currentTimeMillis();
         pruneWindow(now);
         clicks.addLast(now);
+        lastClickTime = now;
+        clickStreak++;
     }
 
-    /** Current CPS in the last second. */
     public static int currentCPS() {
         pruneWindow(System.currentTimeMillis());
         return clicks.size();
