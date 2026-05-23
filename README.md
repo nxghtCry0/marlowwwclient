@@ -1,6 +1,6 @@
 # IMPORTANT!
 Join the Discord!
-https://discord.gg/kiwihome
+https://discord.gg/marlowwwclient
 Download releases or get early access here!
 ❤️
 
