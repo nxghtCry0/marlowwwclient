@@ -1,4 +1,4 @@
-# Marlow Client v2.3.1 - The UI & Combat Stability Rework
+# Marlow Client v2.4.0 - The UI & Combat Stability Rework
 
 ## 🚀 Major Features & Fixes
 
