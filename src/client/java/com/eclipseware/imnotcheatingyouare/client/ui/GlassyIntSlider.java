@@ -2,42 +2,41 @@ package com.eclipseware.imnotcheatingyouare.client.ui;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
-import java.util.function.IntConsumer;
-import java.util.function.IntFunction;
-import java.util.function.IntSupplier;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleFunction;
+import java.util.function.DoubleSupplier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
 public final class GlassyIntSlider extends CompatSliderButton {
-    private final IntSupplier getter;
-    private final IntConsumer setter;
-    private final int min;
-    private final int max;
-    private final int step;
-    private final IntFunction<Component> label;
+    private final DoubleSupplier getter;
+    private final DoubleConsumer setter;
+    private final double min;
+    private final double max;
+    private final boolean onlyInt;
+    private final DoubleFunction<Component> label;
     private double animValue;
     private final double defaultValue01;
-    private final int defaultValue;
+    private final double defaultValue;
     private long lastRenderTime = 0;
 
-    public GlassyIntSlider(int x, int y, int width, int height, IntSupplier getter, IntConsumer setter, int min, int max, int step, IntFunction<Component> label, int defaultValue) {
+    public GlassyIntSlider(int x, int y, int width, int height, DoubleSupplier getter, DoubleConsumer setter, double min, double max, boolean onlyInt, DoubleFunction<Component> label, double defaultValue) {
         super(x, y, width, height, Component.empty(), 0.0D);
         this.getter = getter;
         this.setter = setter;
         this.min = min;
         this.max = max;
-        this.step = step;
+        this.onlyInt = onlyInt;
         this.label = label;
         this.defaultValue = defaultValue;
         this.defaultValue01 = (clamp(defaultValue, min, max) - min) / Math.max(1.0D, (max - min));
         
-        int got = (getter != null) ? getter.getAsInt() : min;
-        int knob = clamp(got, min, max);
+        double got = (getter != null) ? getter.getAsDouble() : min;
+        double knob = clamp(got, min, max);
         this.value = (knob - min) / Math.max(1.0D, (max - min));
         this.animValue = this.value;
         updateMessage();
@@ -49,27 +48,70 @@ public final class GlassyIntSlider extends CompatSliderButton {
 
     @Override
     protected void updateMessage() {
-        int got = (this.getter != null) ? this.getter.getAsInt() : this.min;
-        int knob = clamp(got, this.min, this.max);
+        double got = (this.getter != null) ? this.getter.getAsDouble() : this.min;
+        double knob = clamp(got, this.min, this.max);
         this.value = (knob - this.min) / Math.max(1.0D, (this.max - this.min));
         if (this.label != null) {
             setMessage(this.label.apply(knob));
         } else {
-            setMessage(Component.literal(Integer.toString(knob)));
+            setMessage(Component.literal(this.onlyInt ? Integer.toString((int) knob) : Double.toString(knob)));
         } 
     }
 
     @Override
     protected void applyValue() {
         this.value = Mth.clamp(this.value, 0.0D, 1.0D);
-        int raw = (int)Math.round(this.min + (this.max - this.min) * this.value);
-        int stepped = (this.step <= 1) ? raw : ((int)Math.round((double)raw / this.step) * this.step);
-        int clamped = clamp(stepped, this.min, this.max);
+        double raw = this.min + (this.max - this.min) * this.value;
+        double stepped;
+        if (this.onlyInt) {
+            stepped = Math.round(raw);
+        } else {
+            stepped = Math.round(raw * 10.0) / 10.0;
+        }
+        double clamped = clamp(stepped, this.min, this.max);
         this.value = (clamped - this.min) / Math.max(1.0D, (this.max - this.min));
         if (this.setter != null) {
             this.setter.accept(clamped);
         }
         updateMessage();
+    }
+
+    private void updateValueFromMouse(double mouseX) {
+        double pad = 6.0;
+        double knobW = 6.0;
+        double knobHalf = knobW / 2.0;
+        double trackX0 = getX() + pad;
+        double trackX1 = getX() + getWidth() - pad;
+        double centerMin = trackX0 + knobHalf;
+        double centerMax = trackX1 - knobHalf;
+        double totalRange = centerMax - centerMin;
+        if (totalRange <= 0.0) {
+            this.value = 0.0;
+        } else {
+            this.value = (mouseX - centerMin) / totalRange;
+        }
+        applyValue();
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        if (event != null && this.active && this.visible && event.button() == 1 && isMouseOver(event.x(), event.y())) {
+            return true;
+        }
+        if (event != null && this.active && this.visible && event.button() == 0 && isMouseOver(event.x(), event.y())) {
+            updateValueFromMouse(event.x());
+            return true;
+        } 
+        return super.mouseClicked(event, doubleClick);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        if (event != null && this.active && this.visible && event.button() == 0) {
+            updateValueFromMouse(event.x());
+            return true;
+        } 
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     @Override
@@ -85,37 +127,8 @@ public final class GlassyIntSlider extends CompatSliderButton {
 
         renderGlassySlider(guiGraphics, mouseX, mouseY, getX(), getY(), getWidth(), getHeight(), this.animValue, this.defaultValue01, getMessage(), this.active, this.isHovered);
     }
-
-    @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (event != null && this.active && this.visible && event.button() == 1 && isMouseOver(event.x(), event.y())) {
-            return true;
-        }
-        if (event != null && this.active && this.visible && event.button() == 0 && isMouseOver(event.x(), event.y()) && isShiftDown()) {
-            this.value = this.defaultValue01;
-            applyValue();
-            updateMessage();
-            return true;
-        } 
-        return super.mouseClicked(event, doubleClick);
-    }
-
-    @Override
-    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
-        if (event != null && this.active && this.visible && event.button() == 0 && isShiftDown()) {
-            this.value = this.defaultValue01;
-            applyValue();
-            updateMessage();
-            return true;
-        } 
-        return super.mouseDragged(event, dragX, dragY);
-    }
     
-    private static boolean isShiftDown() {
-        return false;
-    }
-    
-    private static int clamp(int v, int min, int max) {
+    private static double clamp(double v, double min, double max) {
         return Math.max(min, Math.min(max, v));
     }
 

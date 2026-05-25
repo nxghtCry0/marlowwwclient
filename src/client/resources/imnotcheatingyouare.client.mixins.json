@@ -29,7 +29,8 @@
 "ChatScreenMixin",
 "VisGraphMixin",
 "MouseMixin",
-"MinecraftMixin"
+"MinecraftMixin",
+"MouseButtonEventMixin"
 ],
 "injectors": {
 "defaultRequire": 1

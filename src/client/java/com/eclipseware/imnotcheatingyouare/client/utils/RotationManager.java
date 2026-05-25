@@ -104,6 +104,49 @@ public class RotationManager {
         currentServerPitch = Mth.clamp(currentServerPitch, -90, 90);
     }
 
+    public static void keepRotatedSmooth(float yaw, float pitch, float stepDegrees, boolean moveCorrect) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+
+        float targetYaw = Mth.wrapDegrees(yaw);
+        float targetPitch = Mth.clamp(pitch, -90, 90);
+        movementCorrection = moveCorrect;
+        ticksSinceLastKeep = 0;
+        keepMode = true;
+
+        if (!active || returning) {
+            currentServerYaw = mc.player.getYRot();
+            currentServerPitch = mc.player.getXRot();
+            active = true;
+            returning = false;
+        }
+
+        float gcd = getGCD();
+        if (gcd < 0.001f) gcd = 0.15f;
+
+        float yawDiff = Mth.wrapDegrees(targetYaw - currentServerYaw);
+        float pitchDiff = targetPitch - currentServerPitch;
+
+        float yawStep = yawDiff;
+        if (Math.abs(yawStep) > stepDegrees) {
+            yawStep = Math.signum(yawStep) * stepDegrees;
+        }
+
+        float pitchStep = pitchDiff;
+        if (Math.abs(pitchStep) > stepDegrees) {
+            pitchStep = Math.signum(pitchStep) * stepDegrees;
+        }
+
+        int yawSteps = Math.round(yawStep / gcd);
+        int pitchSteps = Math.round(pitchStep / gcd);
+
+        float deltaYaw = yawSteps * gcd;
+        float deltaPitch = pitchSteps * gcd;
+
+        currentServerYaw = Mth.wrapDegrees(currentServerYaw + deltaYaw);
+        currentServerPitch = Mth.clamp(currentServerPitch + deltaPitch, -90, 90);
+    }
+
     /**
      * One-shot silent rotation for modules like AutoWeb/AutoDrain.
      */

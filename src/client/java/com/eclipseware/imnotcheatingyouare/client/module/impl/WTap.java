@@ -45,7 +45,7 @@ public class WTap extends Module {
                 ticksRemaining--;
                 if (ticksRemaining <= 0) {
                     if (AntiCheatProfile.wtapSilentMode()) {
-                        sendSprintPacket(false);
+                        mc.player.setSprinting(false);
                     } else {
                         mc.options.keyUp.setDown(false);
                     }
@@ -59,7 +59,7 @@ public class WTap extends Module {
                 ticksRemaining--;
                 if (ticksRemaining <= 0) {
                     if (AntiCheatProfile.wtapSilentMode()) {
-                        sendSprintPacket(true);
+                        mc.player.setSprinting(true);
                     } else if (isPhysicallyHoldingW()) {
                         mc.options.keyUp.setDown(true);
                     }
@@ -69,15 +69,11 @@ public class WTap extends Module {
         }
     }
 
-    /** Send a ServerboundPlayerCommandPacket to start/stop sprinting without touching key state. */
-    private void sendSprintPacket(boolean start) {
-        if (mc.getConnection() == null || mc.player == null) return;
-        net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket.Action action =
-            start
-            ? net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket.Action.START_SPRINTING
-            : net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket.Action.STOP_SPRINTING;
-        mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket(
-            mc.player, action));
+    public static boolean shouldSilentStopSprint() {
+        if (ImnotcheatingyouareClient.INSTANCE == null || ImnotcheatingyouareClient.INSTANCE.moduleManager == null) return false;
+        WTap wTap = (WTap) ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("WTap");
+        if (wTap == null || !wTap.isToggled()) return false;
+        return AntiCheatProfile.wtapSilentMode() && wTap.phase == 2;
     }
 
     private boolean isPhysicallyHoldingW() {

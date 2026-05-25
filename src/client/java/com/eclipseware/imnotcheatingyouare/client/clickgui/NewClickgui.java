@@ -52,6 +52,17 @@ public class NewClickgui extends Screen {
         super(Component.literal("Marlowww Client"));
     }
 
+    public float getScaleFactor() {
+        float scale = 1.0f;
+        if (this.width < 680f) {
+            scale = Math.min(scale, this.width / 680f);
+        }
+        if (this.height < 400f) {
+            scale = Math.min(scale, this.height / 400f);
+        }
+        return scale;
+    }
+
     @Override
     protected void init() {
         this.clearWidgets();
@@ -60,10 +71,14 @@ public class NewClickgui extends Screen {
         settingWidgets.clear();
         activeSettings.clear();
 
+        float scale = getScaleFactor();
+        int virtualWidth = (int) (this.width / scale);
+        int virtualHeight = (int) (this.height / scale);
+
         int panelWidth = PANEL_WIDTH;
         int panelHeight = PANEL_HEIGHT;
-        int startX = (this.width - panelWidth) / 2;
-        int startY = (this.height - panelHeight) / 2;
+        int startX = (virtualWidth - panelWidth) / 2;
+        int startY = (virtualHeight - panelHeight) / 2;
 
         int catX = startX + 10;
         int catY = startY + 30;
@@ -129,13 +144,13 @@ public class NewClickgui extends Screen {
                 this.addRenderableWidget(t);
             } else if (s.isSlider()) {
                 GlassyIntSlider sl = new GlassyIntSlider(0, 0, 150, 20, 
-                    () -> (int) s.getValDouble(), 
-                    val -> s.setValDouble(val), 
-                    (int) s.getMin(), 
-                    (int) s.getMax(), 
-                    1, 
-                    val -> Component.literal(String.valueOf(val)), 
-                    (int) s.getValDouble());
+                    s::getValDouble, 
+                    s::setValDouble, 
+                    s.getMin(), 
+                    s.getMax(), 
+                    s.onlyInt(), 
+                    val -> Component.literal(s.onlyInt() ? String.valueOf((int) val) : String.valueOf(val)), 
+                    s.getValDouble());
                 settingWidgets.add(sl);
                 this.addRenderableWidget(sl);
             } else if (s.isCombo()) {
@@ -260,12 +275,13 @@ public class NewClickgui extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+        float scale = getScaleFactor();
         if (verticalAmount != 0) {
             targetScrollOffset -= (float) (verticalAmount * 25);
             if (targetScrollOffset < 0) targetScrollOffset = 0;
             return true;
         }
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+        return super.mouseScrolled(mouseX / scale, mouseY / scale, horizontalAmount, verticalAmount);
     }
 
     @Override
@@ -294,12 +310,21 @@ public class NewClickgui extends Screen {
         categorySlideX = lerpDecay(categorySlideX, 0f, 10f, timeDelta);
         categoryAlpha = lerpDecay(categoryAlpha, 1f, 10f, timeDelta);
         
+        float scale = getScaleFactor();
+        int scaledMouseX = (int) (mouseX / scale);
+        int scaledMouseY = (int) (mouseY / scale);
+        
+        context.pose().pushMatrix();
+        context.pose().scale(scale, scale);
+        
         GuiGraphics graphics = new GuiGraphics(context);
         
         int panelWidth = PANEL_WIDTH;
         int panelHeight = PANEL_HEIGHT;
-        int startX = (this.width - panelWidth) / 2;
-        int startY = (this.height - panelHeight) / 2;
+        int virtualWidth = (int) (this.width / scale);
+        int virtualHeight = (int) (this.height / scale);
+        int startX = (virtualWidth - panelWidth) / 2;
+        int startY = (virtualHeight - panelHeight) / 2;
 
         graphics.fill(startX, startY, startX + panelWidth, startY + panelHeight, GlassyTheme.PANEL_BG);
         graphics.renderOutline(startX, startY, panelWidth, panelHeight, GlassyTheme.PANEL_BORDER);
@@ -382,7 +407,7 @@ public class NewClickgui extends Screen {
             boolean visible = (modY + rowHeight + currentH > listY && modY < listY + listHeight);
             
             if (visible) {
-                boolean hovered = mouseX >= listX && mouseX <= listX + listWidth && mouseY >= modY && mouseY <= modY + rowHeight;
+                boolean hovered = scaledMouseX >= listX && scaledMouseX <= listX + listWidth && scaledMouseY >= modY && scaledMouseY <= modY + rowHeight;
                 int bg = hovered ? 0x22FFFFFF : ((i % 2 == 0) ? 0x08FFFFFF : 0x00000000);
                 graphics.fill(listX, Math.max(listY, modY), listX + listWidth, Math.min(listY + listHeight, modY + rowHeight), bg);
                 
@@ -458,7 +483,7 @@ public class NewClickgui extends Screen {
             float scrollPct = scrollOffset / maxScroll;
             int thumbY = sbY + (int) (scrollPct * (sbHeight - thumbHeight));
             
-            boolean sbHovered = mouseX >= sbX - 2 && mouseX <= sbX + sbWidth + 2 && mouseY >= sbY && mouseY <= sbY + sbHeight;
+            boolean sbHovered = scaledMouseX >= sbX - 2 && scaledMouseX <= sbX + sbWidth + 2 && scaledMouseY >= sbY && scaledMouseY <= sbY + sbHeight;
             int thumbColor = (draggingScrollbar || sbHovered) ? GlassyTheme.ACCENT : 0x44FFFFFF;
             
             graphics.fill(sbX, thumbY, sbX + sbWidth, thumbY + thumbHeight, thumbColor);
@@ -466,15 +491,17 @@ public class NewClickgui extends Screen {
 
         graphics.fill(startX + 130, startY + panelHeight - 40, startX + panelWidth, startY + panelHeight - 39, 0x44FFFFFF);
 
-        super.extractRenderState(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, scaledMouseX, scaledMouseY, delta);
         
         if (expandedModule != null) {
             for (AbstractWidget w : settingWidgets) {
                 if (w instanceof GlassyDropdown<?> dropdown) {
-                    dropdown.renderOverlay(graphics, mouseX, mouseY);
+                    dropdown.renderOverlay(graphics, scaledMouseX, scaledMouseY);
                 }
             }
         }
+        
+        context.pose().popMatrix();
     }
 
     @Override

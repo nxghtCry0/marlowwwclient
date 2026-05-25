@@ -6,6 +6,7 @@ import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.FriendManager;
 import com.eclipseware.imnotcheatingyouare.client.utils.RotationManager;
+import com.eclipseware.imnotcheatingyouare.client.utils.MouseAimHelper;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
@@ -25,6 +26,11 @@ public class KillAura extends Module {
     private LivingEntity target;
     private long lastAttackTime = 0;
     private long nextDelay = 0;
+    private int aimTicks = 0;
+    private LivingEntity lastTarget = null;
+    private double startAimMult = 1.0;
+    private double midAimMult = 1.0;
+    private double endAimMult = 1.0;
 
     public KillAura() {
         super("KillAura", Category.Blatant, "Automatically attacks entities around you.");
@@ -33,7 +39,10 @@ public class KillAura extends Module {
     @Override
     public void onDisable() {
         target = null;
+        lastTarget = null;
+        aimTicks = 0;
         RotationManager.requestReturn();
+        MouseAimHelper.clearAimRate();
     }
 
     @Override
@@ -47,14 +56,65 @@ public class KillAura extends Module {
         boolean critOnly = getSettingBoolean("Criticals Only");
         float turnSpeed = (float) getSettingDouble("Turn Speed");
         boolean moveCorrect = getSettingBoolean("Movement Correction");
+        String rotMode = getSettingCombo("Rotation Mode");
+        boolean silent = getSettingBoolean("Silent");
 
         target = getBestTarget(range);
-        if (target == null) return;
+        if (target == null) {
+            lastTarget = null;
+            aimTicks = 0;
+            MouseAimHelper.clearAimRate();
+            RotationManager.requestReturn();
+            return;
+        }
+
+        if (target != lastTarget) {
+            lastTarget = target;
+            aimTicks = 0;
+            startAimMult = 0.2 + Math.random() * 0.3;
+            midAimMult = 0.8 + Math.random() * 0.4;
+            endAimMult = 0.3 + Math.random() * 0.3;
+        }
+
+        aimTicks++;
+        double tAim = Math.min(aimTicks / 20.0, 1.0);
+        double aimBezierMult = (1.0 - tAim) * (1.0 - tAim) * startAimMult + 2.0 * (1.0 - tAim) * tAim * midAimMult + tAim * tAim * endAimMult;
 
         Vec3 targetPos = target.position().add(0, target.getBbHeight() / 2.0f, 0);
         float[] rotations = getRotationsTo(targetPos);
 
-        RotationManager.keepRotated(rotations[0], rotations[1], turnSpeed, moveCorrect);
+        if (silent) {
+            float scaledSpeed = turnSpeed * (float) aimBezierMult;
+            if (scaledSpeed < 1.0f) scaledSpeed = 1.0f;
+            if (rotMode.equalsIgnoreCase("Bypass")) {
+                RotationManager.keepRotated(rotations[0], rotations[1], scaledSpeed, moveCorrect);
+            } else {
+                RotationManager.keepRotatedSmooth(rotations[0], rotations[1], scaledSpeed, moveCorrect);
+            }
+            MouseAimHelper.clearAimRate();
+        } else {
+            double deltaYaw = Mth.wrapDegrees(rotations[0] - mc.player.getYRot());
+            double toRotateYaw = Math.min(Math.abs(deltaYaw), turnSpeed * aimBezierMult);
+            toRotateYaw = Math.copySign(toRotateYaw, deltaYaw);
+
+            double deltaPitch = Mth.wrapDegrees(rotations[1] - mc.player.getXRot());
+            double toRotatePitch = Math.min(Math.abs(deltaPitch), turnSpeed * aimBezierMult);
+            toRotatePitch = Math.copySign(toRotatePitch, deltaPitch);
+
+            MouseAimHelper.setAimRate(toRotateYaw, toRotatePitch);
+            RotationManager.requestReturn();
+        }
+    }
+
+    public void postSendPosition() {
+        if (mc.player == null || mc.level == null || target == null) return;
+        if (mc.player.isDeadOrDying()) return;
+        if (mc.player.isBlocking()) return;
+
+        double range = getSettingDouble("Range");
+        boolean modernMode = getSettingCombo("Combat System").equalsIgnoreCase("Modern (1.9+)");
+        boolean critOnly = getSettingBoolean("Criticals Only");
+        boolean silent = getSettingBoolean("Silent");
 
         if (!isWeaponReady(modernMode)) return;
 
@@ -71,8 +131,8 @@ public class KillAura extends Module {
         Vec3 targetCenter = target.position().add(0, target.getBbHeight() / 2.0f, 0);
         if (!RotationManager.hasLineOfSight(eyePos, targetCenter)) return;
 
-        float currentYaw = RotationManager.getServerYaw();
-        float currentPitch = RotationManager.getServerPitch();
+        float currentYaw = silent ? RotationManager.getServerYaw() : mc.player.getYRot();
+        float currentPitch = silent ? RotationManager.getServerPitch() : mc.player.getXRot();
 
         Vec3 from = mc.player.getEyePosition();
         Vec3 looking = Vec3.directionFromRotation(currentPitch, currentYaw);
@@ -82,8 +142,8 @@ public class KillAura extends Module {
         EntityHitResult hitResult = ProjectileUtil.getEntityHitResult(mc.player, from, to, aabb, (e) -> e == target, attackRange * attackRange);
 
         if (hitResult != null && hitResult.getEntity() == target) {
-            mc.gameMode.attack(mc.player, target);
             mc.player.swing(InteractionHand.MAIN_HAND);
+            mc.gameMode.attack(mc.player, target);
             lastAttackTime = System.currentTimeMillis();
 
             if (!modernMode) {

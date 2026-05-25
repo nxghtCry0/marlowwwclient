@@ -115,6 +115,7 @@ public class ConnectionMixin {
             if (Minecraft.getInstance().player != null && Minecraft.getInstance().level != null) {
                 if (!(packet instanceof net.minecraft.network.protocol.common.ClientboundKeepAlivePacket) &&
                     !(packet instanceof net.minecraft.network.protocol.common.ClientboundPingPacket) &&
+                    !(packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket) &&
                     !(packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket)) {
                     com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack.queuePacket(packet);
                     ci.cancel();

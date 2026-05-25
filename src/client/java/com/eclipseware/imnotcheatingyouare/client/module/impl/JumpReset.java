@@ -10,6 +10,7 @@ public class JumpReset extends Module {
     private long lastHitTime = 0;
     private boolean shouldJump = false;
     private int jumpDelayTicks = 0;
+    private boolean keyWasPressed = false;
 
     public JumpReset() {
         super("JumpReset", Category.Combat, "Converts horizontal KB into vertical KB by jumping on specific hits.");
@@ -19,6 +20,13 @@ public class JumpReset extends Module {
     public void onTick() {
         if (!isToggled() || mc.player == null || mc.options == null) return;
 
+        if (keyWasPressed) {
+            if (!isPhysicallyHoldingJump()) {
+                mc.options.keyJump.setDown(false);
+            }
+            keyWasPressed = false;
+        }
+
         Setting timeoutSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Trade Timeout (ms)");
         long timeout = timeoutSetting != null ? (long) timeoutSetting.getValDouble() : 500;
         if (System.currentTimeMillis() - lastHitTime > timeout) {
@@ -27,9 +35,13 @@ public class JumpReset extends Module {
 
         if (shouldJump && mc.player.onGround()) {
             Setting delaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Delay (Ticks)");
-            int delay = delaySetting != null ? (int) delaySetting.getValDouble() : 0;
+            Setting modeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Mode");
+            String mode = modeSetting != null ? modeSetting.getValString() : "Smart";
+            int delay = (mode.equals("Classic") || mode.equals("Blatant")) ? 0 : (delaySetting != null ? (int) delaySetting.getValDouble() : 0);
+
             if (jumpDelayTicks >= delay) {
-                mc.player.jumpFromGround();
+                mc.options.keyJump.setDown(true);
+                keyWasPressed = true;
                 shouldJump = false;
                 jumpDelayTicks = 0;
             } else {
@@ -44,8 +56,8 @@ public class JumpReset extends Module {
         
         if (System.currentTimeMillis() - lastHitTime < 50) return;
 
-        hitsInTrade++;
         lastHitTime = System.currentTimeMillis();
+        hitsInTrade++;
 
         Setting chanceSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Chance (%)");
         double chance = chanceSetting != null ? chanceSetting.getValDouble() : 100.0;
@@ -55,9 +67,8 @@ public class JumpReset extends Module {
         String mode = modeSetting != null ? modeSetting.getValString() : "Smart";
 
         if (mode.equals("Classic")) {
-            if (mc.player.onGround()) {
-                mc.player.jumpFromGround();
-            }
+            shouldJump = true;
+            jumpDelayTicks = 0;
         } else if (mode.equals("Smart")) {
             Setting resetHitSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Reset Hit");
             int resetHit = resetHitSetting != null ? (int) resetHitSetting.getValDouble() : 2;
@@ -78,10 +89,27 @@ public class JumpReset extends Module {
                 jumpDelayTicks = 0;
             }
         } else {
-            if (mc.player.onGround()) {
-                mc.player.jumpFromGround();
-            }
+            shouldJump = true;
+            jumpDelayTicks = 0;
         }
+    }
+
+    private boolean isPhysicallyHoldingJump() {
+        long window = getWindowHandle();
+        if (window == 0) return false;
+        return org.lwjgl.glfw.GLFW.glfwGetKey(window, mc.options.keyJump.getDefaultKey().getValue()) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+    }
+
+    private long getWindowHandle() {
+        try {
+            for (java.lang.reflect.Field f : mc.getWindow().getClass().getDeclaredFields()) {
+                if (f.getType() == long.class) {
+                    f.setAccessible(true);
+                    return f.getLong(mc.getWindow());
+                }
+            }
+        } catch (Exception ignored) {}
+        return 0;
     }
 
     @Override
@@ -89,6 +117,7 @@ public class JumpReset extends Module {
         shouldJump = false;
         jumpDelayTicks = 0;
         hitsInTrade = 0;
+        keyWasPressed = false;
         if (mc.options != null && mc.options.keyJump != null) {
             mc.options.keyJump.setDown(false);
         }

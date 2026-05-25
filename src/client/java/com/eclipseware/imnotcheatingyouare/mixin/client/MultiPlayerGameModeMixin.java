@@ -73,8 +73,16 @@ public class MultiPlayerGameModeMixin {
             }
         }
 
-        if (!ci.isCancelled()) {
+        if (!ci.isCancelled() && !kbShouldRevert) {
             Module silentAim = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("SilentAim");
+            Module killAura = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("KillAura");
+            boolean kaSilent = false;
+            if (killAura != null && killAura.isToggled()) {
+                com.eclipseware.imnotcheatingyouare.client.setting.Setting s = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(killAura, "Silent");
+                if (s != null && s.getValBoolean()) {
+                    kaSilent = true;
+                }
+            }
             if (silentAim != null && silentAim.isToggled() && com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.isActive()) {
                 if (Minecraft.getInstance().getConnection() != null) {
                     Minecraft.getInstance().getConnection().send(new ServerboundMovePlayerPacket.Rot(
@@ -84,6 +92,14 @@ public class MultiPlayerGameModeMixin {
                     ));
                 }
                 com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.consume();
+            } else if (kaSilent && com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.isActive()) {
+                if (Minecraft.getInstance().getConnection() != null) {
+                    Minecraft.getInstance().getConnection().send(new ServerboundMovePlayerPacket.Rot(
+                        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getServerYaw(),
+                        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getServerPitch(),
+                        player.onGround(), false
+                    ));
+                }
             }
         }
     }

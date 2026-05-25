@@ -21,4 +21,13 @@ public class EntityMixin {
             }
         }
     }
+
+    @Inject(method = "isSprinting", at = @At("HEAD"), cancellable = true)
+    private void onIsSprinting(CallbackInfoReturnable<Boolean> cir) {
+        if ((Object) this instanceof net.minecraft.client.player.LocalPlayer) {
+            if (com.eclipseware.imnotcheatingyouare.client.module.impl.WTap.shouldSilentStopSprint()) {
+                cir.setReturnValue(false);
+            }
+        }
+    }
 }

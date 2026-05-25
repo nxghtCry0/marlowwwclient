@@ -4,16 +4,12 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
+import com.eclipseware.imnotcheatingyouare.client.utils.SpoofManager;
 import com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor;
-import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 public class LungeAssist extends Module {
-    private boolean needsSwapBack = false;
-    private int originalSlot = -1;
-    private int swapDelayTicks = -1;
-    
     private boolean waitingForApex = false;
 
     public LungeAssist() {
@@ -42,20 +38,9 @@ public class LungeAssist extends Module {
     }
 
     private void executeLunge(int spearSlot) {
-        int oldSlot = mc.player.getInventory().getSelectedSlot();
-        if (oldSlot == spearSlot) {
+        SpoofManager.silentUse(spearSlot, () -> {
             ((MinecraftAccessor) mc).invokeStartAttack();
-            return;
-        }
-        
-        mc.player.getInventory().setSelectedSlot(spearSlot);
-        mc.getConnection().send(new ServerboundSetCarriedItemPacket(spearSlot));
-        
-        ((MinecraftAccessor) mc).invokeStartAttack();
-        
-        needsSwapBack = true;
-        originalSlot = oldSlot;
-        swapDelayTicks = 1;
+        });
     }
 
     @Override
@@ -71,20 +56,10 @@ public class LungeAssist extends Module {
                 waitingForApex = false;
             }
         }
-
-        if (needsSwapBack && !waitingForApex) {
-            swapDelayTicks--;
-            if (swapDelayTicks <= 0) {
-                mc.player.getInventory().setSelectedSlot(originalSlot);
-                mc.getConnection().send(new ServerboundSetCarriedItemPacket(originalSlot));
-                needsSwapBack = false;
-            }
-        }
     }
 
     @Override
     public void onDisable() {
-        needsSwapBack = false;
         waitingForApex = false;
     }
 

@@ -35,4 +35,40 @@ public class MovementCorrectionMixin {
         player.setYRot(eclipseSavedYRot);
         eclipseWasCorrecting = false;
     }
+
+    @Unique
+    private float eclipseSavedSendYRot;
+    @Unique
+    private float eclipseSavedSendXRot;
+    @Unique
+    private boolean eclipseIsSendCorrecting = false;
+
+    @Inject(method = "sendPosition", at = @At("HEAD"))
+    private void onSendPositionHead(CallbackInfo ci) {
+        eclipseIsSendCorrecting = false;
+        if (!RotationManager.isActive()) return;
+
+        LocalPlayer player = (LocalPlayer) (Object) this;
+        eclipseSavedSendYRot = player.getYRot();
+        eclipseSavedSendXRot = player.getXRot();
+        eclipseIsSendCorrecting = true;
+
+        player.setYRot(RotationManager.getServerYaw());
+        player.setXRot(RotationManager.getServerPitch());
+    }
+
+    @Inject(method = "sendPosition", at = @At("TAIL"))
+    private void onSendPositionTail(CallbackInfo ci) {
+        LocalPlayer player = (LocalPlayer) (Object) this;
+        if (eclipseIsSendCorrecting) {
+            player.setYRot(eclipseSavedSendYRot);
+            player.setXRot(eclipseSavedSendXRot);
+            eclipseIsSendCorrecting = false;
+        }
+
+        com.eclipseware.imnotcheatingyouare.client.module.Module killAura = com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("KillAura");
+        if (killAura != null && killAura.isToggled() && killAura instanceof com.eclipseware.imnotcheatingyouare.client.module.impl.KillAura ka) {
+            ka.postSendPosition();
+        }
+    }
 }

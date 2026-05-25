@@ -51,24 +51,45 @@ public class Clickgui extends Screen {
         }
     }
 
+    public float getScaleFactor() {
+        float scale = 1.0f;
+        if (this.width < 1120f) {
+            scale = Math.min(scale, this.width / 1120f);
+        }
+        if (this.height < 460f) {
+            scale = Math.min(scale, this.height / 460f);
+        }
+        return scale;
+    }
+
     @Override
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         com.eclipseware.imnotcheatingyouare.client.clickgui.components.Item.context = context;
         context.fill(0, 0, context.guiWidth(), context.guiHeight(), 0x55000000);
-        this.widgets.forEach(components -> components.drawScreen(context, mouseX, mouseY, delta));
+        
+        float scale = getScaleFactor();
+        int scaledMouseX = (int) (mouseX / scale);
+        int scaledMouseY = (int) (mouseY / scale);
+        
+        context.pose().pushMatrix();
+        context.pose().scale(scale, scale);
+        
+        this.widgets.forEach(components -> components.drawScreen(context, scaledMouseX, scaledMouseY, delta));
         
         for (Widget widget : this.widgets) {
             for (com.eclipseware.imnotcheatingyouare.client.clickgui.components.Item item : widget.getItems()) {
                 if (item instanceof ModuleButton mb) {
-                    if (mb.isHovering(mouseX, mouseY) && mb.getModule().getDescription() != null && !mb.getModule().getDescription().isEmpty()) {
+                    if (mb.isHovering(scaledMouseX, scaledMouseY) && mb.getModule().getDescription() != null && !mb.getModule().getDescription().isEmpty()) {
                         String desc = mb.getModule().getDescription();
                         int textW = com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.width(desc);
-                        context.fill(mouseX + 5, mouseY - 15, mouseX + 9 + textW, mouseY - 1, 0xAA000000);
-                        com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.drawString(context, desc, mouseX + 7, mouseY - 12, -1, false);
+                        context.fill(scaledMouseX + 5, scaledMouseY - 15, scaledMouseX + 9 + textW, scaledMouseY - 1, 0xAA000000);
+                        com.eclipseware.imnotcheatingyouare.client.utils.FontUtils.drawString(context, desc, scaledMouseX + 7, scaledMouseY - 12, -1, false);
                     }
                 }
             }
         }
+        
+        context.pose().popMatrix();
     }
 
     @Override
@@ -101,6 +122,10 @@ public class Clickgui extends Screen {
             shiftDown = org.lwjgl.glfw.GLFW.glfwGetKey(windowHandle, org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT) == org.lwjgl.glfw.GLFW.GLFW_PRESS || org.lwjgl.glfw.GLFW.glfwGetKey(windowHandle, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
         }
 
+        float scale = getScaleFactor();
+        double scaledMouseX = mouseX / scale;
+        double scaledMouseY = mouseY / scale;
+
         if (shiftDown) {
             if (verticalAmount < 0) {
                 this.widgets.forEach(component -> component.setX(component.getX() - 30));
@@ -109,8 +134,8 @@ public class Clickgui extends Screen {
             }
         } else {
             for (Widget component : this.widgets) {
-                float totalHeight = component.isOpen() ? component.getItems().size() * 15f + 20f : 0f; // Approx height
-                if (mouseX >= component.getX() && mouseX <= component.getX() + component.getWidth() && mouseY >= component.getY() && mouseY <= component.getY() + component.getHeight() + totalHeight) {
+                float totalHeight = component.isOpen() ? component.getItems().size() * 15f + 20f : 0f;
+                if (scaledMouseX >= component.getX() && scaledMouseX <= component.getX() + component.getWidth() && scaledMouseY >= component.getY() && scaledMouseY <= component.getY() + component.getHeight() + totalHeight) {
                     if (verticalAmount < 0) {
                         component.setY(component.getY() - 15);
                     } else if (verticalAmount > 0) {
@@ -119,7 +144,7 @@ public class Clickgui extends Screen {
                 }
             }
         }
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+        return super.mouseScrolled(scaledMouseX, scaledMouseY, horizontalAmount, verticalAmount);
     }
 
     @Override
