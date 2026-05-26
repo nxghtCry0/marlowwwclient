@@ -19,15 +19,34 @@ private long swapBackTime = 0;
 private int originalSlot = -1;
 private int axeSlot = -1;
 private int ticksWaited = 0;
+private int lastTargetId = -1;
+private long targetBlockingStartTime = 0;
+
 public AutoShieldBreaker() {
-super("AutoShieldBreaker", Category.Combat);
+super("AutoShieldBreaker", Category.Blatant);
 }
+private boolean checkReactionTime(Entity target, LivingEntity livingTarget) {
+    if (!livingTarget.isBlocking()) {
+        lastTargetId = -1;
+        targetBlockingStartTime = 0;
+        return false;
+    }
+    if (target.getId() != lastTargetId || targetBlockingStartTime == 0) {
+        lastTargetId = target.getId();
+        targetBlockingStartTime = System.currentTimeMillis();
+    }
+    Setting reactionSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Reaction Time (ms)");
+    long reactionTime = reactionSetting != null ? (long) reactionSetting.getValDouble() : 0;
+    return System.currentTimeMillis() - targetBlockingStartTime >= reactionTime;
+}
+
 public boolean shouldCancelAttack(Entity target) {
 if (!this.isToggled() || !(target instanceof LivingEntity)) return false;
 LivingEntity livingTarget = (LivingEntity) target;
 if (!livingTarget.isBlocking()) return false;
 if (!isShieldBlockingUs(livingTarget, mc.player)) return false;
 if (!isHoldingSword(mc.player)) return false;
+if (!checkReactionTime(target, livingTarget)) return false;
 
 Setting delaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Delay (ms)");
 long delay = delaySetting != null ? (long) delaySetting.getValDouble() : 0;
@@ -77,6 +96,7 @@ if (!this.isToggled() || !(target instanceof LivingEntity)) return false;
 LivingEntity livingTarget = (LivingEntity) target;
 if (!livingTarget.isBlocking()) return false;
 if (!isShieldBlockingUs(livingTarget, player)) return false;
+if (!checkReactionTime(target, livingTarget)) return false;
 Setting delaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Delay (ms)");
 long delay = delaySetting != null ? (long) delaySetting.getValDouble() : 0;
 if (System.currentTimeMillis() - lastBreakTime < delay) {

@@ -54,7 +54,7 @@ public class Backtrack extends Module {
     private int currentChance = 0;
 
     public Backtrack() {
-        super("Backtrack", Category.Blatant, "Delays entity position updates to extend hitbox window.");
+        super("Backtrack", Category.Exploit, "Delays entity position updates to extend hitbox window.");
         INSTANCE = this;
     }
 

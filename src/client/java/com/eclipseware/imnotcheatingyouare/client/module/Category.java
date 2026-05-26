@@ -4,6 +4,8 @@ public enum Category {
     Combat,
     Crystal,
     Movement,
+    Exploit,
+    Utility,
     Render,
     Misc,
     World,

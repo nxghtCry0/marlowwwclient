@@ -7,7 +7,7 @@ public class FastPlace extends Module {
     public static FastPlace INSTANCE;
 
     public FastPlace() {
-        super("FastPlace", Category.World, "Removes the right-click delay for placing blocks.");
+        super("FastPlace", Category.Utility, "Removes the right-click delay for placing blocks.");
         INSTANCE = this;
     }
 }

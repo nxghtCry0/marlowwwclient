@@ -26,7 +26,7 @@ public class AutoElytraSwap extends Module {
     private int originalHotbarSlot = -1;
 
     public AutoElytraSwap() {
-        super("Auto Elytra Swap", Category.Combat, "Automatically swaps Elytra with Chestplate when falling towards a target.");
+        super("Auto Elytra Swap", Category.Utility, "Automatically swaps Elytra with Chestplate when falling towards a target.");
         ArrayList<String> modes = new ArrayList<>();
         modes.add("Silent");
         modes.add("Interact");

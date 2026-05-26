@@ -28,4 +28,16 @@ public abstract class MouseMixin {
         this.accumulatedDX += dx;
         this.accumulatedDY += dy;
     }
+
+    @Inject(method = "onButton", at = @At("HEAD"))
+    private void onMousePress(long windowHandle, net.minecraft.client.input.MouseButtonInfo buttonInfo, int action, CallbackInfo ci) {
+        if (Minecraft.getInstance().screen != null) return;
+        if (com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.isRecording()) {
+            if (action == 1) {
+                com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.recordMouse(buttonInfo.button(), true, windowHandle);
+            } else if (action == 0) {
+                com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.recordMouse(buttonInfo.button(), false, windowHandle);
+            }
+        }
+    }
 }

@@ -21,6 +21,19 @@ public class ConnectionMixin {
 
     @Inject(method = "send(Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"), cancellable = true)
     private void onSend(Packet<?> packet, CallbackInfo ci) {
+        if (packet instanceof net.minecraft.network.protocol.game.ServerboundCommandSuggestionPacket) {
+            if (ImnotcheatingyouareClient.INSTANCE != null && ImnotcheatingyouareClient.INSTANCE.moduleManager != null) {
+                Module bypass = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Bypass");
+                if (bypass != null && bypass.isToggled()) {
+                    com.eclipseware.imnotcheatingyouare.client.setting.Setting disableAutofill = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(bypass, "Disable Command Autofill");
+                    if (disableAutofill != null && disableAutofill.getValBoolean()) {
+                        ci.cancel();
+                        return;
+                    }
+                }
+            }
+        }
+
         if (com.eclipseware.imnotcheatingyouare.client.module.impl.BlinkModule.isActive()) {
             com.eclipseware.imnotcheatingyouare.client.module.impl.BlinkModule.queuePacket(packet);
             if (!(packet instanceof ServerboundSignUpdatePacket)) {

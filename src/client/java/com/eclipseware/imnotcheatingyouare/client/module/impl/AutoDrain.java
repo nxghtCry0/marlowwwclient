@@ -24,7 +24,7 @@ public class AutoDrain extends Module {
     private boolean useWebCached = false;
 
     public AutoDrain() {
-        super("AutoDrain", Category.Combat, "Instantly removes enemy water using webs or buckets.");
+        super("AutoDrain", Category.Utility, "Instantly removes enemy water using webs or buckets.");
     }
 
     @Override

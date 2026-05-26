@@ -12,8 +12,10 @@ public class JumpReset extends Module {
     private int jumpDelayTicks = 0;
     private boolean keyWasPressed = false;
 
+    private long lastKnockbackTime = 0;
+
     public JumpReset() {
-        super("JumpReset", Category.Combat, "Converts horizontal KB into vertical KB by jumping on specific hits.");
+        super("JumpReset", Category.Utility, "Converts horizontal KB into vertical KB by jumping on specific hits.");
     }
 
     @Override
@@ -33,19 +35,24 @@ public class JumpReset extends Module {
             hitsInTrade = 0;
         }
 
-        if (shouldJump && mc.player.onGround()) {
-            Setting delaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Delay (Ticks)");
-            Setting modeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Mode");
-            String mode = modeSetting != null ? modeSetting.getValString() : "Smart";
-            int delay = (mode.equals("Classic") || mode.equals("Blatant")) ? 0 : (delaySetting != null ? (int) delaySetting.getValDouble() : 0);
-
-            if (jumpDelayTicks >= delay) {
-                mc.options.keyJump.setDown(true);
-                keyWasPressed = true;
+        if (shouldJump) {
+            if (System.currentTimeMillis() - lastKnockbackTime > 250) {
                 shouldJump = false;
                 jumpDelayTicks = 0;
-            } else {
-                jumpDelayTicks++;
+            } else if (mc.player.onGround()) {
+                Setting delaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Delay (Ticks)");
+                Setting modeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Mode");
+                String mode = modeSetting != null ? modeSetting.getValString() : "Smart";
+                int delay = (mode.equals("Classic") || mode.equals("Blatant")) ? 0 : (delaySetting != null ? (int) delaySetting.getValDouble() : 0);
+
+                if (jumpDelayTicks >= delay) {
+                    mc.options.keyJump.setDown(true);
+                    keyWasPressed = true;
+                    shouldJump = false;
+                    jumpDelayTicks = 0;
+                } else {
+                    jumpDelayTicks++;
+                }
             }
         }
     }
@@ -57,6 +64,7 @@ public class JumpReset extends Module {
         if (System.currentTimeMillis() - lastHitTime < 50) return;
 
         lastHitTime = System.currentTimeMillis();
+        lastKnockbackTime = lastHitTime;
         hitsInTrade++;
 
         Setting chanceSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Chance (%)");
@@ -97,7 +105,20 @@ public class JumpReset extends Module {
     private boolean isPhysicallyHoldingJump() {
         long window = getWindowHandle();
         if (window == 0) return false;
-        return org.lwjgl.glfw.GLFW.glfwGetKey(window, mc.options.keyJump.getDefaultKey().getValue()) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+        return org.lwjgl.glfw.GLFW.glfwGetKey(window, getKeyCode(mc.options.keyJump)) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+    }
+
+    private int getKeyCode(net.minecraft.client.KeyMapping mapping) {
+        try {
+            for (java.lang.reflect.Method m : mapping.getClass().getMethods()) {
+                if (m.getParameterCount() == 0 && m.getReturnType().getName().contains("InputConstants$Key")) {
+                    Object keyObj = m.invoke(mapping);
+                    java.lang.reflect.Method getValue = keyObj.getClass().getMethod("getValue");
+                    return (int) getValue.invoke(keyObj);
+                }
+            }
+        } catch (Exception ignored) {}
+        return mapping.getDefaultKey().getValue();
     }
 
     private long getWindowHandle() {

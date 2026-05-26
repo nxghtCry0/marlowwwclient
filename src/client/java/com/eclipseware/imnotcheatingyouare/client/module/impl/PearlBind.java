@@ -8,7 +8,7 @@ import net.minecraft.world.InteractionResult;
 
 public class PearlBind extends Module {
     public PearlBind() {
-        super("PearlBind", Category.Movement, "Throws an ender pearl automatically when bound key is pressed");
+        super("PearlBind", Category.Utility, "Throws an ender pearl automatically when bound key is pressed");
         setSubCategory("Crystal PvP");
     }
 

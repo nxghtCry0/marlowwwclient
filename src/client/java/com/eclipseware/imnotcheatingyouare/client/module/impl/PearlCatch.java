@@ -16,7 +16,7 @@ public class PearlCatch extends Module {
     private float targetYaw, targetPitch;
 
     public PearlCatch() {
-        super("PearlCatch", Category.Movement);
+        super("PearlCatch", Category.Utility);
     }
 
     @Override

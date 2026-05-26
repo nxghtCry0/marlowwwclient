@@ -21,7 +21,7 @@ public class BlinkModule extends Module {
     private TimerUtil dumpCooldown = new TimerUtil();
 
     public BlinkModule() {
-        super("Blink", Category.Blatant);
+        super("Blink", Category.Exploit);
     }
 
     public static void queuePacket(Packet<?> packet) {

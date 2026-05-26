@@ -13,7 +13,7 @@ public class HitSwap extends Module {
     private boolean swapped = false;
 
     public HitSwap() {
-        super("HitSwap", Category.Combat, "Automatically swaps to best weapon before hitting, then swaps back.");
+        super("HitSwap", Category.Exploit, "Automatically swaps to best weapon before hitting, then swaps back.");
         INSTANCE = this;
     }
 

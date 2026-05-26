@@ -9,7 +9,7 @@ import net.minecraft.world.phys.AABB;
 public class BridgeAssist extends Module {
     private boolean isShifting = false;
     public BridgeAssist() {
-        super("BridgeAssist", Category.World, "Uses Meteor's SafeWalk logic to perfectly sneak at edges.");
+        super("BridgeAssist", Category.Utility, "Uses Meteor's SafeWalk logic to perfectly sneak at edges.");
     }
 
     @Override

@@ -13,7 +13,7 @@ public class AutoWindcharge extends Module {
     private int originalSlot = -1;
 
     public AutoWindcharge() {
-        super("AutoWindcharge", Category.Movement, "Automatically throws a windcharge at your feet.");
+        super("AutoWindcharge", Category.Utility, "Automatically throws a windcharge at your feet.");
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Delay Ticks", this, 2.0, 1.0, 10.0, true));
     }
 

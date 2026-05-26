@@ -173,7 +173,6 @@ Module autoDHand = new com.eclipseware.imnotcheatingyouare.client.module.impl.Au
 Module autoWindcharge = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoWindcharge();
 Module boatFly = new com.eclipseware.imnotcheatingyouare.client.module.impl.BoatFly();
 Module flight = new com.eclipseware.imnotcheatingyouare.client.module.impl.Flight();
-Module silentAimbot = new com.eclipseware.imnotcheatingyouare.client.module.impl.SilentAimbot();
 Module weapons = new com.eclipseware.imnotcheatingyouare.client.module.impl.Weapons();
 Module bypassModule = new com.eclipseware.imnotcheatingyouare.client.module.impl.Bypass();
 Module npcModule = new com.eclipseware.imnotcheatingyouare.client.module.impl.NPC();
@@ -182,10 +181,11 @@ moduleManager.modules.add(autoDHand);
 moduleManager.modules.add(autoWindcharge);
 moduleManager.modules.add(boatFly);
 moduleManager.modules.add(flight);
-moduleManager.modules.add(silentAimbot);
 moduleManager.modules.add(weapons);
 moduleManager.modules.add(bypassModule);
 moduleManager.modules.add(npcModule);
+Module macroModule = new com.eclipseware.imnotcheatingyouare.client.module.impl.MacroModule();
+moduleManager.modules.add(macroModule);
 Module recommendedConfigs = new com.eclipseware.imnotcheatingyouare.client.module.impl.RecommendedConfigs();
 moduleManager.modules.add(recommendedConfigs);
 
@@ -201,20 +201,7 @@ Module theme = new Module("Theme", Category.Render, "Customizes the client's UI 
         settingsManager.rSetting(new Setting("Background Alpha", theme, 240.0, 0.0, 255.0, true));
         settingsManager.rSetting(new Setting("Anim Speed", theme, 5.0, 1.0, 10.0, false));
 
-        java.util.ArrayList<String> aimModes = new java.util.ArrayList<>();
-aimModes.add("Spring"); aimModes.add("Smooth"); aimModes.add("Linear");
-settingsManager.rSetting(new Setting("Mode", aimAssist, "Spring", aimModes));
-settingsManager.rSetting(new Setting("Smoothness", aimAssist, 7.0, 1.0, 10.0, false));
-settingsManager.rSetting(new Setting("Speed", aimAssist, 3.0, 1.0, 10.0, false));
-settingsManager.rSetting(new Setting("Randomness", aimAssist, 3.0, 0.0, 10.0, false));
-settingsManager.rSetting(new Setting("Overflick", aimAssist, true));
-settingsManager.rSetting(new Setting("Overflick Power", aimAssist, 3.0, 1.0, 10.0, false));
-settingsManager.rSetting(new Setting("Reaction Delay (ms)", aimAssist, 50.0, 0.0, 300.0, true));
-settingsManager.rSetting(new Setting("Attack Only", aimAssist, true));
-settingsManager.rSetting(new Setting("Stop On Target", aimAssist, true));
-settingsManager.rSetting(new Setting("FOV", aimAssist, 60.0, 0.0, 360.0, true));
-settingsManager.rSetting(new Setting("Range", aimAssist, 4.0, 1.0, 8.0, false));
-settingsManager.rSetting(new Setting("Silent Aim", aimAssist, false));
+
 
         java.util.ArrayList<String> acButtons = new java.util.ArrayList<>();
         acButtons.add("Left"); acButtons.add("Right");
@@ -261,9 +248,7 @@ addColorSettings(settingsManager, storageESP, "Furnace Color", 160, 160, 160);
 
         settingsManager.rSetting(new Setting("Firework Level", elytraBoost, 1.0, 0.0, 3.0, true));
         settingsManager.rSetting(new Setting("Play Sound", elytraBoost, true));
-        settingsManager.rSetting(new Setting("Players", aimAssist, true));
-        settingsManager.rSetting(new Setting("Hostile Mobs", aimAssist, true));
-        settingsManager.rSetting(new Setting("Passive Mobs", aimAssist, false));
+
 
         settingsManager.rSetting(new Setting("Wait Ticks", wTap, 0.0, 0.0, 10.0, true));
         settingsManager.rSetting(new Setting("Action Ticks", wTap, 1.0, 1.0, 5.0, true));
@@ -299,6 +284,7 @@ addColorSettings(settingsManager, storageESP, "Furnace Color", 160, 160, 160);
         settingsManager.rSetting(new Setting("Delay (ms)", autoShieldBreaker, 50.0, 0.0, 1000.0, true));
         settingsManager.rSetting(new Setting("Swap Back", autoShieldBreaker, true));
         settingsManager.rSetting(new Setting("Swap Back Delay (ms)", autoShieldBreaker, 100.0, 0.0, 1000.0, true));
+        settingsManager.rSetting(new Setting("Reaction Time (ms)", autoShieldBreaker, 100.0, 0.0, 1000.0, true));
 
         settingsManager.rSetting(new Setting("Delay (ms)", autoWeb, 250.0, 0.0, 1000.0, true));
         settingsManager.rSetting(new Setting("Movement Correction", autoWeb, true));
@@ -486,6 +472,7 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
         });
 
         com.eclipseware.imnotcheatingyouare.client.setting.ConfigManager.load();
+        com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.load();
 
         com.eclipseware.imnotcheatingyouare.client.utils.FriendManager.load();
 
@@ -513,6 +500,22 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
                 )
             );
             dispatcher.register(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("mc")
+                .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("macro")
+                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("export")
+                        .executes(context -> {
+                            com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.exportToClipboard();
+                            context.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("§d[EclipseWare] §7Macro exported to clipboard!"));
+                            return 1;
+                        })
+                    )
+                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("import")
+                        .executes(context -> {
+                            com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.importFromClipboard();
+                            context.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("§d[EclipseWare] §7Macro imported from clipboard!"));
+                            return 1;
+                        })
+                    )
+                )
                 .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("enable")
                     .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument("module", com.mojang.brigadier.arguments.StringArgumentType.word())
                         .executes(context -> {

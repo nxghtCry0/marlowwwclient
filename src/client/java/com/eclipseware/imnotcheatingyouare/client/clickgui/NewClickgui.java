@@ -10,6 +10,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
@@ -24,6 +25,7 @@ public class NewClickgui extends Screen {
 
     private Category selectedCategory = Category.Combat;
     private Module expandedModule = null;
+    private Module bindingModule = null;
     
     private final Map<Module, GlassyToggle> moduleToggles = new HashMap<>();
     private final List<GlassyButton> categoryButtons = new ArrayList<>();
@@ -171,13 +173,14 @@ public class NewClickgui extends Screen {
         double mouseY = event.y();
         int button = event.button();
         
-        if (button == 0) {
-            for (AbstractWidget w : settingWidgets) {
-                if (w instanceof GlassyDropdown<?> dd && dd.isMenuOpen()) {
-                    if (dd.mouseClicked(event, doubleClick)) {
-                        return true;
-                    }
-                }
+        if (bindingModule != null) {
+            if (button != 0 && button != 1) {
+                bindingModule.setKeyBind(button);
+                try {
+                    com.eclipseware.imnotcheatingyouare.client.setting.ConfigManager.save();
+                } catch (Exception e) {}
+                bindingModule = null;
+                return true;
             }
         }
         
@@ -189,7 +192,44 @@ public class NewClickgui extends Screen {
         int listX = startX + 131;
         int listY = startY + 20;
         int listWidth = panelWidth - 131;
-        int listHeight = panelHeight - 20 - 45; 
+        int listHeight = panelHeight - 20 - 45;
+        
+        if (button == 0) {
+            if (mouseX >= listX && mouseX <= listX + listWidth && mouseY >= listY && mouseY <= listY + listHeight) {
+                int modY = listY - (int) scrollOffset;
+                int rowHeight = 35;
+                for (int i = 0; i < filteredModules.size(); i++) {
+                    Module m = filteredModules.get(i);
+                    float currentH = moduleConfigHeights.getOrDefault(m, 0f);
+                    
+                    int bindX = listX + listWidth - 110;
+                    int bindY = modY + (rowHeight - 16) / 2;
+                    if (mouseX >= bindX && mouseX <= bindX + 50 && mouseY >= bindY && mouseY <= bindY + 16) {
+                        bindingModule = (bindingModule == m) ? null : m;
+                        com.eclipseware.imnotcheatingyouare.client.clickgui.Clickgui.playSound();
+                        return true;
+                    }
+                    
+                    modY += rowHeight;
+                    if (m == expandedModule && activeSettings != null) {
+                        modY += (int) currentH;
+                    }
+                }
+            }
+            bindingModule = null;
+        } else if (button == 1) {
+            bindingModule = null;
+        }
+        
+        if (button == 0) {
+            for (AbstractWidget w : settingWidgets) {
+                if (w instanceof GlassyDropdown<?> dd && dd.isMenuOpen()) {
+                    if (dd.mouseClicked(event, doubleClick)) {
+                        return true;
+                    }
+                }
+            }
+        } 
         
         if (button == 0) {
             // Scrollbar track click check:
@@ -427,6 +467,20 @@ public class NewClickgui extends Screen {
                 toggle.setX(listX + listWidth - 55);
                 toggle.setY(modY + (rowHeight - 20) / 2);
                 toggle.visible = (toggle.getY() >= listY && toggle.getY() + 20 <= listY + listHeight);
+                
+                int bindX = listX + listWidth - 110;
+                int bindY = modY + (rowHeight - 16) / 2;
+                if (bindY >= listY && bindY + 16 <= listY + listHeight) {
+                    boolean bindHovered = scaledMouseX >= bindX && scaledMouseX <= bindX + 50 && scaledMouseY >= bindY && scaledMouseY <= bindY + 16;
+                    int bindBg = (bindingModule == m) ? GlassyTheme.ACCENT : (bindHovered ? 0x30FFFFFF : 0x15FFFFFF);
+                    graphics.fill(bindX, bindY, bindX + 50, bindY + 16, bindBg);
+                    
+                    String bindText = (bindingModule == m) ? "..." : getKeyName(m.getKeyBind());
+                    int textWidth = this.font.width(bindText);
+                    int textX = bindX + (50 - textWidth) / 2;
+                    int textY = bindY + (16 - 9) / 2;
+                    graphics.drawString(this.font, Component.literal(bindText), textX, textY, GlassyTheme.TEXT, false);
+                }
             } else {
                 toggle.visible = false;
                 toggle.setY(-100);
@@ -502,6 +556,59 @@ public class NewClickgui extends Screen {
         }
         
         context.pose().popMatrix();
+    }
+
+    private String getKeyName(int key) {
+        if (key == -1) return "NONE";
+        
+        if (key >= 0 && key <= 7) {
+            if (key == 1) return "RMB";
+            if (key == 2) return "MMB";
+            return "MB" + (key + 1);
+        }
+
+        switch (key) {
+            case org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT: return "RSHIFT";
+            case org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT: return "LSHIFT";
+            case org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_CONTROL: return "RCTRL";
+            case org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL: return "LCTRL";
+            case org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_ALT: return "RALT";
+            case org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_ALT: return "LALT";
+            case org.lwjgl.glfw.GLFW.GLFW_KEY_TAB: return "TAB";
+            case org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE: return "SPACE";
+            case org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER: return "ENTER";
+            case org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE: return "NONE";
+        }
+
+        String str = org.lwjgl.glfw.GLFW.glfwGetKeyName(key, 0);
+        if (str == null) return "KEY " + key;
+        return str.toUpperCase();
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent input) {
+        if (bindingModule != null) {
+            int key = input.input();
+            int targetKey = key;
+            if (key == org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE || key == org.lwjgl.glfw.GLFW.GLFW_KEY_BACKSPACE || key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+                targetKey = -1;
+            }
+            bindingModule.setKeyBind(targetKey);
+            try {
+                com.eclipseware.imnotcheatingyouare.client.setting.ConfigManager.save();
+            } catch (Exception e) {}
+            bindingModule = null;
+            if (key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+                return true;
+            }
+        }
+        return super.keyPressed(input);
+    }
+
+    @Override
+    public void removed() {
+        bindingModule = null;
+        super.removed();
     }
 
     @Override

@@ -19,7 +19,7 @@ public class PearlGrapple extends Module {
     private float targetYaw, targetPitch;
 
     public PearlGrapple() {
-        super("PearlGrapple", Category.Movement, "Automatically throws a pearl at the target.");
+        super("PearlGrapple", Category.Utility, "Automatically throws a pearl at the target.");
     }
 
     @Override

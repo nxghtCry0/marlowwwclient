@@ -13,7 +13,7 @@ public class ShieldDrain extends Module {
     private long lastGuiTime = 0;
 
     public ShieldDrain() {
-        super("ShieldDrain", Category.Combat, "Massively inflates CPS against shielding enemies to break/drain their shield.");
+        super("ShieldDrain", Category.Utility, "Massively inflates CPS against shielding enemies to break/drain their shield.");
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("CPS", this, 90.0, 20.0, 200.0, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Range", this, 4.0, 1.0, 6.0, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Legit Mode", this, true));

@@ -20,7 +20,7 @@ public class SilentAim extends Module {
     private static final long TARGET_COOLDOWN = 100; 
 
     public SilentAim() {
-        super("SilentAim", Category.Combat, "Silently aims at targets when attacking without moving your camera.");
+        super("SilentAim", Category.Blatant, "Silently aims at targets when attacking without moving your camera.");
     }
 
     @Override

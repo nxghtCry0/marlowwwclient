@@ -24,7 +24,7 @@ public class AutoTotem extends Module {
     private volatile long lastPopMs = 0L;
 
     public AutoTotem() {
-        super("AutoTotem", Category.Crystal, "Re-equips a totem right after a pop with a timed inventory macro.");
+        super("AutoTotem", Category.Utility, "Re-equips a totem right after a pop with a timed inventory macro.");
         setSubCategory("Crystal PvP");
 
         ArrayList<String> modes = new ArrayList<>();

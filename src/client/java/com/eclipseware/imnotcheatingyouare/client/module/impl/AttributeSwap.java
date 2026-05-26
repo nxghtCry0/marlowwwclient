@@ -14,7 +14,7 @@ public class AttributeSwap extends Module {
     private int ticksWaited = 0;
 
     public AttributeSwap() {
-        super("AttributeSwap", Category.Combat, "Attacks with Primary weapon and swaps to Secondary in the same tick.");
+        super("AttributeSwap", Category.Exploit, "Attacks with Primary weapon and swaps to Secondary in the same tick.");
         INSTANCE = this;
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Primary Slot (0=Any)", this, 1.0, 0.0, 9.0, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Secondary Slot", this, 2.0, 1.0, 9.0, true));

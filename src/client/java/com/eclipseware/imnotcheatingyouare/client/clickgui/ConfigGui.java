@@ -95,7 +95,7 @@ public class ConfigGui extends Screen {
         drawBorder(guiGraphics, startX + 140, startY + 50, 55, 15, invertHovered ? 0x60FFFFFF : 0x20FFFFFF);
         FontUtils.drawCenteredString(guiGraphics, "Invert", startX + 167, startY + 54, -1);
 
-        int listHeight = 180;
+        int listHeight = 150;
         guiGraphics.enableScissor(startX + 18, startY + 75, startX + dialogWidth - 18, startY + listHeight + 75);
         guiGraphics.pose().pushMatrix();
         guiGraphics.pose().translate(0f, (float) scrollY);
@@ -138,17 +138,29 @@ public class ConfigGui extends Screen {
             guiGraphics.fill(sbX, thumbY, sbX + sbW, thumbY + thumbH, accent);
         }
 
-        guiGraphics.fill(startX + 20, startY + dialogHeight - 50, startX + dialogWidth - 20, startY + dialogHeight - 49, 0x15FFFFFF);
+        guiGraphics.fill(startX + 20, startY + 235, startX + dialogWidth - 20, startY + 236, 0x15FFFFFF);
 
-        boolean exportHovered = mouseX >= startX + 20 && mouseX <= startX + 230 && mouseY >= startY + dialogHeight - 40 && mouseY <= startY + dialogHeight - 15;
-        guiGraphics.fill(startX + 20, startY + dialogHeight - 40, startX + 230, startY + dialogHeight - 15, exportHovered ? 0x22FFFFFF : 0x14FFFFFF);
-        drawBorder(guiGraphics, startX + 20, startY + dialogHeight - 40, 210, 25, exportHovered ? 0x60FFFFFF : 0x30FFFFFF);
-        FontUtils.drawCenteredString(guiGraphics, "Export to Clipboard", startX + 125, startY + dialogHeight - 32, -1);
+        boolean exportHovered = mouseX >= startX + 20 && mouseX <= startX + 230 && mouseY >= startY + 242 && mouseY <= startY + 267;
+        guiGraphics.fill(startX + 20, startY + 242, startX + 230, startY + 267, exportHovered ? 0x22FFFFFF : 0x14FFFFFF);
+        drawBorder(guiGraphics, startX + 20, startY + 242, 210, 25, exportHovered ? 0x60FFFFFF : 0x30FFFFFF);
+        FontUtils.drawCenteredString(guiGraphics, "Export to Clipboard", startX + 125, startY + 250, -1);
 
-        boolean importHovered = mouseX >= startX + 250 && mouseX <= startX + 460 && mouseY >= startY + dialogHeight - 40 && mouseY <= startY + dialogHeight - 15;
-        guiGraphics.fill(startX + 250, startY + dialogHeight - 40, startX + 460, startY + dialogHeight - 15, importHovered ? accent : 0x14FFFFFF);
-        drawBorder(guiGraphics, startX + 250, startY + dialogHeight - 40, 210, 25, importHovered ? accent : 0x30FFFFFF);
-        FontUtils.drawCenteredString(guiGraphics, "Import from Clipboard", startX + 355, startY + dialogHeight - 32, importHovered ? -1 : accent);
+        boolean importHovered = mouseX >= startX + 250 && mouseX <= startX + 460 && mouseY >= startY + 242 && mouseY <= startY + 267;
+        guiGraphics.fill(startX + 250, startY + 242, startX + 460, startY + 267, importHovered ? accent : 0x14FFFFFF);
+        drawBorder(guiGraphics, startX + 250, startY + 242, 210, 25, importHovered ? accent : 0x30FFFFFF);
+        FontUtils.drawCenteredString(guiGraphics, "Import from Clipboard", startX + 355, startY + 250, importHovered ? -1 : accent);
+
+        guiGraphics.fill(startX + 20, startY + 274, startX + dialogWidth - 20, startY + 275, 0x15FFFFFF);
+
+        boolean exportMacroHovered = mouseX >= startX + 20 && mouseX <= startX + 230 && mouseY >= startY + 282 && mouseY <= startY + 307;
+        guiGraphics.fill(startX + 20, startY + 282, startX + 230, startY + 307, exportMacroHovered ? 0x22FFFFFF : 0x14FFFFFF);
+        drawBorder(guiGraphics, startX + 20, startY + 282, 210, 25, exportMacroHovered ? 0x60FFFFFF : 0x30FFFFFF);
+        FontUtils.drawCenteredString(guiGraphics, "Export Macro to Clipboard", startX + 125, startY + 290, -1);
+
+        boolean importMacroHovered = mouseX >= startX + 250 && mouseX <= startX + 460 && mouseY >= startY + 282 && mouseY <= startY + 307;
+        guiGraphics.fill(startX + 250, startY + 282, startX + 460, startY + 307, importMacroHovered ? accent : 0x14FFFFFF);
+        drawBorder(guiGraphics, startX + 250, startY + 282, 210, 25, importMacroHovered ? accent : 0x30FFFFFF);
+        FontUtils.drawCenteredString(guiGraphics, "Import Macro from Clipboard", startX + 355, startY + 290, importMacroHovered ? -1 : accent);
     }
 
     @Override
@@ -164,7 +176,7 @@ public class ConfigGui extends Screen {
         int dialogHeight = 320;
         int startX = (w - dialogWidth) / 2;
         int startY = (h - dialogHeight) / 2;
-        int listHeight = 180;
+        int listHeight = 150;
 
         List<Module> modules = ImnotcheatingyouareClient.INSTANCE.moduleManager.modules;
 
@@ -191,7 +203,7 @@ public class ConfigGui extends Screen {
                 return true;
             }
 
-            if (mouseX >= startX + 20 && mouseX <= startX + 230 && mouseY >= startY + dialogHeight - 40 && mouseY <= startY + dialogHeight - 15) {
+            if (mouseX >= startX + 20 && mouseX <= startX + 230 && mouseY >= startY + 242 && mouseY <= startY + 267) {
                 String exported = ConfigManager.exportSpecific(includedModules);
                 Minecraft.getInstance().keyboardHandler.setClipboard(exported);
                 Clickgui.playSound();
@@ -199,9 +211,23 @@ public class ConfigGui extends Screen {
                 return true;
             }
 
-            if (mouseX >= startX + 250 && mouseX <= startX + 460 && mouseY >= startY + dialogHeight - 40 && mouseY <= startY + dialogHeight - 15) {
+            if (mouseX >= startX + 250 && mouseX <= startX + 460 && mouseY >= startY + 242 && mouseY <= startY + 267) {
                 String clipboard = Minecraft.getInstance().keyboardHandler.getClipboard();
                 ConfigManager.importString(clipboard);
+                Clickgui.playSound();
+                this.onClose();
+                return true;
+            }
+
+            if (mouseX >= startX + 20 && mouseX <= startX + 230 && mouseY >= startY + 282 && mouseY <= startY + 307) {
+                com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.exportToClipboard();
+                Clickgui.playSound();
+                this.onClose();
+                return true;
+            }
+
+            if (mouseX >= startX + 250 && mouseX <= startX + 460 && mouseY >= startY + 282 && mouseY <= startY + 307) {
+                com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.importFromClipboard();
                 Clickgui.playSound();
                 this.onClose();
                 return true;
@@ -240,7 +266,7 @@ public class ConfigGui extends Screen {
     private boolean handleScroll(double scrollDelta) {
         int totalRows = (ImnotcheatingyouareClient.INSTANCE.moduleManager.modules.size() + 1) / 2;
         int contentHeight = totalRows * 18;
-        int maxScroll = Math.max(0, contentHeight - 180);
+        int maxScroll = Math.max(0, contentHeight - 150);
         
         targetScrollY += scrollDelta * 20;
         if (targetScrollY > 0) targetScrollY = 0;

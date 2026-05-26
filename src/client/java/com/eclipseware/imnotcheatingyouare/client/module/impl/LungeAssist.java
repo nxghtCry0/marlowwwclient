@@ -14,6 +14,10 @@ public class LungeAssist extends Module {
 
     public LungeAssist() {
         super("LungeAssist", Category.Combat);
+        java.util.ArrayList<String> swapModes = new java.util.ArrayList<>();
+        swapModes.add("Packet");
+        swapModes.add("SpoofManager");
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Swap Mode", this, "Packet", swapModes));
     }
 
     @Override
@@ -38,9 +42,20 @@ public class LungeAssist extends Module {
     }
 
     private void executeLunge(int spearSlot) {
-        SpoofManager.silentUse(spearSlot, () -> {
+        Setting swapModeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Swap Mode");
+        String swapMode = swapModeSetting != null ? swapModeSetting.getValString() : "Packet";
+
+        if ("Packet".equals(swapMode)) {
+            if (mc.getConnection() == null || mc.player == null) return;
+            int oldSlot = mc.player.getInventory().getSelectedSlot();
+            mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket(spearSlot));
             ((MinecraftAccessor) mc).invokeStartAttack();
-        });
+            mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket(oldSlot));
+        } else {
+            SpoofManager.silentUse(spearSlot, () -> {
+                ((MinecraftAccessor) mc).invokeStartAttack();
+            });
+        }
     }
 
     @Override

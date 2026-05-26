@@ -25,7 +25,7 @@ public class AutoMace extends Module {
     private int attackDelayOverride = -1;
 
     public AutoMace() {
-        super("AutoMace", Category.Combat, "Automatically attacks with mace");
+        super("AutoMace", Category.Utility, "Automatically attacks with mace");
         
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Min Fall Distance", this, 3.0, 1.0, 10.0, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Attack Delay", this, 100.0, 0.0, 500.0, true));

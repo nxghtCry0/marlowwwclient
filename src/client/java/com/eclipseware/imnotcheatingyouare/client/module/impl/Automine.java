@@ -8,7 +8,7 @@ import net.minecraft.world.phys.HitResult;
 
 public class Automine extends Module {
     public Automine() {
-        super("Automine", Category.Misc, "Automatically holds down your attack/break key.");
+        super("Automine", Category.Utility, "Automatically holds down your attack/break key.");
     }
 
     @Override

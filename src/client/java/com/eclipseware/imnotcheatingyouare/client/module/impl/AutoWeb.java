@@ -24,7 +24,7 @@ public class AutoWeb extends Module {
     private BlockPos currentTarget = null;
 
     public AutoWeb() {
-        super("AutoWeb", Category.Combat, "Places cobwebs in enemy paths to trip them.");
+        super("AutoWeb", Category.Utility, "Places cobwebs in enemy paths to trip them.");
     }
 
     @Override

@@ -7,7 +7,7 @@ import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 
 public class BoatFly extends Module {
     public BoatFly() {
-        super("BoatFly", Category.Blatant, "Allows boats to fly.");
+        super("BoatFly", Category.Exploit, "Allows boats to fly.");
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Speed", this, 1.0, 0.1, 5.0, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Up Speed", this, 0.5, 0.1, 2.0, false));
     }

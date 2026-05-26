@@ -22,7 +22,7 @@ public class AutoMaceCounter extends Module {
     private int swapDelay = 0;
 
     public AutoMaceCounter() {
-        super("AutoMaceCounter", Category.Combat, "Throws a wind charge at falling mace users to stop them.");
+        super("AutoMaceCounter", Category.Utility, "Throws a wind charge at falling mace users to stop them.");
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Distance", this, 6.0, 2.0, 10.0, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Cooldown (Ticks)", this, 20.0, 0.0, 100.0, true));
     }

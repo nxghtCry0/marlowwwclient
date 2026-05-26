@@ -16,7 +16,7 @@ private int originalSlot = -1;
 private int maceSlot = -1;
 private int ticksWaited = 0;
 public BreachSwap() {
-super("BreachSwap", Category.Combat);
+super("BreachSwap", Category.Exploit);
 }
 public boolean handleAttack(Entity target, Player player) {
 if (!this.isToggled()) return false;

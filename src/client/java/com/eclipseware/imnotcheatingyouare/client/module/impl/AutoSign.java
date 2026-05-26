@@ -11,7 +11,7 @@ public class AutoSign extends Module {
     public static boolean isFront = true;
 
     public AutoSign() {
-        super("AutoSign", Category.Misc, "Automatically fills in signs with your last used text.");
+        super("AutoSign", Category.Utility, "Automatically fills in signs with your last used text.");
     }
 
     public static void handleScreen(AbstractSignEditScreen screen) {
