@@ -36,4 +36,4 @@ venv/
 node_modules/
 .env
 SESSION_HANDOFF.md
-SESSION_HANDOFF.md
+create_release.py
