@@ -16,6 +16,12 @@ public class BridgeAssist extends Module {
     public void onTick() {
         if (mc == null || mc.player == null || mc.level == null) return;
 
+        Setting modeSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Mode");
+        if (modeSet != null && modeSet.getValString().equals("Blatant")) {
+            unShift();
+            return;
+        }
+
         Setting pitchCheck = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Pitch Check");
         if (pitchCheck != null && pitchCheck.getValBoolean() && mc.player.getXRot() < 45.0f) {
             unShift();

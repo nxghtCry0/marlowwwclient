@@ -201,6 +201,9 @@ public class AimAssist extends Module {
         if (!(entity instanceof LivingEntity) || entity == mc.player || !entity.isAlive()) {
             return false;
         }
+        if (com.eclipseware.imnotcheatingyouare.client.utils.TargetFilterManager.isFiltered(entity)) {
+            return false;
+        }
 
         Setting rangeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Range");
         double range = rangeSetting != null ? rangeSetting.getValDouble() : 4.0;

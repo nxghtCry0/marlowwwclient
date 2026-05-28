@@ -181,6 +181,7 @@ public class Triggerbot extends Module {
     private boolean isValidTarget(Entity entity) {
         if (!(entity instanceof LivingEntity)) return false;
         if (!entity.isAlive() || entity == mc.player) return false;
+        if (com.eclipseware.imnotcheatingyouare.client.utils.TargetFilterManager.isFiltered(entity)) return false;
         if (entity instanceof net.minecraft.world.entity.player.Player p && FriendManager.isFriend(p)) return false;
 
         Setting weaponsOnlySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Weapons Only");

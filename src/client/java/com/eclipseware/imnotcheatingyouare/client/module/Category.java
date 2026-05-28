@@ -11,5 +11,7 @@ public enum Category {
     World,
     Blatant,
     Configs,
-    Client
+    Client,
+    Macros,
+    Filters
 }

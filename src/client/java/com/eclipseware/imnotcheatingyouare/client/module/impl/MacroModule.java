@@ -53,8 +53,5 @@ public class MacroModule extends Module {
             }
         }
 
-        if (MacroManager.isPlaying()) {
-            MacroManager.tick();
-        }
     }
 }

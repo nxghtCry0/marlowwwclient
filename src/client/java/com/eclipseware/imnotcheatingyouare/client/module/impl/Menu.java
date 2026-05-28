@@ -12,7 +12,7 @@ public class Menu extends Module {
     public Menu() {
         super("Menu", Category.Client, "Opens the ClickGUI.");
         this.setKeyBind(GLFW.GLFW_KEY_RIGHT_SHIFT); 
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("NewUI+", this, false));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("NewUI+", this, true));
     }
 
     private int pressCount = 0;
@@ -72,21 +72,17 @@ public class Menu extends Module {
             setToggled(false);
             return;
         }
-        
-        Setting newUI = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "NewUI+");
-        boolean useNewUI = newUI != null && newUI.getValBoolean();
-        
-        if (useNewUI) {
-            mc.setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.NewClickgui());
-        } else {
+        Module legacyUI = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("LegacyUI");
+        if (legacyUI != null && legacyUI.isToggled()) {
             if (ImnotcheatingyouareClient.INSTANCE.clickGui == null) {
                 ImnotcheatingyouareClient.INSTANCE.clickGui = new Clickgui();
             }
             if (!(mc.screen instanceof Clickgui)) {
                 mc.setScreen(ImnotcheatingyouareClient.INSTANCE.clickGui);
             }
+        } else {
+            mc.setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.NewClickgui());
         }
-        
         setToggled(false);
     }
 }

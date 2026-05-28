@@ -7,7 +7,7 @@ import com.eclipseware.imnotcheatingyouare.client.module.Module;
 public class Scaffold extends Module {
 
     public Scaffold() {
-        super("Scaffold", Category.Utility, "Macro: Holds S, enables BridgeAssist & FastPlace.");
+        super("Scaffold", Category.World, "Macro: Holds S, enables BridgeAssist & FastPlace.");
     }
 
     @Override

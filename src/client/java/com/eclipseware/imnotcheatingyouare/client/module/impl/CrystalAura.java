@@ -225,7 +225,7 @@ public class CrystalAura extends Module {
 
     private Player getOptimalTarget(double r) {
         return mc.level.players().stream()
-                .filter(p -> p != mc.player && p.isAlive() && !FriendManager.isFriend(p) && !AntiBot.isBot(p)
+                .filter(p -> p != mc.player && p.isAlive() && !FriendManager.isFriend(p) && !com.eclipseware.imnotcheatingyouare.client.utils.TargetFilterManager.isFiltered(p) && !AntiBot.isBot(p)
                         && !Teams.isTeam(p) && mc.player.distanceTo(p) <= r)
                 .min(Comparator.comparingDouble(p -> mc.player.distanceToSqr(p) + (p.getHealth() * 2.0)))
                 .orElse(null);
@@ -379,7 +379,7 @@ public class CrystalAura extends Module {
     private double calculateDamage(BlockPos crystalPos) {
         double best = 0;
         for (Player p : mc.level.players()) {
-            if (p == mc.player || !p.isAlive() || FriendManager.isFriend(p) || AntiBot.isBot(p) || Teams.isTeam(p))
+            if (p == mc.player || !p.isAlive() || FriendManager.isFriend(p) || com.eclipseware.imnotcheatingyouare.client.utils.TargetFilterManager.isFiltered(p) || AntiBot.isBot(p) || Teams.isTeam(p))
                 continue;
             best = Math.max(best, calcDmgToPlayer(crystalPos, p));
         }

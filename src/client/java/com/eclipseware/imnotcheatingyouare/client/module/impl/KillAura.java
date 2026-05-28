@@ -184,6 +184,7 @@ public class KillAura extends Module {
             if (!(entity instanceof LivingEntity le)) return false;
             if (!entity.isAlive()) return false;
             if (mc.player.distanceTo(entity) > range) return false;
+            if (com.eclipseware.imnotcheatingyouare.client.utils.TargetFilterManager.isFiltered(entity)) return false;
 
             Vec3 entityCenter = entity.position().add(0, le.getBbHeight() / 2.0f, 0);
             if (!RotationManager.hasLineOfSight(eyePos, entityCenter)) return false;

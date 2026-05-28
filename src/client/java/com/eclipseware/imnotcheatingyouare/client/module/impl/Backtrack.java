@@ -158,6 +158,7 @@ public class Backtrack extends Module {
 
         for (Entity e : mc.level.entitiesForRendering()) {
             if (e == mc.player || !(e instanceof LivingEntity le) || !le.isAlive()) continue;
+            if (com.eclipseware.imnotcheatingyouare.client.utils.TargetFilterManager.isFiltered(e)) continue;
             if (e instanceof Player p && FriendManager.isFriend(p)) continue;
 
             double dist = mc.player.distanceTo(e);

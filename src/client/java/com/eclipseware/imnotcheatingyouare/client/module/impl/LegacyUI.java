@@ -3,11 +3,11 @@ package com.eclipseware.imnotcheatingyouare.client.module.impl;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 
-public class FastPlace extends Module {
-    public static FastPlace INSTANCE;
+public class LegacyUI extends Module {
+    public static LegacyUI INSTANCE;
 
-    public FastPlace() {
-        super("FastPlace", Category.World, "Removes the right-click delay for placing blocks.");
+    public LegacyUI() {
+        super("LegacyUI", Category.Client, "Enables the old click GUI instead of the new glassy UI.");
         INSTANCE = this;
     }
 }

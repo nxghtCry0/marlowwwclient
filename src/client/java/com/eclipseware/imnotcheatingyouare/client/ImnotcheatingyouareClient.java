@@ -209,11 +209,16 @@ Module theme = new Module("Theme", Category.Render, "Customizes the client's UI 
         settingsManager.rSetting(new Setting("Min CPS", autoClicker, 9.0, 1.0, 20.0, true));
         settingsManager.rSetting(new Setting("Max CPS", autoClicker, 14.0, 1.0, 20.0, true));
         settingsManager.rSetting(new Setting("Require Click", autoClicker, true));
+        settingsManager.rSetting(new Setting("Right Clicker", autoClicker, false));
 
         settingsManager.rSetting(new Setting("Delay (Ticks)", fastPlace, 0.0, 0.0, 3.0, true));
         
+        java.util.ArrayList<String> safewalkModes = new java.util.ArrayList<>();
+        safewalkModes.add("Normal");
+        safewalkModes.add("Blatant");
+        settingsManager.rSetting(new Setting("Mode", bridgeAssist, "Normal", safewalkModes));
         settingsManager.rSetting(new Setting("Edge Distance", bridgeAssist, 0.25, 0.00, 0.30, false));
-settingsManager.rSetting(new Setting("Pitch Check", bridgeAssist, true));
+        settingsManager.rSetting(new Setting("Pitch Check", bridgeAssist, true));
 
 settingsManager.rSetting(new Setting("Range", blockESP, 32.0, 8.0, 64.0, true));
 settingsManager.rSetting(new Setting("FPS", blockESP, 30.0, 1.0, 60.0, true));
@@ -248,6 +253,11 @@ addColorSettings(settingsManager, storageESP, "Furnace Color", 160, 160, 160);
 
         settingsManager.rSetting(new Setting("Firework Level", elytraBoost, 1.0, 0.0, 3.0, true));
         settingsManager.rSetting(new Setting("Play Sound", elytraBoost, true));
+
+        java.util.ArrayList<String> fbModes = new java.util.ArrayList<>();
+        fbModes.add("Night Vision");
+        fbModes.add("Gamma");
+        settingsManager.rSetting(new Setting("Mode", fullbright, "Night Vision", fbModes));
 
 
         settingsManager.rSetting(new Setting("Wait Ticks", wTap, 0.0, 0.0, 10.0, true));
@@ -459,6 +469,8 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
 
         Module menu = new com.eclipseware.imnotcheatingyouare.client.module.impl.Menu();
         moduleManager.modules.add(menu);
+        Module legacyUI = new com.eclipseware.imnotcheatingyouare.client.module.impl.LegacyUI();
+        moduleManager.modules.add(legacyUI);
 
         addColorSettings(settingsManager, menu, "Primary", 155, 60, 255);
         addColorSettings(settingsManager, menu, "Secondary", 20, 20, 20);
@@ -474,6 +486,8 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
 
             com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.tick();
             com.eclipseware.imnotcheatingyouare.client.utils.SpoofManager.onTick();
+            com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.tick();
+            com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.tickKeybinds();
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -484,6 +498,7 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
         com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.load();
 
         com.eclipseware.imnotcheatingyouare.client.utils.FriendManager.load();
+        com.eclipseware.imnotcheatingyouare.client.utils.TargetFilterManager.load();
 
         Thread saveHook = new Thread(com.eclipseware.imnotcheatingyouare.client.setting.ConfigManager::save, "ConfigSaveHook");
         saveHook.setDaemon(true);

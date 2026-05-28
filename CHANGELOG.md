@@ -1,9 +1,13 @@
-# Marlow Client v2.6.0 - WTap & Customization Update
+# Marlow Client v3.0 - AutoClicker & SafeWalk Update
 
 ## 🚀 Major Features & Fixes
 
-### **WTap Rework & Customization**
-- **WTap Modes:** Added customizable modes (`Auto`, `Silent`, and `Normal`) supporting both packet-level and physical key-release methods.
-- **Rebound Key Compatibility:** Restructured movement checks to dynamically resolve the bound key code rather than assuming the default 'W' key, supporting custom keybinds out-of-the-box.
-- **Chance & Jitter Settings:** Added a "Chance (%)" slider setting (0.0 to 100.0) to randomize whether the sprint reset triggers on hit, along with a customizable "Jitter Ticks" slider (0.0 to 5.0) to randomize the timing windows.
-- **Target Filtering:** Added an "Only Players" checkbox setting to prevent WTap from triggering when hitting non-player entities (mobs, items, etc.).
+### **AutoClicker Rework**
+- **Right Clicker Integration:** Added a "Right Clicker" setting to allow autoclicking the right-mouse (Use) key independently.
+- **Double Click Support:** Implemented a new, isolated click consistency engine specifically for right-clicking, mimicking realistic human click distributions.
+
+### **SafeWalk (BridgeAssist) Update**
+- **Blatant Mode:** Added a "Blatant" mode that dynamically clips player movement delta coordinates at block edges. This prevents the player from falling off blocks while moving at normal, standing speed instead of crouching.
+
+### **Gamma Fullbright Mode**
+- **Gamma Setting:** Added a "Gamma" mode to Fullbright that overrides rendering brightness calculations via Lightmap, lighting up the screen without changing system configuration or printing illegal option error spam to client logs.
