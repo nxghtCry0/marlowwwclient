@@ -253,6 +253,15 @@ addColorSettings(settingsManager, storageESP, "Furnace Color", 160, 160, 160);
         settingsManager.rSetting(new Setting("Wait Ticks", wTap, 0.0, 0.0, 10.0, true));
         settingsManager.rSetting(new Setting("Action Ticks", wTap, 1.0, 1.0, 5.0, true));
 
+        java.util.ArrayList<String> wtapModes = new java.util.ArrayList<>();
+        wtapModes.add("Auto");
+        wtapModes.add("Silent");
+        wtapModes.add("Normal");
+        settingsManager.rSetting(new Setting("WTap Mode", wTap, "Auto", wtapModes));
+        settingsManager.rSetting(new Setting("Chance (%)", wTap, 100.0, 0.0, 100.0, true));
+        settingsManager.rSetting(new Setting("Only Players", wTap, true));
+        settingsManager.rSetting(new Setting("Jitter Ticks", wTap, 1.0, 0.0, 5.0, true));
+
         java.util.ArrayList<String> tbModes = new java.util.ArrayList<>();
         tbModes.add("Legit"); tbModes.add("Blatant");
         settingsManager.rSetting(new Setting("Mode", triggerbot, "Legit", tbModes));

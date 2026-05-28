@@ -18,7 +18,7 @@ public class WTapMixin {
         if (ImnotcheatingyouareClient.INSTANCE == null || ImnotcheatingyouareClient.INSTANCE.moduleManager == null) return;
         WTap wTap = (WTap) ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("WTap");
         if (wTap != null && wTap.isToggled()) {
-            wTap.onAttackLanded();
+            wTap.onAttackLanded(target);
         }
     }
 }
