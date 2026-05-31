@@ -5,7 +5,7 @@ import com.eclipseware.imnotcheatingyouare.client.module.Module;
 
 public class ArrayListMod extends Module {
     public ArrayListMod() {
-        super("ArrayList", Category.Render);
+        super("ArrayList", Category.HUD);
         this.toggle(); 
     }
 }

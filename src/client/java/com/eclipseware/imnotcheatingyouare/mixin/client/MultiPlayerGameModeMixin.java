@@ -110,6 +110,10 @@ public class MultiPlayerGameModeMixin {
             com.eclipseware.imnotcheatingyouare.client.module.impl.HitSwap.INSTANCE.onPostAttack(target);
         }
 
+        if (com.eclipseware.imnotcheatingyouare.client.module.impl.TargetHUD.INSTANCE != null) {
+            com.eclipseware.imnotcheatingyouare.client.module.impl.TargetHUD.INSTANCE.onPostAttack(target);
+        }
+
         if (com.eclipseware.imnotcheatingyouare.client.module.impl.AttributeSwap.INSTANCE != null) {
             com.eclipseware.imnotcheatingyouare.client.module.impl.AttributeSwap.INSTANCE.onAttack(target);
         }

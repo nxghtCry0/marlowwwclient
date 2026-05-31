@@ -16,6 +16,10 @@ import net.minecraft.world.phys.Vec3;
 
 public class SilentAim extends Module {
     private Entity target;
+
+    public Entity getTarget() {
+        return target;
+    }
     private long lastTargetTime = 0;
     private static final long TARGET_COOLDOWN = 100; 
 

@@ -7,6 +7,7 @@ public enum Category {
     Exploit,
     Utility,
     Render,
+    HUD,
     Misc,
     World,
     Blatant,

@@ -160,9 +160,20 @@ public class AnimationUtil {
             return;
         }
 
-        guiGraphics.fill(x + 1, y, x + width - 1, y + height, color); 
-        guiGraphics.fill(x, y + 1, x + 1, y + height - 1, color);     
-        guiGraphics.fill(x + width - 1, y + 1, x + width, y + height - 1, color); 
+        radius = Math.min(radius, Math.min(width, height) / 2);
+
+        guiGraphics.fill(x + radius, y, x + width - radius, y + height, color);
+        guiGraphics.fill(x, y + radius, x + radius, y + height - radius, color);
+        guiGraphics.fill(x + width - radius, y + radius, x + width, y + height - radius, color);
+
+        for (int i = 0; i < radius; i++) {
+            int dy = radius - i;
+            int dx = radius - (int) Math.sqrt(radius * radius - dy * dy);
+            guiGraphics.fill(x + dx, y + i, x + radius, y + i + 1, color);
+            guiGraphics.fill(x + width - radius, y + i, x + width - dx, y + i + 1, color);
+            guiGraphics.fill(x + dx, y + height - i - 1, x + radius, y + height - i, color);
+            guiGraphics.fill(x + width - radius, y + height - i - 1, x + width - dx, y + height - i, color);
+        }
     }
 
     /**
@@ -183,11 +194,10 @@ public class AnimationUtil {
         if (radius <= 0) {
             guiGraphics.fill(x, y, x + width, y + thickness, color); 
             guiGraphics.fill(x, y + height - thickness, x + width, y + height, color); 
-            guiGraphics.fill(x, y, x + thickness, y + height, color); 
-            guiGraphics.fill(x + width - thickness, y, x + width, y + height, color); 
+            guiGraphics.fill(x, y + thickness, x + thickness, y + height - thickness, color); 
+            guiGraphics.fill(x + width - thickness, y + thickness, x + width, y + height - thickness, color); 
             return;
         }
-
         radius = Math.min(radius, Math.min(width, height) / 2);
 
         guiGraphics.fill(x + radius, y, x + width - radius, y + thickness, color);
@@ -195,10 +205,16 @@ public class AnimationUtil {
         guiGraphics.fill(x, y + radius, x + thickness, y + height - radius, color);
         guiGraphics.fill(x + width - thickness, y + radius, x + width, y + height - radius, color);
 
-        drawCircleOutline(guiGraphics, x + radius, y + radius, radius, thickness, color);
-        drawCircleOutline(guiGraphics, x + width - radius, y + radius, radius, thickness, color);
-        drawCircleOutline(guiGraphics, x + radius, y + height - radius, radius, thickness, color);
-        drawCircleOutline(guiGraphics, x + width - radius, y + height - radius, radius, thickness, color);
+        for (int i = 0; i < radius; i++) {
+            int dy = radius - i;
+            int dxOut = radius - (int) Math.sqrt(radius * radius - dy * dy);
+            int dxIn = radius - (int) Math.sqrt(Math.max(0, (radius - thickness) * (radius - thickness) - dy * dy));
+
+            guiGraphics.fill(x + dxOut, y + i, x + dxIn, y + i + 1, color);
+            guiGraphics.fill(x + width - dxIn, y + i, x + width - dxOut, y + i + 1, color);
+            guiGraphics.fill(x + dxOut, y + height - i - 1, x + dxIn, y + height - i, color);
+            guiGraphics.fill(x + width - dxIn, y + height - i - 1, x + width - dxOut, y + height - i, color);
+        }
     }
 
     /**
@@ -237,6 +253,204 @@ public class AnimationUtil {
             int segX = x + (int) (i * segmentWidth);
             int segW = (int) Math.ceil(segmentWidth);
             guiGraphics.fill(segX, y, segX + segW, y + height, color);
+        }
+    }
+
+    public static void drawRoundedMask(GuiGraphicsExtractor guiGraphics, int x, int y, int width, int height, int radius, int maskColor) {
+        if (radius <= 0) return;
+        radius = Math.min(radius, Math.min(width, height) / 2);
+
+        for (int i = 0; i < radius; i++) {
+            int dy = radius - i;
+            int dx = radius - (int) Math.sqrt(radius * radius - dy * dy);
+            
+            guiGraphics.fill(x, y + i, x + dx, y + i + 1, maskColor);
+            guiGraphics.fill(x + width - dx, y + i, x + width, y + i + 1, maskColor);
+            guiGraphics.fill(x, y + height - i - 1, x + dx, y + height - i, maskColor);
+            guiGraphics.fill(x + width - dx, y + height - i - 1, x + width, y + height - i, maskColor);
+        }
+    }
+
+    public static void drawSquircleFilled(GuiGraphicsExtractor guiGraphics, float x, float y, float width, float height, float radius, int color) {
+        if (radius <= 0) {
+            guiGraphics.fill((int) x, (int) y, (int) (x + width), (int) (y + height), color);
+            return;
+        }
+        radius = Math.min(radius, Math.min(width, height) / 2);
+        
+        int p = 4;
+        for (int i = 0; i < (int) height; i++) {
+            float dy = 0;
+            if (i < radius) {
+                dy = radius - i;
+            } else if (i > height - radius) {
+                dy = i - (height - radius);
+            }
+            
+            float dx = 0;
+            if (dy > 0) {
+                dx = radius - (float) Math.pow(Math.pow(radius, p) - Math.pow(dy, p), 1.0 / p);
+            }
+            
+            int drawX1 = (int) (x + dx);
+            int drawX2 = (int) (x + width - dx);
+            int drawY = (int) (y + i);
+            guiGraphics.fill(drawX1, drawY, drawX2, drawY + 1, color);
+        }
+    }
+
+    public static void drawSquircleVerticalGradient(GuiGraphicsExtractor guiGraphics, float x, float y, float width, float height, float radius, int startColor, int endColor) {
+        if (radius <= 0) {
+            drawGradientRect(guiGraphics, (int) x, (int) y, (int) width, (int) height, startColor, endColor);
+            return;
+        }
+        radius = Math.min(radius, Math.min(width, height) / 2);
+        
+        int p = 4;
+        for (int i = 0; i < (int) height; i++) {
+            float dy = 0;
+            if (i < radius) {
+                dy = radius - i;
+            } else if (i > height - radius) {
+                dy = i - (height - radius);
+            }
+            
+            float dx = 0;
+            if (dy > 0) {
+                dx = radius - (float) Math.pow(Math.pow(radius, p) - Math.pow(dy, p), 1.0 / p);
+            }
+            
+            int drawX1 = (int) (x + dx);
+            int drawX2 = (int) (x + width - dx);
+            int drawY = (int) (y + i);
+            
+            float t = (float) i / height;
+            int color = interpolateColor(startColor, endColor, t);
+            guiGraphics.fill(drawX1, drawY, drawX2, drawY + 1, color);
+        }
+    }
+
+    public static void drawSquircleOutline(GuiGraphicsExtractor guiGraphics, float x, float y, float width, float height, float radius, float thickness, int color) {
+        if (radius <= 0) {
+            guiGraphics.fill((int) x, (int) y, (int) (x + width), (int) (y + thickness), color); 
+            guiGraphics.fill((int) x, (int) (y + height - thickness), (int) (x + width), (int) (y + height), color); 
+            guiGraphics.fill((int) x, (int) (y + thickness), (int) (x + thickness), (int) (y + height - thickness), color); 
+            guiGraphics.fill((int) (x + width - thickness), (int) (y + thickness), (int) (x + width), (int) (y + height - thickness), color); 
+            return;
+        }
+        radius = Math.min(radius, Math.min(width, height) / 2);
+        
+        int p = 4;
+        for (int i = 0; i < (int) height; i++) {
+            float dy = 0;
+            if (i < radius) {
+                dy = radius - i;
+            } else if (i > height - radius) {
+                dy = i - (height - radius);
+            }
+            
+            float dx = 0;
+            if (dy > 0) {
+                dx = radius - (float) Math.pow(Math.pow(radius, p) - Math.pow(dy, p), 1.0 / p);
+            }
+            
+            int drawX1 = (int) (x + dx);
+            int drawX2 = (int) (x + width - dx);
+            int drawY = (int) (y + i);
+            
+            if (i < thickness || i >= height - thickness) {
+                guiGraphics.fill(drawX1, drawY, drawX2, drawY + 1, color);
+            } else {
+                guiGraphics.fill(drawX1, drawY, drawX1 + (int) thickness, drawY + 1, color);
+                guiGraphics.fill(drawX2 - (int) thickness, drawY, drawX2, drawY + 1, color);
+            }
+        }
+    }
+
+    public static void drawSquircleOutlineGradient(GuiGraphicsExtractor guiGraphics, float x, float y, float width, float height, float radius, float thickness, int startColor, int endColor) {
+        if (radius <= 0) {
+            for (int i = 0; i < (int) height; i++) {
+                float t = (float) i / height;
+                int color = interpolateColor(startColor, endColor, t);
+                if (i < thickness || i >= height - thickness) {
+                    guiGraphics.fill((int) x, (int) (y + i), (int) (x + width), (int) (y + i + 1), color);
+                } else {
+                    guiGraphics.fill((int) x, (int) (y + i), (int) (x + thickness), (int) (y + i + 1), color);
+                    guiGraphics.fill((int) (x + width - thickness), (int) (y + i), (int) (x + width), (int) (y + i + 1), color);
+                }
+            }
+            return;
+        }
+        radius = Math.min(radius, Math.min(width, height) / 2);
+        
+        int p = 4;
+        for (int i = 0; i < (int) height; i++) {
+            float dy = 0;
+            if (i < radius) {
+                dy = radius - i;
+            } else if (i > height - radius) {
+                dy = i - (height - radius);
+            }
+            
+            float dx = 0;
+            if (dy > 0) {
+                dx = radius - (float) Math.pow(Math.pow(radius, p) - Math.pow(dy, p), 1.0 / p);
+            }
+            
+            int drawX1 = (int) (x + dx);
+            int drawX2 = (int) (x + width - dx);
+            int drawY = (int) (y + i);
+            
+            float t = (float) i / height;
+            int color = interpolateColor(startColor, endColor, t);
+            
+            if (i < thickness || i >= height - thickness) {
+                guiGraphics.fill(drawX1, drawY, drawX2, drawY + 1, color);
+            } else {
+                guiGraphics.fill(drawX1, drawY, drawX1 + (int) thickness, drawY + 1, color);
+                guiGraphics.fill(drawX2 - (int) thickness, drawY, drawX2, drawY + 1, color);
+            }
+        }
+    }
+
+    public static void drawRoundedHorizontalGradient(GuiGraphicsExtractor guiGraphics, int x, int y, int width, int height, int radius, int leftColor, int rightColor) {
+        if (radius <= 0) {
+            drawHorizontalGradient(guiGraphics, x, y, width, height, leftColor, rightColor);
+            return;
+        }
+        radius = Math.min(radius, Math.min(width, height) / 2);
+        
+        for (int col = radius; col < width - radius; col++) {
+            int color = interpolateColor(leftColor, rightColor, (float) col / width);
+            guiGraphics.fill(x + col, y, x + col + 1, y + height, color);
+        }
+        
+        for (int i = 0; i < radius; i++) {
+            int dy = radius - i;
+            int dx = radius - (int) Math.sqrt(radius * radius - dy * dy);
+            
+            for (int col = dx; col < radius; col++) {
+                int color = interpolateColor(leftColor, rightColor, (float) col / width);
+                guiGraphics.fill(x + col, y + i, x + col + 1, y + i + 1, color);
+                guiGraphics.fill(x + col, y + height - i - 1, x + col + 1, y + height - i, color);
+            }
+            
+            for (int col = width - radius; col < width - dx; col++) {
+                int color = interpolateColor(leftColor, rightColor, (float) col / width);
+                guiGraphics.fill(x + col, y + i, x + col + 1, y + i + 1, color);
+                guiGraphics.fill(x + col, y + height - i - 1, x + col + 1, y + height - i, color);
+            }
+        }
+        
+        for (int i = radius; i < height - radius; i++) {
+            for (int col = 0; col < radius; col++) {
+                int color = interpolateColor(leftColor, rightColor, (float) col / width);
+                guiGraphics.fill(x + col, y + i, x + col + 1, y + i + 1, color);
+            }
+            for (int col = width - radius; col < width; col++) {
+                int color = interpolateColor(leftColor, rightColor, (float) col / width);
+                guiGraphics.fill(x + col, y + i, x + col + 1, y + i + 1, color);
+            }
         }
     }
 }

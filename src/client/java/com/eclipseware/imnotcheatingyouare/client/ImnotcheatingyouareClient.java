@@ -191,6 +191,13 @@ moduleManager.modules.add(recommendedConfigs);
 
 moduleManager.modules.add(blink);
 
+Module targetHUD = new com.eclipseware.imnotcheatingyouare.client.module.impl.TargetHUD();
+Module armorHUD = new com.eclipseware.imnotcheatingyouare.client.module.impl.ArmorHUD();
+Module hudEditor = new com.eclipseware.imnotcheatingyouare.client.module.impl.HUDEditor();
+moduleManager.modules.add(targetHUD);
+moduleManager.modules.add(armorHUD);
+moduleManager.modules.add(hudEditor);
+
 
 Module theme = new Module("Theme", Category.Render, "Customizes the client's UI colors and animations.");
         moduleManager.modules.add(theme);
@@ -469,8 +476,6 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
 
         Module menu = new com.eclipseware.imnotcheatingyouare.client.module.impl.Menu();
         moduleManager.modules.add(menu);
-        Module legacyUI = new com.eclipseware.imnotcheatingyouare.client.module.impl.LegacyUI();
-        moduleManager.modules.add(legacyUI);
 
         addColorSettings(settingsManager, menu, "Primary", 155, 60, 255);
         addColorSettings(settingsManager, menu, "Secondary", 20, 20, 20);

@@ -24,6 +24,10 @@ import java.util.List;
 
 public class KillAura extends Module {
     private LivingEntity target;
+
+    public LivingEntity getTarget() {
+        return target;
+    }
     private long lastAttackTime = 0;
     private long nextDelay = 0;
     private int aimTicks = 0;
