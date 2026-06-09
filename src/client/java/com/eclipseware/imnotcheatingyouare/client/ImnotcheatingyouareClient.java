@@ -480,8 +480,27 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
         addColorSettings(settingsManager, menu, "Primary", 155, 60, 255);
         addColorSettings(settingsManager, menu, "Secondary", 20, 20, 20);
 
+        Module legacyUI = new com.eclipseware.imnotcheatingyouare.client.module.impl.LegacyUI();
+        moduleManager.modules.add(legacyUI);
+        settingsManager.rSetting(new Setting("On Crystal", crystalHelper, true));
+        settingsManager.rSetting(new Setting("On Obsidian", crystalHelper, true));
+        settingsManager.rSetting(new Setting("Exclude Bedrock", crystalHelper, false));
+        settingsManager.rSetting(new Setting("Only Selected", crystalHelper, true));
+        settingsManager.rSetting(new Setting("On Sword", crystalHelper, true));
+        settingsManager.rSetting(new Setting("On Crystal Item", crystalHelper, true));
+        settingsManager.rSetting(new Setting("On Obsidian Item", crystalHelper, true));
+        settingsManager.rSetting(new Setting("On Totem", crystalHelper, true));
+        settingsManager.rSetting(new Setting("On Glowstone", crystalHelper, true));
+        settingsManager.rSetting(new Setting("On Anchor", crystalHelper, true));
+        settingsManager.rSetting(new Setting("Hold Trigger", crystalHelper, false));
+        settingsManager.rSetting(new Setting("Cooldown (ms)", crystalHelper, 200.0, 0.0, 1000.0, true));
+
 
         ClientTickEvents.START_CLIENT_TICK.register(client -> {
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.onClientTickStart();
+            com.eclipseware.imnotcheatingyouare.client.utils.SpoofManager.onTick();
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.tickSilentRevert();
+
             for (Module m : moduleManager.modules) {
                 m.tickKeybind();
                 if (m.isToggled()) {
@@ -490,13 +509,13 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
             }
 
             com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.tick();
-            com.eclipseware.imnotcheatingyouare.client.utils.SpoofManager.onTick();
             com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.tick();
             com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.tickKeybinds();
         });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.visualTick();
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.onClientTickEnd();
         });
 
         com.eclipseware.imnotcheatingyouare.client.setting.ConfigManager.load();

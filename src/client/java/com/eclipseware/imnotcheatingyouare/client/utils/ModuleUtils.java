@@ -6,6 +6,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -92,7 +93,31 @@ public class ModuleUtils {
         BlockHitResult hitResult = new BlockHitResult(
             Vec3.atCenterOf(pos), face, pos, false
         );
-        mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
+
+        boolean rotationSpoof = com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.isActive();
+        boolean silentAimSpoof = com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.isActive();
+
+        net.minecraft.client.multiplayer.prediction.BlockStatePredictionHandler handler = getPredictionHandler();
+        int seq = 0;
+        if (handler != null) {
+            handler.startPredicting();
+            seq = handler.currentSequence();
+        }
+
+        if (rotationSpoof || silentAimSpoof) {
+            float yaw = silentAimSpoof ? com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.getYaw() : com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getServerYaw();
+            float pitch = silentAimSpoof ? com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.getPitch() : com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getServerPitch();
+            
+            mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Rot(
+                yaw, pitch, mc.player.onGround(), false
+            ));
+            
+            mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundUseItemOnPacket(
+                InteractionHand.MAIN_HAND, hitResult, seq
+            ));
+        } else {
+            mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
+        }
         mc.player.swing(InteractionHand.MAIN_HAND);
     }
 
@@ -129,5 +154,176 @@ public class ModuleUtils {
             InteractionHand.MAIN_HAND, hitResult, 0
         ));
         mc.player.swing(InteractionHand.MAIN_HAND);
+    }
+
+    private static int silentRevertSlot = -1;
+
+    public static void runSilentSwap(int targetSlot, Runnable action) {
+        if (mc.player == null || mc.getConnection() == null) return;
+        int originalSlot = getSelectedSlot();
+        if (originalSlot == targetSlot) {
+            action.run();
+            return;
+        }
+
+        mc.getConnection().send(new ServerboundSetCarriedItemPacket(targetSlot));
+        setClientSlot(targetSlot);
+        try {
+            action.run();
+        } finally {
+            setClientSlot(originalSlot);
+        }
+        silentRevertSlot = originalSlot;
+    }
+
+    public static void tickSilentRevert() {
+        if (silentRevertSlot != -1 && mc.player != null && mc.getConnection() != null) {
+            mc.getConnection().send(new ServerboundSetCarriedItemPacket(silentRevertSlot));
+            silentRevertSlot = -1;
+        }
+    }
+
+    public static boolean isSpoofing = false;
+
+    private static java.lang.reflect.Method getHandlerMethod = null;
+    
+    private static net.minecraft.client.multiplayer.prediction.BlockStatePredictionHandler getPredictionHandler() {
+        if (mc.level == null) return null;
+        try {
+            if (getHandlerMethod == null) {
+                getHandlerMethod = net.minecraft.client.multiplayer.ClientLevel.class.getDeclaredMethod("getBlockStatePredictionHandler");
+                getHandlerMethod.setAccessible(true);
+            }
+            return (net.minecraft.client.multiplayer.prediction.BlockStatePredictionHandler) getHandlerMethod.invoke(mc.level);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static class PendingPlacement {
+        public final BlockPos pos;
+        public final Direction face;
+        public final int targetSlot;
+        public final int originalSlot;
+        public final BlockHitResult hitResult;
+
+        public PendingPlacement(BlockPos pos, Direction face, int targetSlot, int originalSlot) {
+            this.pos = pos;
+            this.face = face;
+            this.targetSlot = targetSlot;
+            this.originalSlot = originalSlot;
+            this.hitResult = new BlockHitResult(Vec3.atCenterOf(pos), face, pos, false);
+        }
+
+        public PendingPlacement(BlockHitResult hitResult, int targetSlot, int originalSlot) {
+            this.pos = hitResult.getBlockPos();
+            this.face = hitResult.getDirection();
+            this.targetSlot = targetSlot;
+            this.originalSlot = originalSlot;
+            this.hitResult = hitResult;
+        }
+    }
+
+    public static int spoofState = 0; // 0 = idle, 1 = slot swapped, 2 = placing/placed, waiting to revert
+    private static PendingPlacement pendingPlacement = null;
+    public static int revertSlot = -1;
+
+    public static boolean hasPendingPlacement() {
+        return spoofState == 1 || spoofState == 2;
+    }
+
+    public static void placeBlockSilent(BlockPos pos, Direction face, int targetSlot) {
+        if (spoofState != 0 || mc.player == null || mc.getConnection() == null) return;
+        
+        int originalSlot = getSelectedSlot();
+        pendingPlacement = new PendingPlacement(pos, face, targetSlot, originalSlot);
+        
+        spoofState = 1;
+        revertSlot = originalSlot;
+        
+        if (originalSlot != targetSlot) {
+            mc.getConnection().send(new ServerboundSetCarriedItemPacket(targetSlot));
+            setClientSlot(targetSlot);
+        }
+    }
+
+    public static void placeBlockSilent(BlockHitResult hitResult, int targetSlot) {
+        if (spoofState != 0 || mc.player == null || mc.getConnection() == null) return;
+        
+        int originalSlot = getSelectedSlot();
+        pendingPlacement = new PendingPlacement(hitResult, targetSlot, originalSlot);
+        
+        spoofState = 1;
+        revertSlot = originalSlot;
+        
+        if (originalSlot != targetSlot) {
+            mc.getConnection().send(new ServerboundSetCarriedItemPacket(targetSlot));
+            setClientSlot(targetSlot);
+        }
+    }
+
+    public static void processPostMovement() {
+        if (spoofState != 2 || pendingPlacement == null || mc.player == null || mc.getConnection() == null) return;
+        
+        PendingPlacement placement = pendingPlacement;
+        pendingPlacement = null; // Clear to prevent loops
+        
+        mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, placement.hitResult);
+        mc.player.swing(InteractionHand.MAIN_HAND);
+    }
+
+    public static void onClientTickStart() {
+        if (mc.player == null || mc.getConnection() == null) {
+            spoofState = 0;
+            pendingPlacement = null;
+            revertSlot = -1;
+            return;
+        }
+
+        if (spoofState == 1) {
+            // Move to state 2, waiting for the movement packet to be sent in this tick
+            spoofState = 2;
+        } else if (spoofState == 2) {
+            // Revert back to original slot in this tick
+            if (revertSlot != -1) {
+                int current = getSelectedSlot();
+                if (current != revertSlot) {
+                    mc.getConnection().send(new ServerboundSetCarriedItemPacket(revertSlot));
+                    setClientSlot(revertSlot);
+                }
+                revertSlot = -1;
+            }
+            spoofState = 0;
+            pendingPlacement = null;
+        }
+    }
+
+    public static void onClientTickEnd() {
+        if (spoofState == 2 && pendingPlacement != null && mc.player != null && mc.getConnection() != null) {
+            // No movement packet was sent during tick N+1 (player was still),
+            // so we manually send a Rot packet followed by the placement packets.
+            boolean rotationSpoof = com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.isActive();
+            boolean silentAimSpoof = com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.isActive();
+
+            float yaw, pitch;
+            if (rotationSpoof || silentAimSpoof) {
+                yaw = silentAimSpoof ? com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.getYaw() : com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getServerYaw();
+                pitch = silentAimSpoof ? com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.getPitch() : com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getServerPitch();
+            } else {
+                float[] rots = getRotations(mc.player.getEyePosition(), pendingPlacement.hitResult.getLocation());
+                yaw = rots[0];
+                pitch = rots[1];
+            }
+
+            isSpoofing = true;
+            float jitterYaw = yaw + (float) ((Math.random() - 0.5) * 0.01);
+            float jitterPitch = pitch + (float) ((Math.random() - 0.5) * 0.01);
+            mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(
+                jitterYaw, jitterPitch, mc.player.onGround(), false
+            ));
+            isSpoofing = false;
+
+            processPostMovement();
+        }
     }
 }

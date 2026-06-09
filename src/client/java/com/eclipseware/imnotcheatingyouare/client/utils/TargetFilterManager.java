@@ -90,8 +90,7 @@ public class TargetFilterManager {
     public static void load() {
         if (!FILTERS_FILE.exists()) return;
         try (FileReader reader = new FileReader(FILTERS_FILE)) {
-            JsonParser parser = new JsonParser();
-            JsonObject obj = parser.parse(reader).getAsJsonObject();
+            JsonObject obj = JsonParser.parseReader(reader).getAsJsonObject();
             FilterContainer container = GSON.fromJson(obj, FilterContainer.class);
             if (container != null) {
                 if (container.players != null) {

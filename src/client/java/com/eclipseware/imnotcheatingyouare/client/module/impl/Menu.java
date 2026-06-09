@@ -70,11 +70,16 @@ public class Menu extends Module {
             setToggled(false);
             return;
         }
-        if (ImnotcheatingyouareClient.INSTANCE.clickGui == null) {
-            ImnotcheatingyouareClient.INSTANCE.clickGui = new Clickgui();
-        }
-        if (!(mc.screen instanceof Clickgui)) {
-            mc.setScreen(ImnotcheatingyouareClient.INSTANCE.clickGui);
+        Module legacyUI = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("LegacyUI");
+        if (legacyUI != null && legacyUI.isToggled()) {
+            if (ImnotcheatingyouareClient.INSTANCE.clickGui == null) {
+                ImnotcheatingyouareClient.INSTANCE.clickGui = new Clickgui();
+            }
+            if (!(mc.screen instanceof Clickgui)) {
+                mc.setScreen(ImnotcheatingyouareClient.INSTANCE.clickGui);
+            }
+        } else {
+            mc.setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.NewClickgui());
         }
         setToggled(false);
     }

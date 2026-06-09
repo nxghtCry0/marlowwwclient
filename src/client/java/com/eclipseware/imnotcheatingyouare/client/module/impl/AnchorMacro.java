@@ -54,160 +54,199 @@ public class AnchorMacro extends Module {
     public void onTick() {
         if (mc.player == null || mc.level == null) return;
 
-        if (step == 0) {
-            net.minecraft.world.phys.HitResult hitResult = mc.hitResult;
-            if (hitResult == null || hitResult.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) return;
-
-            BlockHitResult bhr = (BlockHitResult) hitResult;
-            BlockPos lookingAt = bhr.getBlockPos();
-            BlockState state = mc.level.getBlockState(lookingAt);
-
-            if (!state.is(Blocks.RESPAWN_ANCHOR)) return;
-
-            int charges = state.hasProperty(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
-                    ? state.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
-                    : 0;
-
-            if (charges > 0) return;
-
-            targetAnchorPos = lookingAt;
-            previousSlot = ModuleUtils.getSelectedSlot();
-            step = 1;
-            ticksWait = (int) delaySetting.getValDouble();
-            return;
-        }
-
-        if (ticksWait > 0) {
-            ticksWait--;
-            return;
-        }
-
-        int delay = (int) delaySetting.getValDouble();
-
-        if (step == 1) {
-            BlockState anchorState = mc.level.getBlockState(targetAnchorPos);
-
-            if (!anchorState.is(Blocks.RESPAWN_ANCHOR)) {
-                reset();
-                return;
+        for (int iteration = 0; iteration < 4; iteration++) {
+            if (ticksWait > 0) {
+                ticksWait--;
+                break;
             }
 
-            int charges = anchorState.hasProperty(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
-                    ? anchorState.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
-                    : 0;
+            if (step == 0) {
+                net.minecraft.world.phys.HitResult hitResult = mc.hitResult;
+                if (hitResult == null || hitResult.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) break;
 
-            if (charges > 0) {
+                BlockHitResult bhr = (BlockHitResult) hitResult;
+                BlockPos lookingAt = bhr.getBlockPos();
+                BlockState state = mc.level.getBlockState(lookingAt);
+
+                if (!state.is(Blocks.RESPAWN_ANCHOR)) break;
+
+                int charges = state.hasProperty(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
+                        ? state.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
+                        : 0;
+
+                targetAnchorPos = lookingAt;
+                previousSlot = ModuleUtils.getSelectedSlot();
+
+                if (charges > 0) {
+                    if (safeAnchor.getValBoolean()) {
+                        step = 2;
+                    } else {
+                        step = 3;
+                    }
+                } else {
+                    step = 1;
+                }
+
+                ticksWait = (int) delaySetting.getValDouble();
+                if (ticksWait > 0) break;
+                continue;
+            }
+
+            int delay = (int) delaySetting.getValDouble();
+
+            if (step == 1) {
+                BlockState anchorState = mc.level.getBlockState(targetAnchorPos);
+
+                if (!anchorState.is(Blocks.RESPAWN_ANCHOR)) {
+                    reset();
+                    break;
+                }
+
+                int charges = anchorState.hasProperty(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
+                        ? anchorState.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
+                        : 0;
+
+                if (charges > 0) {
+                    if (safeAnchor.getValBoolean()) {
+                        step = 2;
+                    } else {
+                        step = 3;
+                    }
+                    ticksWait = delay;
+                    if (ticksWait > 0) break;
+                    continue;
+                }
+
+                int glowstoneSlot = ModuleUtils.findItemInHotbar(Items.GLOWSTONE);
+                if (glowstoneSlot == -1) {
+                    reset();
+                    break;
+                }
+
+                ModuleUtils.switchToSlot(glowstoneSlot);
+                if (silentAim.getValBoolean()) aimAt(targetAnchorPos);
+
+                BlockHitResult hit = new BlockHitResult(
+                        Vec3.atCenterOf(targetAnchorPos), Direction.UP, targetAnchorPos, false);
+                mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hit);
+                mc.player.swing(InteractionHand.MAIN_HAND);
+
                 if (safeAnchor.getValBoolean()) {
                     step = 2;
                 } else {
                     step = 3;
                 }
                 ticksWait = delay;
-                return;
+                if (ticksWait > 0) break;
+                continue;
             }
 
-            int glowstoneSlot = ModuleUtils.findItemInHotbar(Items.GLOWSTONE);
-            if (glowstoneSlot == -1) {
-                reset();
-                return;
-            }
+            if (step == 2) {
+                BlockPos shieldPos = getShieldPos();
+                if (shieldPos == null) {
+                    step = 3;
+                    ticksWait = delay;
+                    if (ticksWait > 0) break;
+                    continue;
+                }
 
-            ModuleUtils.switchToSlot(glowstoneSlot);
-            if (silentAim.getValBoolean()) aimAt(targetAnchorPos);
+                BlockState shieldState = mc.level.getBlockState(shieldPos);
+                if (!shieldState.isAir() && !shieldState.canBeReplaced()) {
+                    step = 3;
+                    ticksWait = delay;
+                    if (ticksWait > 0) break;
+                    continue;
+                }
 
-            BlockHitResult hit = new BlockHitResult(
-                    Vec3.atCenterOf(targetAnchorPos), Direction.UP, targetAnchorPos, false);
-            mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hit);
-            mc.player.swing(InteractionHand.MAIN_HAND);
+                int shieldSlot = findShieldBlockSlot();
+                if (shieldSlot == -1) {
+                    step = 3;
+                    ticksWait = delay;
+                    if (ticksWait > 0) break;
+                    continue;
+                }
 
-            if (safeAnchor.getValBoolean()) {
-                step = 2;
-            } else {
-                step = 3;
-            }
-            ticksWait = delay;
-            return;
-        }
+                ModuleUtils.switchToSlot(shieldSlot);
+                if (silentAim.getValBoolean()) aimAt(shieldPos);
 
-        if (step == 2) {
-            BlockPos shieldPos = getShieldPos();
-            if (shieldPos == null) {
-                step = 3;
-                ticksWait = delay;
-                return;
-            }
+                BlockPos supportBlock = findSupportForShield(shieldPos);
+                Direction supportFace = getPlaceFace(supportBlock, shieldPos);
 
-            BlockState shieldState = mc.level.getBlockState(shieldPos);
-            if (!shieldState.isAir() && !shieldState.canBeReplaced()) {
-                step = 3;
-                ticksWait = delay;
-                return;
-            }
+                BlockHitResult hit = new BlockHitResult(
+                        Vec3.atCenterOf(supportBlock), supportFace, supportBlock, false);
+                mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hit);
+                mc.player.swing(InteractionHand.MAIN_HAND);
 
-            int glowstoneSlot = ModuleUtils.findItemInHotbar(Items.GLOWSTONE);
-            if (glowstoneSlot == -1) {
                 step = 3;
                 ticksWait = delay;
-                return;
+                if (ticksWait > 0) break;
+                continue;
             }
 
-            ModuleUtils.switchToSlot(glowstoneSlot);
-            if (silentAim.getValBoolean()) aimAt(shieldPos);
+            if (step == 3) {
+                if (!autoDetonate.getValBoolean()) {
+                    restoreSlot();
+                    finish();
+                    break;
+                }
 
-            BlockPos supportBlock = findSupportForShield(shieldPos);
-            Direction supportFace = getPlaceFace(supportBlock, shieldPos);
+                BlockState anchorState = mc.level.getBlockState(targetAnchorPos);
+                if (!anchorState.is(Blocks.RESPAWN_ANCHOR)) {
+                    restoreSlot();
+                    finish();
+                    break;
+                }
 
-            BlockHitResult hit = new BlockHitResult(
-                    Vec3.atCenterOf(supportBlock), supportFace, supportBlock, false);
-            mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hit);
-            mc.player.swing(InteractionHand.MAIN_HAND);
+                int charges = anchorState.hasProperty(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
+                        ? anchorState.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
+                        : 0;
 
-            step = 3;
-            ticksWait = delay;
-            return;
-        }
+                if (charges <= 0) break;
 
-        if (step == 3) {
-            if (!autoDetonate.getValBoolean()) {
+                int detonateSlot = findNonAnchorNonGlowstoneSlot();
+                if (detonateSlot != -1) {
+                    ModuleUtils.switchToSlot(detonateSlot);
+                }
+
+                if (silentAim.getValBoolean()) aimAt(targetAnchorPos);
+
+                BlockHitResult hit = new BlockHitResult(
+                        Vec3.atCenterOf(targetAnchorPos), Direction.UP, targetAnchorPos, false);
+                mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hit);
+                mc.player.swing(InteractionHand.MAIN_HAND);
+
                 restoreSlot();
                 finish();
-                return;
+                break;
             }
-
-            BlockState anchorState = mc.level.getBlockState(targetAnchorPos);
-            if (!anchorState.is(Blocks.RESPAWN_ANCHOR)) {
-                restoreSlot();
-                finish();
-                return;
-            }
-
-            int charges = anchorState.hasProperty(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
-                    ? anchorState.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
-                    : 0;
-
-            if (charges <= 0) return;
-
-            int detonateSlot = findNonAnchorNonGlowstoneSlot();
-            if (detonateSlot != -1) {
-                ModuleUtils.switchToSlot(detonateSlot);
-            }
-
-            if (silentAim.getValBoolean()) aimAt(targetAnchorPos);
-
-            BlockHitResult hit = new BlockHitResult(
-                    Vec3.atCenterOf(targetAnchorPos), Direction.UP, targetAnchorPos, false);
-            mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hit);
-            mc.player.swing(InteractionHand.MAIN_HAND);
-
-            restoreSlot();
-            finish();
         }
     }
 
     private BlockPos getShieldPos() {
         if (mc.player == null || targetAnchorPos == null) return null;
         Direction dir = getDirectionFromAnchorToPlayer();
-        return targetAnchorPos.relative(dir);
+        BlockPos shieldPos = targetAnchorPos.relative(dir);
+
+        if (intersectsPlayer(shieldPos)) {
+            // Fallback to dominant horizontal direction
+            double dx = mc.player.getX() - (targetAnchorPos.getX() + 0.5);
+            double dz = mc.player.getZ() - (targetAnchorPos.getZ() + 0.5);
+            Direction horizontalDir = Math.abs(dx) > Math.abs(dz)
+                    ? (dx > 0 ? Direction.EAST : Direction.WEST)
+                    : (dz > 0 ? Direction.SOUTH : Direction.NORTH);
+            shieldPos = targetAnchorPos.relative(horizontalDir);
+            if (intersectsPlayer(shieldPos)) {
+                return null; // Don't place if it still intersects the player
+            }
+        }
+        return shieldPos;
+    }
+
+    private boolean intersectsPlayer(BlockPos pos) {
+        if (mc.player == null) return false;
+        net.minecraft.world.phys.AABB playerBox = mc.player.getBoundingBox();
+        net.minecraft.world.phys.AABB blockBox = new net.minecraft.world.phys.AABB(pos);
+        return playerBox.intersects(blockBox);
     }
 
     private BlockPos findSupportForShield(BlockPos shieldPos) {
@@ -242,13 +281,44 @@ public class AnchorMacro extends Module {
         if (mc.player == null || targetAnchorPos == null) return Direction.NORTH;
 
         double dx = mc.player.getX() - (targetAnchorPos.getX() + 0.5);
+        double dy = (mc.player.getY() + mc.player.getEyeHeight()) - (targetAnchorPos.getY() + 0.5);
         double dz = mc.player.getZ() - (targetAnchorPos.getZ() + 0.5);
 
-        if (Math.abs(dx) > Math.abs(dz)) {
+        double absX = Math.abs(dx);
+        double absY = Math.abs(dy);
+        double absZ = Math.abs(dz);
+
+        if (absX > absY && absX > absZ) {
             return dx > 0 ? Direction.EAST : Direction.WEST;
+        } else if (absY > absX && absY > absZ) {
+            return dy > 0 ? Direction.UP : Direction.DOWN;
         } else {
             return dz > 0 ? Direction.SOUTH : Direction.NORTH;
         }
+    }
+
+    private int findShieldBlockSlot() {
+        if (mc.player == null) return -1;
+        
+        int obsidianSlot = ModuleUtils.findItemInHotbar(Items.OBSIDIAN);
+        if (obsidianSlot != -1) return obsidianSlot;
+
+        int cryingSlot = ModuleUtils.findItemInHotbar(Items.CRYING_OBSIDIAN);
+        if (cryingSlot != -1) return cryingSlot;
+
+        for (int i = 0; i < 9; i++) {
+            net.minecraft.world.item.ItemStack stack = mc.player.getInventory().getItem(i);
+            if (stack.isEmpty()) continue;
+            net.minecraft.world.item.Item item = stack.getItem();
+            if (item == Items.GLOWSTONE || item == Items.RESPAWN_ANCHOR) continue;
+            if (item instanceof net.minecraft.world.item.BlockItem blockItem) {
+                net.minecraft.world.level.block.Block block = blockItem.getBlock();
+                if (block.defaultBlockState().isCollisionShapeFullBlock(mc.level, BlockPos.ZERO)) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 
     private int findNonAnchorNonGlowstoneSlot() {

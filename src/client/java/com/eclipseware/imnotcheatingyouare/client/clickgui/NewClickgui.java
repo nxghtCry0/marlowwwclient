@@ -1084,6 +1084,20 @@ public class NewClickgui extends Screen {
                 return true;
             }
         }
+        
+        Module menuMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Menu");
+        int menuKey = menuMod != null ? menuMod.getKeyBind() : org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT;
+        if (input.input() == menuKey) {
+            boolean anyFocused = (searchBox != null && searchBox.isFocused()) ||
+                                 (macroNameBox != null && macroNameBox.isFocused()) ||
+                                 (filterPlayerBox != null && filterPlayerBox.isFocused()) ||
+                                 (filterEntityBox != null && filterEntityBox.isFocused());
+            if (!anyFocused) {
+                this.onClose();
+                return true;
+            }
+        }
+        
         return super.keyPressed(input);
     }
 

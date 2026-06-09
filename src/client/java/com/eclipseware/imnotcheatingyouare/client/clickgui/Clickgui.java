@@ -170,6 +170,15 @@ public class Clickgui extends Screen {
             return true;
         }
         
+        if (!wasBinding) {
+            Module menuMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Menu");
+            int menuKey = menuMod != null ? menuMod.getKeyBind() : org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT;
+            if (input.input() == menuKey) {
+                this.onClose();
+                return true;
+            }
+        }
+        
         return super.keyPressed(input);
     }
 

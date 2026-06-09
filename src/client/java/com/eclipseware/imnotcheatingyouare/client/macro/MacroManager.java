@@ -292,8 +292,7 @@ public class MacroManager {
             return;
         }
         try (FileReader reader = new FileReader(MACROS_FILE)) {
-            JsonParser parser = new JsonParser();
-            JsonObject obj = parser.parse(reader).getAsJsonObject();
+            JsonObject obj = JsonParser.parseReader(reader).getAsJsonObject();
             if (obj.has("macros")) {
                 MacroContainer container = GSON.fromJson(obj, MacroContainer.class);
                 if (container != null && container.macros != null && !container.macros.isEmpty()) {

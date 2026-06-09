@@ -78,11 +78,7 @@ public class CrystalAura extends Module {
         boolean silentSwap = silentSwapS != null ? silentSwapS.getValBoolean() : true;
 
         if (deferredRevertSlot != -1) {
-            if (silentSwap) {
-                ModuleUtils.setServerSlot(deferredRevertSlot);
-            } else {
-                ModuleUtils.switchToSlot(deferredRevertSlot);
-            }
+            ModuleUtils.switchToSlot(deferredRevertSlot);
             deferredRevertSlot = -1;
         }
 
@@ -157,14 +153,13 @@ public class CrystalAura extends Module {
                 }
                 if (silentAim.getValBoolean())
                     aimAt(placeTarget);
-                deferredRevertSlot = mc.player.getInventory().getSelectedSlot();
-
-                if (silentSwap)
-                    ModuleUtils.setServerSlot(crystalSlot);
-                else
+                if (silentSwap) {
+                    ModuleUtils.placeBlockSilent(targetPos, Direction.UP, crystalSlot);
+                } else {
+                    deferredRevertSlot = mc.player.getInventory().getSelectedSlot();
                     ModuleUtils.switchToSlot(crystalSlot);
-
-                ModuleUtils.placeBlockPacket(targetPos, Direction.UP);
+                    ModuleUtils.placeBlockPacket(targetPos, Direction.UP);
+                }
                 placeTicks = Math.max(1, (int) placeDelay.getValDouble());
             } else {
                 int obbySlot = ModuleUtils.findItemInHotbar(Items.OBSIDIAN);
@@ -179,14 +174,14 @@ public class CrystalAura extends Module {
                         }
                         if (silentAim.getValBoolean())
                             aimAt(obbyTarget);
-                        deferredRevertSlot = mc.player.getInventory().getSelectedSlot();
 
-                        if (silentSwap)
-                            ModuleUtils.setServerSlot(obbySlot);
-                        else
+                        if (silentSwap) {
+                            ModuleUtils.placeBlockSilent(obbyPos.below(), Direction.UP, obbySlot);
+                        } else {
+                            deferredRevertSlot = mc.player.getInventory().getSelectedSlot();
                             ModuleUtils.switchToSlot(obbySlot);
-
-                        ModuleUtils.placeBlockPacket(obbyPos.below(), Direction.UP);
+                            ModuleUtils.placeBlockPacket(obbyPos.below(), Direction.UP);
+                        }
                         recentObby.put(obbyPos.below(), now + 1500);
                         placeTicks = Math.max(1, (int) placeDelay.getValDouble());
                     }

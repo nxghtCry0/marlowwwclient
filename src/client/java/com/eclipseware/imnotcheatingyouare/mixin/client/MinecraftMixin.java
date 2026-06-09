@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Minecraft.class)
@@ -24,6 +25,16 @@ public class MinecraftMixin {
     private void onStartAttack(CallbackInfoReturnable<Boolean> cir) {
         Minecraft mc = (Minecraft) (Object) this;
         if (mc.player == null) return;
+
+        Module crystalHelper = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("CrystalHelper");
+        if (crystalHelper != null && crystalHelper.isToggled()) {
+            if (this.hitResult != null && this.hitResult.getType() == HitResult.Type.BLOCK) {
+                cir.setReturnValue(false);
+                cir.cancel();
+                return;
+            }
+        }
+
         Module autoMace = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("AutoMace");
         if (autoMace != null && autoMace.isToggled()) {
             Setting swingPrevSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(autoMace, "Swing Prevention");
@@ -44,6 +55,18 @@ public class MinecraftMixin {
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    @Inject(method = "continueAttack", at = @At("HEAD"), cancellable = true)
+    private void onContinueAttack(boolean leftClick, CallbackInfo ci) {
+        if (leftClick) {
+            Module crystalHelper = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("CrystalHelper");
+            if (crystalHelper != null && crystalHelper.isToggled()) {
+                if (this.hitResult != null && this.hitResult.getType() == HitResult.Type.BLOCK) {
+                    ci.cancel();
                 }
             }
         }

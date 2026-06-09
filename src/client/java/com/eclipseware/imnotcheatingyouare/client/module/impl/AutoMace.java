@@ -151,7 +151,7 @@ public class AutoMace extends Module {
             switchToAppropriateMace(fallDist);
         }
 
-        if (hasMace() && attackTimer.hasElapsedTime(getEffectiveAttackDelay(), true)) {
+        if (hasMace() && mc.player.getAttackStrengthScale(0.5f) >= 1.0f && attackTimer.hasElapsedTime(getEffectiveAttackDelay(), true)) {
             ((MinecraftAccessor) mc).invokeStartAttack();
             maceHit = true;
         }
