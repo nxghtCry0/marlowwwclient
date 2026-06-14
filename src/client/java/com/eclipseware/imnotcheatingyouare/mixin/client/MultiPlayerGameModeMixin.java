@@ -15,9 +15,20 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 
 @Mixin(MultiPlayerGameMode.class)
 public class MultiPlayerGameModeMixin {
+
+    @Inject(method = "destroyBlock", at = @At("HEAD"))
+    private void onDestroyBlock(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
+        Module attributeSwapMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("AttributeSwap");
+        if (attributeSwapMod != null && attributeSwapMod.isToggled() && attributeSwapMod instanceof com.eclipseware.imnotcheatingyouare.client.module.impl.AttributeSwap as) {
+            as.handleBlockBreak();
+        }
+    }
 
     @Unique
     private boolean kbShouldRevert = false;
@@ -55,6 +66,14 @@ public class MultiPlayerGameModeMixin {
         Module breachSwapMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("BreachSwap");
         if (breachSwapMod != null && breachSwapMod instanceof com.eclipseware.imnotcheatingyouare.client.module.impl.BreachSwap bs) {
             if (bs.handleAttack(target, player)) {
+                ci.cancel();
+                return;
+            }
+        }
+
+        Module attributeSwapMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("AttributeSwap");
+        if (attributeSwapMod != null && attributeSwapMod.isToggled() && attributeSwapMod instanceof com.eclipseware.imnotcheatingyouare.client.module.impl.AttributeSwap as) {
+            if (as.handleAttack(target, player)) {
                 ci.cancel();
                 return;
             }
@@ -114,9 +133,7 @@ public class MultiPlayerGameModeMixin {
             com.eclipseware.imnotcheatingyouare.client.module.impl.TargetHUD.INSTANCE.onPostAttack(target);
         }
 
-        if (com.eclipseware.imnotcheatingyouare.client.module.impl.AttributeSwap.INSTANCE != null) {
-            com.eclipseware.imnotcheatingyouare.client.module.impl.AttributeSwap.INSTANCE.onAttack(target);
-        }
+
 
         if (com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack.INSTANCE != null) {
             com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack.INSTANCE.onAttack(target);

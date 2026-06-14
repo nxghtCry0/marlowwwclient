@@ -18,6 +18,8 @@ import java.util.Arrays;
 
 public class AimAssist extends Module {
     private Entity target;
+    private Entity lastTarget;
+    private Vec3 targetOffset = Vec3.ZERO;
 
     public AimAssist() {
         super("AimAssist", Category.Combat, "Automatically aims at entities with Grim AC v3 bypass.");
@@ -36,9 +38,12 @@ public class AimAssist extends Module {
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Predict", this, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Prediction Ticks", this, 1.0, 0.0, 5.0, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Jitter", this, 0.0, 0.0, 5.0, false));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Aim Deviation", this, 0.0, 0.0, 1.0, false));
 
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Click Aim", this, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Weapon Only", this, false));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Horizontal Only", this, false));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Team Check", this, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Ignore Walls", this, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Players", this, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Hostile Mobs", this, true));
@@ -48,6 +53,8 @@ public class AimAssist extends Module {
     @Override
     public void onDisable() {
         target = null;
+        lastTarget = null;
+        targetOffset = Vec3.ZERO;
         MouseAimHelper.clearAimRate();
     }
 
@@ -58,6 +65,8 @@ public class AimAssist extends Module {
         Setting clickAimSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Click Aim");
         if (clickAimSetting != null && clickAimSetting.getValBoolean() && !mc.options.keyAttack.isDown()) {
             target = null;
+            lastTarget = null;
+            targetOffset = Vec3.ZERO;
             MouseAimHelper.clearAimRate();
             return;
         }
@@ -65,6 +74,8 @@ public class AimAssist extends Module {
         Setting weaponOnlySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Weapon Only");
         if (mc.screen != null || (weaponOnlySetting != null && weaponOnlySetting.getValBoolean() && !isHoldingWeapon())) {
             target = null;
+            lastTarget = null;
+            targetOffset = Vec3.ZERO;
             MouseAimHelper.clearAimRate();
             return;
         }
@@ -72,11 +83,28 @@ public class AimAssist extends Module {
         updateTarget();
 
         if (target == null) {
+            lastTarget = null;
+            targetOffset = Vec3.ZERO;
             MouseAimHelper.clearAimRate();
             return;
         }
 
-        Vec3 targetPos = getTargetBonePos(target);
+        if (target != lastTarget) {
+            lastTarget = target;
+            Setting devSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Aim Deviation");
+            double dev = devSetting != null ? devSetting.getValDouble() : 0.0;
+            if (dev > 0.0) {
+                targetOffset = new Vec3(
+                    (Math.random() - 0.5) * dev,
+                    (Math.random() - 0.5) * dev,
+                    (Math.random() - 0.5) * dev
+                );
+            } else {
+                targetOffset = Vec3.ZERO;
+            }
+        }
+
+        Vec3 targetPos = getTargetBonePos(target).add(targetOffset);
 
         Setting predictSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Predict");
         if (predictSetting != null && predictSetting.getValBoolean()) {
@@ -104,11 +132,18 @@ public class AimAssist extends Module {
         double targetPitch = -Math.toDegrees(Math.atan2(deltaY, horizontalDist));
         double deltaPitch = Mth.wrapDegrees(targetPitch - mc.player.getXRot());
 
+        Setting horizOnlySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Horizontal Only");
+        if (horizOnlySetting != null && horizOnlySetting.getValBoolean()) {
+            deltaPitch = 0.0;
+        }
+
         Setting jitterSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Jitter");
         double jitter = jitterSetting != null ? jitterSetting.getValDouble() : 0.0;
         if (jitter > 0.0) {
             deltaYaw += (Math.random() - 0.5) * jitter;
-            deltaPitch += (Math.random() - 0.5) * jitter;
+            if (deltaPitch != 0.0) {
+                deltaPitch += (Math.random() - 0.5) * jitter;
+            }
         }
 
         double hFactor = hSpeed / 100.0;
@@ -221,6 +256,10 @@ public class AimAssist extends Module {
             if (FriendManager.isFriend(p)) {
                 return false;
             }
+            Setting teamCheckSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Team Check");
+            if (teamCheckSetting != null && teamCheckSetting.getValBoolean() && Teams.isTeam(p)) {
+                return false;
+            }
             Setting playersSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Players");
             if (playersSetting != null && !playersSetting.getValBoolean()) {
                 return false;
@@ -263,6 +302,6 @@ public class AimAssist extends Module {
         if (mc.player == null) return false;
         net.minecraft.world.item.Item item = mc.player.getMainHandItem().getItem();
         String name = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item).getPath().toLowerCase();
-        return name.contains("sword") || name.contains("axe") || name.contains("mace");
+        return name.contains("sword") || name.contains("axe") || name.contains("mace") || name.contains("trident") || name.contains("bow") || name.contains("crossbow");
     }
 }
