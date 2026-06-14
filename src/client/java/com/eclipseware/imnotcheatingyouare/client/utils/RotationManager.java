@@ -10,6 +10,10 @@ import net.minecraft.world.phys.Vec3;
 import java.util.Random;
 
 public class RotationManager {
+    public static boolean packetSentThisTick = false;
+    public static float lastSentYaw = Float.NaN;
+    public static float lastSentPitch = Float.NaN;
+    public static Runnable postMovementCallback = null;
     private static boolean active = false;
     private static boolean keepMode = false;
     private static boolean returning = false;
@@ -169,6 +173,7 @@ public class RotationManager {
      * Called at START_CLIENT_TICK. Handles returning and timeout.
      */
     public static void tick() {
+        packetSentThisTick = false;
         if (!active) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {
@@ -212,6 +217,43 @@ public class RotationManager {
         if (!active) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
+
+        if (!packetSentThisTick && mc.getConnection() != null) {
+            float yaw = currentServerYaw;
+            float pitch = currentServerPitch;
+            
+            float lastYaw = Float.isNaN(lastSentYaw) ? mc.player.getYRot() : lastSentYaw;
+            float lastPitch = Float.isNaN(lastSentPitch) ? mc.player.getXRot() : lastSentPitch;
+            
+            float gcd = getGCD();
+            if (gcd < 0.001f) gcd = 0.15f;
+            
+            float yawDiff = Mth.wrapDegrees(yaw - lastYaw);
+            float pitchDiff = pitch - lastPitch;
+            
+            int yawSteps = Math.round(yawDiff / gcd);
+            int pitchSteps = Math.round(pitchDiff / gcd);
+            
+            float finalYaw = lastYaw + yawSteps * gcd;
+            float finalPitch = lastPitch + pitchSteps * gcd;
+            finalPitch = Mth.clamp(finalPitch, -90.0f, 90.0f);
+            
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.isSpoofing = true;
+            mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Rot(
+                finalYaw, finalPitch, mc.player.onGround(), false
+            ));
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.isSpoofing = false;
+            
+            lastSentYaw = finalYaw;
+            lastSentPitch = finalPitch;
+            packetSentThisTick = true;
+
+            if (postMovementCallback != null) {
+                Runnable cb = postMovementCallback;
+                postMovementCallback = null;
+                cb.run();
+            }
+        }
 
         if (!mc.options.getCameraType().isFirstPerson()) {
             float wrappedYaw = Mth.wrapDegrees(currentServerYaw);

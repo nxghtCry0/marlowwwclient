@@ -5,8 +5,6 @@ import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import net.minecraft.tags.ItemTags;
-import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -15,7 +13,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
 public class AutoShieldBreaker extends Module {
-    private long lastBreakTime = 0;
+    public long lastBreakTime = 0;
     private boolean needsSwapBack = false;
     private long swapBackTime = 0;
     private int originalSlot = -1;
@@ -49,10 +47,7 @@ public class AutoShieldBreaker extends Module {
             return false;
         }
         if (mode.equals("Silent")) {
-            if (mc.getConnection() != null) {
-                mc.getConnection().send(new ServerboundSetCarriedItemPacket(axeSlot));
-            }
-            mc.player.getInventory().setSelectedSlot(axeSlot);
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(axeSlot);
             needsSwapBack = true;
             originalSlot = oldSlot;
             ticksWaited = 0;
@@ -60,10 +55,7 @@ public class AutoShieldBreaker extends Module {
             lastBreakTime = System.currentTimeMillis();
             return false;
         } else {
-            mc.player.getInventory().setSelectedSlot(axeSlot);
-            if (mc.getConnection() != null) {
-                mc.getConnection().send(new ServerboundSetCarriedItemPacket(axeSlot));
-            }
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(axeSlot);
             Setting swapBackSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Swap Back");
             if (swapBackSetting != null && swapBackSetting.getValBoolean()) {
                 Setting swapDelaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Swap Back Delay (ms)");
@@ -97,10 +89,7 @@ public class AutoShieldBreaker extends Module {
             return false;
         }
         if (mode.equals("Silent")) {
-            if (mc.getConnection() != null) {
-                mc.getConnection().send(new ServerboundSetCarriedItemPacket(axeSlot));
-            }
-            player.getInventory().setSelectedSlot(axeSlot);
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(axeSlot);
             needsSwapBack = true;
             originalSlot = oldSlot;
             ticksWaited = 0;
@@ -108,10 +97,7 @@ public class AutoShieldBreaker extends Module {
             lastBreakTime = System.currentTimeMillis();
             return false;
         } else {
-            player.getInventory().setSelectedSlot(axeSlot);
-            if (mc.getConnection() != null) {
-                mc.getConnection().send(new ServerboundSetCarriedItemPacket(axeSlot));
-            }
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(axeSlot);
             Setting swapBackSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Swap Back");
             if (swapBackSetting != null && swapBackSetting.getValBoolean()) {
                 Setting swapDelaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Swap Back Delay (ms)");
@@ -131,14 +117,12 @@ public class AutoShieldBreaker extends Module {
             if (swapBackTime == 0) {
                 ticksWaited++;
                 if (ticksWaited >= 1) {
-                    mc.player.getInventory().setSelectedSlot(originalSlot);
-                    mc.getConnection().send(new ServerboundSetCarriedItemPacket(originalSlot));
+                    com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(originalSlot);
                     needsSwapBack = false;
                     axeSlot = -1;
                 }
             } else if (System.currentTimeMillis() >= swapBackTime) {
-                mc.player.getInventory().setSelectedSlot(originalSlot);
-                mc.getConnection().send(new ServerboundSetCarriedItemPacket(originalSlot));
+                com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(originalSlot);
                 needsSwapBack = false;
                 swapBackTime = 0;
             }
@@ -148,8 +132,7 @@ public class AutoShieldBreaker extends Module {
     @Override
     public void onDisable() {
         if (needsSwapBack && mc.player != null && mc.getConnection() != null) {
-            mc.player.getInventory().setSelectedSlot(originalSlot);
-            mc.getConnection().send(new ServerboundSetCarriedItemPacket(originalSlot));
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(originalSlot);
         }
         needsSwapBack = false;
         swapBackTime = 0;

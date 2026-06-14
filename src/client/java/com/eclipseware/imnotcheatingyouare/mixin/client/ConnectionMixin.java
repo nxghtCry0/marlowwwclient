@@ -15,8 +15,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Connection.class)
 public class ConnectionMixin {
-    private static float lastSentYaw = Float.NaN;
-    private static float lastSentPitch = Float.NaN;
 
     @Inject(method = "send(Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"), cancellable = true)
     private void onSend(Packet<?> packet, CallbackInfo ci) {
@@ -45,6 +43,7 @@ public class ConnectionMixin {
         if (mc.player == null) return;
 
         if (packet instanceof ServerboundMovePlayerPacket movePacket && !com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.isSpoofing) {
+            com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.packetSentThisTick = true;
             boolean rotationSpoof = com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.hasPendingPlacement() || com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.isActive() || SilentAimUtil.isActive();
             boolean silentAimSpoof = SilentAimUtil.isActive();
             
@@ -52,9 +51,21 @@ public class ConnectionMixin {
                 float yaw = silentAimSpoof ? SilentAimUtil.getYaw() : (com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.isActive() ? com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getServerYaw() : mc.player.getYRot());
                 float pitch = silentAimSpoof ? SilentAimUtil.getPitch() : (com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.isActive() ? com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getServerPitch() : mc.player.getXRot());
                 
-                // Add tiny sub-GCD jitter to yaw and pitch to bypass AimDuplicateLook checks
-                float jitterYaw = yaw + (float) ((Math.random() - 0.5) * 0.01);
-                float jitterPitch = pitch + (float) ((Math.random() - 0.5) * 0.01);
+                float lastYaw = Float.isNaN(com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw) ? mc.player.getYRot() : com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw;
+                float lastPitch = Float.isNaN(com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch) ? mc.player.getXRot() : com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch;
+                
+                float gcd = com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getGCD();
+                if (gcd < 0.001f) gcd = 0.15f;
+                
+                float yawDiff = net.minecraft.util.Mth.wrapDegrees(yaw - lastYaw);
+                float pitchDiff = pitch - lastPitch;
+                
+                int yawSteps = Math.round(yawDiff / gcd);
+                int pitchSteps = Math.round(pitchDiff / gcd);
+                
+                float finalYaw = lastYaw + yawSteps * gcd;
+                float finalPitch = lastPitch + pitchSteps * gcd;
+                finalPitch = net.minecraft.util.Mth.clamp(finalPitch, -90.0f, 90.0f);
                 
                 boolean onGround = mc.player.onGround();
                 double px = movePacket.getX(mc.player.getX());
@@ -66,34 +77,38 @@ public class ConnectionMixin {
                 boolean isPos = movePacket.hasPosition();
                 
                 boolean forceRot = com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.hasPendingPlacement();
-                boolean rotChanged = forceRot || Math.abs(jitterYaw - lastSentYaw) >= 0.01f || Math.abs(jitterPitch - lastSentPitch) >= 0.01f;
+                boolean rotChanged = forceRot || Math.abs(finalYaw - com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw) >= 0.01f || Math.abs(finalPitch - com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch) >= 0.01f;
 
                 if (rotChanged) {
                     if (isPos) {
-                        spoofed = new ServerboundMovePlayerPacket.PosRot(px, py, pz, jitterYaw, jitterPitch, onGround, true);
+                        spoofed = new ServerboundMovePlayerPacket.PosRot(px, py, pz, finalYaw, finalPitch, onGround, true);
                     } else {
-                        spoofed = new ServerboundMovePlayerPacket.Rot(jitterYaw, jitterPitch, onGround, false);
+                        spoofed = new ServerboundMovePlayerPacket.Rot(finalYaw, finalPitch, onGround, false);
                     }
-                    lastSentYaw = jitterYaw;
-                    lastSentPitch = jitterPitch;
+                    com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw = finalYaw;
+                    com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch = finalPitch;
                 } else if (isPos) {
-                    // Force PosRot anyway to ensure rotation synchronization when pending placement is active
                     if (forceRot) {
-                        spoofed = new ServerboundMovePlayerPacket.PosRot(px, py, pz, jitterYaw, jitterPitch, onGround, true);
-                        lastSentYaw = jitterYaw;
-                        lastSentPitch = jitterPitch;
+                        spoofed = new ServerboundMovePlayerPacket.PosRot(px, py, pz, finalYaw, finalPitch, onGround, true);
+                        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw = finalYaw;
+                        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch = finalPitch;
                     } else {
                         spoofed = new ServerboundMovePlayerPacket.Pos(px, py, pz, onGround, false);
                     }
                 } else if (isRot) {
                     if (forceRot) {
-                        spoofed = new ServerboundMovePlayerPacket.Rot(jitterYaw, jitterPitch, onGround, false);
-                        lastSentYaw = jitterYaw;
-                        lastSentPitch = jitterPitch;
+                        spoofed = new ServerboundMovePlayerPacket.Rot(finalYaw, finalPitch, onGround, false);
+                        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw = finalYaw;
+                        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch = finalPitch;
                     } else {
                         ci.cancel();
                         if (silentAimSpoof) SilentAimUtil.consume();
                         com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.processPostMovement();
+                        if (com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.postMovementCallback != null) {
+                            Runnable cb = com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.postMovementCallback;
+                            com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.postMovementCallback = null;
+                            cb.run();
+                        }
                         return;
                     }
                 }
@@ -106,12 +121,17 @@ public class ConnectionMixin {
                     ((Connection)(Object)this).send(spoofed);
                     com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.isSpoofing = false;
                     com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.processPostMovement();
+                    if (com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.postMovementCallback != null) {
+                        Runnable cb = com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.postMovementCallback;
+                        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.postMovementCallback = null;
+                        cb.run();
+                    }
                     return;
                 }
             } else {
                 if (movePacket.hasRotation()) {
-                    lastSentYaw = movePacket.getYRot(mc.player.getYRot());
-                    lastSentPitch = movePacket.getXRot(mc.player.getXRot());
+                    com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw = movePacket.getYRot(mc.player.getYRot());
+                    com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch = movePacket.getXRot(mc.player.getXRot());
                 }
             }
         }

@@ -55,6 +55,7 @@ Module nameProtect = new com.eclipseware.imnotcheatingyouare.client.module.impl.
 Module breachSwap = new com.eclipseware.imnotcheatingyouare.client.module.impl.BreachSwap();
 
 Module lungeAssist = new com.eclipseware.imnotcheatingyouare.client.module.impl.LungeAssist();
+Module webStun = new com.eclipseware.imnotcheatingyouare.client.module.impl.WebStun();
 Module autoMace = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoMace();
 Module autoElytraSwap = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoElytraSwap();
 Module pearlCatch = new com.eclipseware.imnotcheatingyouare.client.module.impl.PearlCatch();
@@ -114,6 +115,7 @@ moduleManager.modules.add(nameProtect);
 moduleManager.modules.add(breachSwap);
 
 moduleManager.modules.add(lungeAssist);
+moduleManager.modules.add(webStun);
 moduleManager.modules.add(autoMace);
 moduleManager.modules.add(autoElytraSwap);
 moduleManager.modules.add(pearlCatch);

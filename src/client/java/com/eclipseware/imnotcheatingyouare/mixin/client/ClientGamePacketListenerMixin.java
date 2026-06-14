@@ -15,6 +15,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ClientPacketListener.class)
 public class ClientGamePacketListenerMixin {
 
+    @Inject(method = "handleEntityEvent", at = @At("HEAD"))
+    private void onHandleEntityEventHead(ClientboundEntityEventPacket packet, CallbackInfo ci) {
+        if (packet.getEventId() == 30 && ImnotcheatingyouareClient.INSTANCE != null) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level != null) {
+                Entity eventEntity = packet.getEntity(mc.level);
+                if (eventEntity != null) {
+                    com.eclipseware.imnotcheatingyouare.client.module.impl.WebStun.onShieldBreak(eventEntity);
+                }
+            }
+        }
+    }
+
     @Inject(method = "handleEntityEvent", at = @At("TAIL"))
     private void onHandleEntityEvent(ClientboundEntityEventPacket packet, CallbackInfo ci) {
         if (packet.getEventId() != 35) return;

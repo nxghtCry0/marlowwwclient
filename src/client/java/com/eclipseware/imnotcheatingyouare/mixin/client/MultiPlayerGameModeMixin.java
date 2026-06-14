@@ -49,9 +49,13 @@ public class MultiPlayerGameModeMixin {
 
         Module shieldBreakerMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("AutoShieldBreaker");
         if (shieldBreakerMod != null && shieldBreakerMod.isToggled() && shieldBreakerMod instanceof AutoShieldBreaker asb) {
+            long prevBreakTime = asb.lastBreakTime;
             if (asb.shouldCancelAttack(target)) {
                 ci.cancel();
                 return;
+            }
+            if (asb.lastBreakTime != prevBreakTime) {
+                com.eclipseware.imnotcheatingyouare.client.module.impl.WebStun.trigger(target);
             }
         }
 
