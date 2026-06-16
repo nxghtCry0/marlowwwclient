@@ -71,4 +71,18 @@ public class MinecraftMixin {
             }
         }
     }
+
+    @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
+    private void onSetScreen(net.minecraft.client.gui.screens.Screen screen, CallbackInfo ci) {
+        if (screen != null && !(screen instanceof com.eclipseware.imnotcheatingyouare.client.clickgui.PSAScreen)) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.font != null) {
+                java.io.File psaFile = new java.io.File(mc.gameDirectory, "config/imnotcheatingyouare/psa_accepted");
+                if (!psaFile.exists()) {
+                    ci.cancel();
+                    mc.setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.PSAScreen(screen));
+                }
+            }
+        }
+    }
 }

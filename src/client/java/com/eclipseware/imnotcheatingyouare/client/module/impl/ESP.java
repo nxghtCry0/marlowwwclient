@@ -28,6 +28,31 @@ public class ESP extends Module {
         }
     }
 
+    private static final Color MOB_COLOR = new Color(255, 85, 85);
+    private static final int FILL_COLOR = 0x23000000;
+
+    private Setting modeSetting;
+    private Setting mobsSetting;
+    private Setting fillSetting;
+    private Setting healthSetting;
+    private Setting namesSetting;
+    private Setting outlineSetting;
+    private Setting borderSetting;
+    private Setting cornerGapSetting;
+
+    private void cacheSettings() {
+        if (modeSetting == null) {
+            modeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Mode");
+            mobsSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Show Mobs");
+            fillSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Fill");
+            healthSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Health");
+            namesSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Names");
+            outlineSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Outline Thickness");
+            borderSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Border");
+            cornerGapSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Corner Gap");
+        }
+    }
+
     @Override
     public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
@@ -37,25 +62,19 @@ public class ESP extends Module {
 
         float partialTick = getTickDelta(tickDeltaObj);
 
-        Setting modeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Mode");
+        cacheSettings();
+
         String mode = modeSetting != null ? modeSetting.getValString() : "Outline";
         if (mode.equals("Glow")) return;
 
-        Setting mobsSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Show Mobs");
         boolean showMobs = mobsSetting != null && mobsSetting.getValBoolean();
-        Setting fillSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Fill");
         boolean doFill = fillSetting == null || fillSetting.getValBoolean();
-        Setting healthSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Health");
         boolean showHealth = healthSetting == null || healthSetting.getValBoolean();
-        Setting namesSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Names");
         boolean showNames = namesSetting == null || namesSetting.getValBoolean();
-        Setting outlineSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Outline Thickness");
         int outlineThickness = outlineSetting != null ? (int) outlineSetting.getValDouble() : 1;
-        Setting borderSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Border");
         boolean doBorder = borderSetting == null || borderSetting.getValBoolean();
 
         boolean useCorner = mode.equals("Outline") || mode.equals("Hybrid");
-        Setting cornerGapSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Corner Gap");
         float cornerGap = cornerGapSetting != null ? (float) cornerGapSetting.getValDouble() : 50f;
 
         Color themeColor = RenderUtils.getThemeAccentColor();
@@ -68,7 +87,7 @@ public class ESP extends Module {
             boolean isMob = entity instanceof Mob;
             if (!isPlayer && !(isMob && showMobs)) continue;
 
-            Color color = isPlayer ? themeColor : new Color(255, 85, 85);
+            Color color = isPlayer ? themeColor : MOB_COLOR;
 
             double x = net.minecraft.util.Mth.lerp(partialTick, entity.xo, entity.getX());
             double y = net.minecraft.util.Mth.lerp(partialTick, entity.yo, entity.getY());
@@ -101,14 +120,13 @@ public class ESP extends Module {
             float rectH = (float)(maxY - minY);
             float alpha = Math.max(0.3f, 1.0f - (float)(dist / 64.0));
             int oa = (int)(alpha * 255);
-            Color outlineColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), oa);
-            int black = new Color(0, 0, 0, oa).getRGB();
-            int oc = outlineColor.getRGB();
+            int oc = (oa << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
+            int black = (oa << 24);
             int ix = (int) minX, iy = (int) minY, ix2 = (int) maxX, iy2 = (int) maxY;
             int t = outlineThickness;
 
             if (doFill) {
-                guiGraphics.fill(ix + t, iy + t, ix2 - t, iy2 - t, new Color(0, 0, 0, 35).getRGB());
+                guiGraphics.fill(ix + t, iy + t, ix2 - t, iy2 - t, FILL_COLOR);
             }
 
             if (useCorner) {
@@ -138,9 +156,11 @@ public class ESP extends Module {
                 int barH = (int)(rectH * pct);
                 int barX = ix - 6;
 
-                guiGraphics.fill(barX - 1, iy - 1, barX + 2, iy2 + 1, new Color(0, 0, 0, (int)(alpha * 160)).getRGB());
-                guiGraphics.fill(barX, iy2 - barH, barX + 1, iy2,
-                    new Color(hpColor.getRed(), hpColor.getGreen(), hpColor.getBlue(), oa).getRGB());
+                int hpRGB = (oa << 24) | (hpColor.getRed() << 16) | (hpColor.getGreen() << 8) | hpColor.getBlue();
+                int bgRGB = ((int)(alpha * 160) << 24);
+
+                guiGraphics.fill(barX - 1, iy - 1, barX + 2, iy2 + 1, bgRGB);
+                guiGraphics.fill(barX, iy2 - barH, barX + 1, iy2, hpRGB);
             }
 
             if (showNames) {
@@ -152,9 +172,12 @@ public class ESP extends Module {
                 int textX = (int)(minX + rectW / 2 - textWidth / 2);
                 int textY = iy - 12;
 
-                guiGraphics.fill(textX - 3, textY - 2, textX + textWidth + 3, textY + 9, new Color(0, 0, 0, (int)(alpha * 120)).getRGB());
+                int nameBgColor = ((int)(alpha * 120) << 24);
+                int nameDistColor = (oa << 24) | (200 << 16) | (200 << 8) | 200;
+
+                guiGraphics.fill(textX - 3, textY - 2, textX + textWidth + 3, textY + 9, nameBgColor);
                 FontUtils.drawString(guiGraphics, name, textX, textY, Color.WHITE.getRGB(), true);
-                FontUtils.drawString(guiGraphics, distStr, textX + FontUtils.width(name), textY, new Color(200, 200, 200, oa).getRGB(), true);
+                FontUtils.drawString(guiGraphics, distStr, textX + FontUtils.width(name), textY, nameDistColor, true);
             }
         }
     }
@@ -182,25 +205,68 @@ public class ESP extends Module {
 
     public boolean shouldGlow() {
         if (!isToggled()) return false;
-        Setting modeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Mode");
+        cacheSettings();
         String mode = modeSetting != null ? modeSetting.getValString() : "2D";
         return mode.equals("Glow") || mode.equals("Both");
     }
 
+    private static java.lang.reflect.Method cachedTickDeltaMethod = null;
+    private static Class<?> cachedTickDeltaClass = null;
+    private static Object[] cachedTickDeltaArgs = null;
+    private static boolean tickDeltaResolved = false;
+
     private float getTickDelta(Object tickDeltaObj) {
         if (tickDeltaObj instanceof Float) return (Float) tickDeltaObj;
-        for (java.lang.reflect.Method m : tickDeltaObj.getClass().getMethods()) {
+        if (tickDeltaObj == null) return 1.0f;
+
+        Class<?> clazz = tickDeltaObj.getClass();
+        if (tickDeltaResolved && clazz == cachedTickDeltaClass) {
+            if (cachedTickDeltaMethod != null) {
+                try {
+                    return (float) cachedTickDeltaMethod.invoke(tickDeltaObj, cachedTickDeltaArgs);
+                } catch (Exception e) {
+                    return 1.0f;
+                }
+            }
+            return 1.0f;
+        }
+
+        cachedTickDeltaClass = clazz;
+        cachedTickDeltaMethod = null;
+        cachedTickDeltaArgs = null;
+        tickDeltaResolved = true;
+
+        for (java.lang.reflect.Method m : clazz.getMethods()) {
             if (m.getReturnType() == float.class) {
-                if (m.getParameterCount() == 1 && m.getParameterTypes()[0] == boolean.class) {
-                    try { return (float) m.invoke(tickDeltaObj, true); } catch (Exception e) {}
-                } else if (m.getParameterCount() == 0) {
+                if (m.getParameterCount() == 0) {
                     String name = m.getName().toLowerCase();
                     if (name.contains("tick") || name.contains("delta") || name.contains("frame")) {
-                        try { return (float) m.invoke(tickDeltaObj); } catch (Exception e) {}
+                        try {
+                            m.setAccessible(true);
+                            float val = (float) m.invoke(tickDeltaObj);
+                            cachedTickDeltaMethod = m;
+                            cachedTickDeltaArgs = new Object[0];
+                            return val;
+                        } catch (Exception e) {}
                     }
                 }
             }
         }
+
+        for (java.lang.reflect.Method m : clazz.getMethods()) {
+            if (m.getReturnType() == float.class) {
+                if (m.getParameterCount() == 1 && m.getParameterTypes()[0] == boolean.class) {
+                    try {
+                        m.setAccessible(true);
+                        float val = (float) m.invoke(tickDeltaObj, true);
+                        cachedTickDeltaMethod = m;
+                        cachedTickDeltaArgs = new Object[]{true};
+                        return val;
+                    } catch (Exception e) {}
+                }
+            }
+        }
+
         return 1.0f;
     }
 }

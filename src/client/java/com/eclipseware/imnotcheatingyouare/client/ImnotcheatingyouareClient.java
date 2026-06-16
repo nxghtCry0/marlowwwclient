@@ -190,8 +190,10 @@ Module macroModule = new com.eclipseware.imnotcheatingyouare.client.module.impl.
 moduleManager.modules.add(macroModule);
 Module recommendedConfigs = new com.eclipseware.imnotcheatingyouare.client.module.impl.RecommendedConfigs();
 moduleManager.modules.add(recommendedConfigs);
-
 moduleManager.modules.add(blink);
+
+Module loot = new com.eclipseware.imnotcheatingyouare.client.module.impl.Loot();
+moduleManager.modules.add(loot);
 
 Module targetHUD = new com.eclipseware.imnotcheatingyouare.client.module.impl.TargetHUD();
 Module armorHUD = new com.eclipseware.imnotcheatingyouare.client.module.impl.ArmorHUD();

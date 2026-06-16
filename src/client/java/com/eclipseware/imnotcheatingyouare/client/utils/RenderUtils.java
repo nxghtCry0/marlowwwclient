@@ -16,6 +16,7 @@ import java.awt.Color;
 public class RenderUtils {
     private static final Minecraft mc = Minecraft.getInstance();
     private static final org.joml.Vector4f transformVec = new org.joml.Vector4f();
+    private static final ThreadLocal<Matrix4f> combinedMatrixBuffer = ThreadLocal.withInitial(Matrix4f::new);
 
     public static Vector3d project2D(double x, double y, double z, float partialTicks) {
         Vector3d out = new Vector3d();
@@ -30,7 +31,7 @@ public class RenderUtils {
         if (camera == null) return false;
         Vec3 camPos = camera.position();
         
-        Matrix4f combinedMatrix = camera.getViewRotationProjectionMatrix(new Matrix4f());
+        Matrix4f combinedMatrix = camera.getViewRotationProjectionMatrix(combinedMatrixBuffer.get());
 
         transformVec.set((float)(x - camPos.x), (float)(y - camPos.y), (float)(z - camPos.z), 1.0f);
         combinedMatrix.transform(transformVec);

@@ -2,6 +2,7 @@
 "required": true,
 "minVersion": "0.8",
 "package": "com.eclipseware.imnotcheatingyouare.mixin.client",
+"refmap": "imnotcheatingyouare-refmap.json",
 "compatibilityLevel": "JAVA_21",
 "client": [
 "NoJumpDelayMixin",
@@ -13,11 +14,10 @@
 "MultiPlayerGameModeMixin",
 "PlayerTabOverlayMixin",
 "MinecraftAccessor",
-"JumpResetMixin",
-"AutoSignScreenMixin",
-"ConnectionMixin",
 "ClientPacketListenerMixin",
 "ClientGamePacketListenerMixin",
+"AutoSignScreenMixin",
+"ConnectionMixin",
 "WTapMixin",
 "EntityGlowMixin",
 "HandViewMixin",
@@ -28,7 +28,12 @@
 "GuiMixin",
 "ChatScreenMixin",
 "VisGraphMixin",
-"MouseMixin"
+"MouseMixin",
+"MinecraftMixin",
+"MouseButtonEventMixin",
+"KeyboardHandlerMixin",
+"MouseHandlerAccessor",
+"KeyboardHandlerAccessor"
 ],
 "injectors": {
 "defaultRequire": 1
