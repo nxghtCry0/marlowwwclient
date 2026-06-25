@@ -70,6 +70,17 @@ public class Menu extends Module {
             setToggled(false);
             return;
         }
+
+        com.eclipseware.imnotcheatingyouare.client.setting.Setting reworkedSetting =
+                ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Reworked UI");
+        boolean useReworked = reworkedSetting != null && reworkedSetting.getValBoolean();
+
+        if (useReworked) {
+            mc.setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.ReworkedClickgui());
+            setToggled(false);
+            return;
+        }
+
         Module legacyUI = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("LegacyUI");
         if (legacyUI != null && legacyUI.isToggled()) {
             if (ImnotcheatingyouareClient.INSTANCE.clickGui == null) {

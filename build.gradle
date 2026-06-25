@@ -113,8 +113,8 @@ jar {
     }
 }
 
-// configure the maven publication
 publishing {
+    // configure the maven publication
     publications {
         create("mavenJava", MavenPublication) {
             artifactId = project.archives_base_name
@@ -130,5 +130,4 @@ publishing {
         // retrieving dependencies.
     }
 }
-
 

@@ -24,6 +24,8 @@
 "FastPlaceMixin",
 "BlockBehaviourMixin",
 "MovementCorrectionMixin",
+"LivingEntityRendererMixin",
+"AvatarRendererMixin",
 "EntityMixin",
 "GuiMixin",
 "ChatScreenMixin",
