@@ -4,6 +4,9 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
+import com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils;
+import com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -29,6 +32,8 @@ public class CrystalHelper extends Module {
         Setting onObiSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "On Obsidian");
         Setting excludeBedrockSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Exclude Bedrock");
         Setting onlySelectedSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Only Selected");
+        Setting onAnySet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "On Any");
+        Setting onEmptySet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "On Empty");
         Setting onSwordSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "On Sword");
         Setting onCrystalItemSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "On Crystal Item");
         Setting onObiItemSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "On Obsidian Item");
@@ -42,6 +47,8 @@ public class CrystalHelper extends Module {
         boolean onObi = onObiSet != null ? onObiSet.getValBoolean() : true;
         boolean excludeBedrock = excludeBedrockSet != null ? excludeBedrockSet.getValBoolean() : false;
         boolean onlySelected = onlySelectedSet != null ? onlySelectedSet.getValBoolean() : true;
+        boolean onAny = onAnySet != null ? onAnySet.getValBoolean() : false;
+        boolean onEmpty = onEmptySet != null ? onEmptySet.getValBoolean() : true;
         boolean onSword = onSwordSet != null ? onSwordSet.getValBoolean() : true;
         boolean onCrystalItem = onCrystalItemSet != null ? onCrystalItemSet.getValBoolean() : true;
         boolean onObiItem = onObiItemSet != null ? onObiItemSet.getValBoolean() : true;
@@ -60,7 +67,7 @@ public class CrystalHelper extends Module {
             long currentTime = System.currentTimeMillis();
             if (currentTime - lastPlaceTime < cooldownMs) return;
 
-            if (!canUse(onlySelected, onSword, onCrystalItem, onObiItem, onTotem, onGlowstone, onAnchor)) return;
+            if (!canUse(onlySelected, onAny, onEmpty, onSword, onCrystalItem, onObiItem, onTotem, onGlowstone, onAnchor)) return;
 
             if (mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK) {
                 BlockHitResult blockHit = (BlockHitResult) mc.hitResult;
@@ -68,18 +75,18 @@ public class CrystalHelper extends Module {
 
                 boolean isCrystallable = (block == Blocks.OBSIDIAN) || (!excludeBedrock && (block == Blocks.BEDROCK));
 
-                if (isCrystallable && blockHit.getDirection() == net.minecraft.core.Direction.UP) {
-                    if (onCrystal) {
-                        int crystalSlot = com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.getCrystalSlot();
+                if (isCrystallable) {
+                    if (onCrystal && blockHit.getDirection() == net.minecraft.core.Direction.UP) {
+                        int crystalSlot = ModuleUtils.getCrystalSlot();
                         if (crystalSlot != -1) {
                             silentUseItem(crystalSlot, blockHit);
                             lastPlaceTime = currentTime;
                         }
                     }
                 } 
-                else if (!isCrystallable) {
+                else {
                     if (onObi) {
-                        int obiSlot = com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.getObsidianSlot();
+                        int obiSlot = ModuleUtils.getObsidianSlot();
                         if (obiSlot != -1) {
                             silentUseItem(obiSlot, blockHit);
                             lastPlaceTime = currentTime;
@@ -90,17 +97,18 @@ public class CrystalHelper extends Module {
         }
     }
 
-    private boolean canUse(boolean onlySelected, boolean onSword, boolean onCrystalItem, boolean onObiItem, boolean onTotem, boolean onGlowstone, boolean onAnchor) {
+    private boolean canUse(boolean onlySelected, boolean onAny, boolean onEmpty, boolean onSword, boolean onCrystalItem, boolean onObiItem, boolean onTotem, boolean onGlowstone, boolean onAnchor) {
         if (!onlySelected) return true;
+        if (onAny) return true;
         if (mc.player == null) return false;
 
         net.minecraft.world.item.ItemStack held = mc.player.getMainHandItem();
-        if (held.isEmpty()) return false;
+        if (held.isEmpty()) return onEmpty;
 
-        if (onSword && com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.isHoldingWeapon(held)) return true;
+        if (onSword && ModuleUtils.isHoldingWeapon(held)) return true;
         if (onCrystalItem && held.is(Items.END_CRYSTAL)) return true;
         if (onObiItem && held.is(Items.OBSIDIAN)) return true;
-        if (onTotem && held.getItem().getDescriptionId().toLowerCase().contains("totem")) return true;
+        if (onTotem && (held.is(Items.TOTEM_OF_UNDYING) || held.getItem().getDescriptionId().toLowerCase().contains("totem"))) return true;
         if (onGlowstone && held.is(Items.GLOWSTONE)) return true;
         if (onAnchor && held.is(Items.RESPAWN_ANCHOR)) return true;
 
@@ -108,13 +116,11 @@ public class CrystalHelper extends Module {
     }
 
     private void silentUseItem(int targetSlot, BlockHitResult hitResult) {
-        int originalSlot = com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.getSelectedSlot();
-        com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(targetSlot);
-        mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
-        mc.gameMode.useItemOn(mc.player, net.minecraft.world.InteractionHand.MAIN_HAND, hitResult);
-        if (originalSlot != targetSlot) {
-            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(originalSlot);
-        }
+        ModuleUtils.runSilentSwap(targetSlot, () -> {
+            mc.player.swing(InteractionHand.MAIN_HAND);
+            mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
+            ((MinecraftAccessor) mc).invokeStartUseItem();
+        });
     }
 
     private int findItem(Item item) {

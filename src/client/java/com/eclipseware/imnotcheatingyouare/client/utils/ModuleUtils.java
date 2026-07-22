@@ -100,11 +100,7 @@ public class ModuleUtils {
 
     public static void setServerSlot(int slot) {
         if (mc.player == null || mc.getConnection() == null) return;
-        if (mc.player.getInventory().getSelectedSlot() == slot && lastSentSlot == slot) return;
-        if (mc.player.getInventory().getSelectedSlot() == slot) {
-            lastSentSlot = slot;
-            return;
-        }
+        if (lastSentSlot == slot) return;
         
         mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
         lastSentSlot = slot;

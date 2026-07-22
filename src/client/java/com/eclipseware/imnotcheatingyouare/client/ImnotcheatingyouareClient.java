@@ -496,6 +496,8 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
         settingsManager.rSetting(new Setting("On Obsidian", crystalHelper, true));
         settingsManager.rSetting(new Setting("Exclude Bedrock", crystalHelper, false));
         settingsManager.rSetting(new Setting("Only Selected", crystalHelper, true));
+        settingsManager.rSetting(new Setting("On Any", crystalHelper, false));
+        settingsManager.rSetting(new Setting("On Empty", crystalHelper, true));
         settingsManager.rSetting(new Setting("On Sword", crystalHelper, true));
         settingsManager.rSetting(new Setting("On Crystal Item", crystalHelper, true));
         settingsManager.rSetting(new Setting("On Obsidian Item", crystalHelper, true));
