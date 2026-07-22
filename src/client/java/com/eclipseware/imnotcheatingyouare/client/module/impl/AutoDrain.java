@@ -54,7 +54,7 @@ public class AutoDrain extends Module {
         }
 
         Vec3 eyes = mc.player.getEyePosition();
-        Vec3 waterCenter = currentTarget.getCenter();
+        Vec3 waterCenter = new Vec3(currentTarget.getX() + 0.5, currentTarget.getY() + 0.5, currentTarget.getZ() + 0.5);
         if (!RotationManager.hasLineOfSight(eyes, waterCenter)) { currentTarget = null; return; }
 
         float[] rots = ModuleUtils.getRotations(eyes, waterCenter);
@@ -112,7 +112,7 @@ public class AutoDrain extends Module {
                     }
                     if (mc.level.getFluidState(pos).getType() == Fluids.WATER && mc.level.getFluidState(pos).isSource()) {
                         Vec3 eyes = mc.player.getEyePosition();
-                        if (RotationManager.hasLineOfSight(eyes, pos.getCenter())) return pos;
+                        if (RotationManager.hasLineOfSight(eyes, new Vec3(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5))) return pos;
                     }
                 }
             }

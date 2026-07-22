@@ -60,9 +60,21 @@ public class Render2DEngine {
                 double alpha;
                 if (hollow) {
                     double dist = Math.abs(d - (r - 0.5));
-                    alpha = (dist <= 0.55) ? 1.0 : 0.0;
+                    if (dist <= 0.25) {
+                        alpha = 1.0;
+                    } else if (dist >= 1.25) {
+                        alpha = 0.0;
+                    } else {
+                        alpha = 1.0 - (dist - 0.25);
+                    }
                 } else {
-                    alpha = (d <= r) ? 1.0 : 0.0;
+                    if (d <= r - 0.5) {
+                        alpha = 1.0;
+                    } else if (d >= r + 0.5) {
+                        alpha = 0.0;
+                    } else {
+                        alpha = (r + 0.5) - d;
+                    }
                 }
                 int a = (int)(alpha * 255);
                 image.setPixelABGR(x, y, (a << 24) | 0x00FFFFFF);
@@ -76,7 +88,7 @@ public class Render2DEngine {
             net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
             if (mc.getTextureManager() == null) return;
 
-            com.mojang.blaze3d.platform.NativeImage image = new com.mojang.blaze3d.platform.NativeImage(128, 64, true);
+            com.mojang.blaze3d.platform.NativeImage image = new com.mojang.blaze3d.platform.NativeImage(128, 64, false);
             
             drawCircle(image, 8, 8, 3, false);
             drawCircle(image, 24, 8, 3, true);
@@ -95,6 +107,14 @@ public class Render2DEngine {
             System.out.println("[Marlow] Failed to register dynamic AA corner texture: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    public static void drawRoundedRect(org.joml.Matrix3x2fStack matrices, float x, float y, float width, float height, float radius, int color) {
+        drawRoundedRect(matrices, x, y, width, height, radius, new java.awt.Color(color, true));
+    }
+
+    public static void drawRoundedOutline(org.joml.Matrix3x2fStack matrices, float x, float y, float width, float height, float radius, float thickness, int color) {
+        drawRoundedOutline(matrices, x, y, width, height, radius, thickness, new java.awt.Color(color, true));
     }
 
     public static void drawRoundedRect(org.joml.Matrix3x2fStack matrices, float x, float y, float width, float height, float radius, java.awt.Color color) {
@@ -168,7 +188,17 @@ public class Render2DEngine {
 
     public static void drawLine(org.joml.Matrix3x2fStack matrices, float x, float y, float x1, float y1, float width, java.awt.Color color) {
         if (activeContext != null) {
-            activeContext.fill((int)x, (int)y, (int)x1, (int)y1, color.getRGB());
+            float dx = x1 - x;
+            float dy = y1 - y;
+            float length = (float) Math.sqrt(dx * dx + dy * dy);
+            if (length < 0.01f) return;
+            float angle = (float) Math.atan2(dy, dx);
+
+            matrices.pushMatrix();
+            matrices.translate(x, y);
+            matrices.rotate(angle);
+            activeContext.fill(0, 0, (int) Math.ceil(length), (int) Math.max(1, width), color.getRGB());
+            matrices.popMatrix();
         }
     }
 

@@ -24,16 +24,14 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
     private KeyMapping guiBind;
 
     private void addColorSettings(SettingsManager sm, Module module, String colorName, int r, int g, int b) {
-    sm.rSetting(new Setting(colorName + " R", module, (double) r, 0.0, 255.0, true));
-    sm.rSetting(new Setting(colorName + " G", module, (double) g, 0.0, 255.0, true));
-    sm.rSetting(new Setting(colorName + " B", module, (double) b, 0.0, 255.0, true));
-}
+        sm.rSetting(new Setting(colorName, module, new java.awt.Color(r, g, b)));
+    }
 
-@Override
-@SuppressWarnings("deprecation")
-public void onInitializeClient() {
+    @Override
+    public void onInitializeClient() {
         Module.mc = net.minecraft.client.Minecraft.getInstance();
         INSTANCE = this;
+        new com.eclipseware.imnotcheatingyouare.client.utils.remnant.Fonts();
         moduleManager = new ModuleManager();
         settingsManager = new SettingsManager();
 
@@ -88,13 +86,19 @@ Module detectionAlert = new com.eclipseware.imnotcheatingyouare.client.module.im
 Module backtrack = new com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack();
 Module pearlBind = new com.eclipseware.imnotcheatingyouare.client.module.impl.PearlBind();
 Module autoTotem = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoTotem();
-Module hitboxes = new com.eclipseware.imnotcheatingyouare.client.module.impl.Hitboxes();
 Module anchorMacro = new com.eclipseware.imnotcheatingyouare.client.module.impl.AnchorMacro();
 Module crystalAura = new com.eclipseware.imnotcheatingyouare.client.module.impl.CrystalAura();
 Module crystalHelper = new com.eclipseware.imnotcheatingyouare.client.module.impl.CrystalHelper();
 Module antibot = new com.eclipseware.imnotcheatingyouare.client.module.impl.AntiBot();
 Module teams = new com.eclipseware.imnotcheatingyouare.client.module.impl.Teams();
 Module blink = new com.eclipseware.imnotcheatingyouare.client.module.impl.BlinkModule();
+Module packetAuditor = new com.eclipseware.imnotcheatingyouare.client.module.impl.PacketAuditor();
+Module autoHitCrystal = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoHitCrystal();
+Module autoPlaceCrystal = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoPlaceCrystal();
+Module fastThrowables = new com.eclipseware.imnotcheatingyouare.client.module.impl.FastThrowables();
+Module sTap = new com.eclipseware.imnotcheatingyouare.client.module.impl.STap();
+Module trajectories = new com.eclipseware.imnotcheatingyouare.client.module.impl.Trajectories();
+Module surround = new com.eclipseware.imnotcheatingyouare.client.module.impl.Surround();
 
 
 moduleManager.modules.add(autoSprint);
@@ -147,10 +151,11 @@ moduleManager.modules.add(killAura);
 moduleManager.modules.add(backtrack);
 moduleManager.modules.add(pearlBind);
 moduleManager.modules.add(autoTotem);
-moduleManager.modules.add(hitboxes);
 moduleManager.modules.add(anchorMacro);
 moduleManager.modules.add(crystalAura);
 moduleManager.modules.add(crystalHelper);
+moduleManager.modules.add(trajectories);
+moduleManager.modules.add(surround);
 Module hitSwap = new com.eclipseware.imnotcheatingyouare.client.module.impl.HitSwap();
 moduleManager.modules.add(hitSwap);
 moduleManager.modules.add(antibot);
@@ -179,6 +184,8 @@ Module weapons = new com.eclipseware.imnotcheatingyouare.client.module.impl.Weap
 Module bypassModule = new com.eclipseware.imnotcheatingyouare.client.module.impl.Bypass();
 Module npcModule = new com.eclipseware.imnotcheatingyouare.client.module.impl.NPC();
 
+Module autoMLG = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoMLG();
+moduleManager.modules.add(autoMLG);
 moduleManager.modules.add(autoDHand);
 moduleManager.modules.add(autoWindcharge);
 moduleManager.modules.add(boatFly);
@@ -186,31 +193,66 @@ moduleManager.modules.add(flight);
 moduleManager.modules.add(weapons);
 moduleManager.modules.add(bypassModule);
 moduleManager.modules.add(npcModule);
-Module macroModule = new com.eclipseware.imnotcheatingyouare.client.module.impl.MacroModule();
-moduleManager.modules.add(macroModule);
-Module recommendedConfigs = new com.eclipseware.imnotcheatingyouare.client.module.impl.RecommendedConfigs();
+        Module recommendedConfigs = new com.eclipseware.imnotcheatingyouare.client.module.impl.RecommendedConfigs();
 moduleManager.modules.add(recommendedConfigs);
 moduleManager.modules.add(blink);
+moduleManager.modules.add(packetAuditor);
+moduleManager.modules.add(autoHitCrystal);
+moduleManager.modules.add(autoPlaceCrystal);
+moduleManager.modules.add(fastThrowables);
+moduleManager.modules.add(sTap);
+
+Module keybindWater = new com.eclipseware.imnotcheatingyouare.client.module.impl.KeybindWater();
+Module noFall = new com.eclipseware.imnotcheatingyouare.client.module.impl.NoFall();
+moduleManager.modules.add(noFall);
+Module keybindLava = new com.eclipseware.imnotcheatingyouare.client.module.impl.KeybindLava();
+Module keybindWeb = new com.eclipseware.imnotcheatingyouare.client.module.impl.KeybindWeb();
+Module vapeMacro = new com.eclipseware.imnotcheatingyouare.client.module.impl.VapeMacro();
+Module keybindList = new com.eclipseware.imnotcheatingyouare.client.module.impl.KeybindList();
+
+moduleManager.modules.add(keybindWater);
+moduleManager.modules.add(keybindLava);
+moduleManager.modules.add(keybindWeb);
+moduleManager.modules.add(vapeMacro);
+moduleManager.modules.add(keybindList);
+
+settingsManager.rSetting(new Setting("Scale", keybindList, 0.75, 0.3, 1.5, false));
+settingsManager.rSetting(new Setting("Only Enabled", keybindList, false));
 
 Module loot = new com.eclipseware.imnotcheatingyouare.client.module.impl.Loot();
 moduleManager.modules.add(loot);
 
+Module instaCart = new com.eclipseware.imnotcheatingyouare.client.module.impl.InstaCart();
+Module cartRefill = new com.eclipseware.imnotcheatingyouare.client.module.impl.CartRefill();
+Module xbowCart = new com.eclipseware.imnotcheatingyouare.client.module.impl.XbowCart();
+moduleManager.modules.add(instaCart);
+moduleManager.modules.add(cartRefill);
+moduleManager.modules.add(xbowCart);
+
 Module targetHUD = new com.eclipseware.imnotcheatingyouare.client.module.impl.TargetHUD();
 Module armorHUD = new com.eclipseware.imnotcheatingyouare.client.module.impl.ArmorHUD();
 Module hudEditor = new com.eclipseware.imnotcheatingyouare.client.module.impl.HUDEditor();
+Module ghostBlockMacro = new com.eclipseware.imnotcheatingyouare.client.module.impl.GhostBlockMacro();
 moduleManager.modules.add(targetHUD);
 moduleManager.modules.add(armorHUD);
 moduleManager.modules.add(hudEditor);
+moduleManager.modules.add(ghostBlockMacro);
 
 
-Module theme = new Module("Theme", Category.Render, "Customizes the client's UI colors and animations.");
+        Module clientSpoof = new com.eclipseware.imnotcheatingyouare.client.module.impl.ClientSpoof();
+        moduleManager.modules.add(clientSpoof);
+        java.util.ArrayList<String> csModes = new java.util.ArrayList<>();
+        csModes.add("Lunar"); csModes.add("Vanilla"); csModes.add("Fabric"); csModes.add("Custom");
+        settingsManager.rSetting(new Setting("Mode", clientSpoof, "Lunar", csModes));
+        settingsManager.rSetting(new Setting("Custom Brand", clientSpoof, "lunarclient:v2.12.0-2629", true));
+
+        Module theme = new Module("Theme", Category.Render, "Customizes the client's UI colors and animations.");
         moduleManager.modules.add(theme);
-
-        settingsManager.rSetting(new Setting("Accent R", theme, 155.0, 0.0, 255.0, true));
-        settingsManager.rSetting(new Setting("Accent G", theme, 60.0, 0.0, 255.0, true));
-        settingsManager.rSetting(new Setting("Accent B", theme, 255.0, 0.0, 255.0, true));
+        settingsManager.rSetting(new Setting("Accent Color", theme, new java.awt.Color(239, 142, 172)));
         settingsManager.rSetting(new Setting("Background Alpha", theme, 240.0, 0.0, 255.0, true));
         settingsManager.rSetting(new Setting("Anim Speed", theme, 5.0, 1.0, 10.0, false));
+
+        settingsManager.rSetting(new Setting("Target Item", vapeMacro, "pearl", true));
 
 
 
@@ -231,36 +273,7 @@ Module theme = new Module("Theme", Category.Render, "Customizes the client's UI 
         settingsManager.rSetting(new Setting("Edge Distance", bridgeAssist, 0.25, 0.00, 0.30, false));
         settingsManager.rSetting(new Setting("Pitch Check", bridgeAssist, true));
 
-settingsManager.rSetting(new Setting("Range", blockESP, 32.0, 8.0, 64.0, true));
-settingsManager.rSetting(new Setting("FPS", blockESP, 30.0, 1.0, 60.0, true));
-settingsManager.rSetting(new Setting("Tracers", blockESP, true));
-settingsManager.rSetting(new Setting("Fill", blockESP, true));
-settingsManager.rSetting(new Setting("Outline", blockESP, true));
 
-settingsManager.rSetting(new Setting("Chest", storageESP, true));
-settingsManager.rSetting(new Setting("Barrel", storageESP, true));
-settingsManager.rSetting(new Setting("Shulker Box", storageESP, true));
-settingsManager.rSetting(new Setting("Ender Chest", storageESP, true));
-settingsManager.rSetting(new Setting("Trapped Chest", storageESP, true));
-settingsManager.rSetting(new Setting("Hopper", storageESP, false));
-settingsManager.rSetting(new Setting("Dispenser", storageESP, false));
-settingsManager.rSetting(new Setting("Dropper", storageESP, false));
-settingsManager.rSetting(new Setting("Furnaces", storageESP, false));
-settingsManager.rSetting(new Setting("Range", storageESP, 64.0, 8.0, 128.0, true));
-settingsManager.rSetting(new Setting("FPS", storageESP, 30.0, 1.0, 60.0, true));
-settingsManager.rSetting(new Setting("Tracers", storageESP, true));
-settingsManager.rSetting(new Setting("Fill", storageESP, true));
-settingsManager.rSetting(new Setting("Outline", storageESP, true));
-
-addColorSettings(settingsManager, storageESP, "Chest Color", 255, 165, 0);
-addColorSettings(settingsManager, storageESP, "Barrel Color", 139, 90, 43);
-addColorSettings(settingsManager, storageESP, "Shulker Color", 130, 90, 130);
-addColorSettings(settingsManager, storageESP, "Ender Chest Color", 138, 43, 226);
-addColorSettings(settingsManager, storageESP, "Trapped Chest Color", 255, 0, 0);
-addColorSettings(settingsManager, storageESP, "Hopper Color", 100, 100, 100);
-addColorSettings(settingsManager, storageESP, "Dispenser Color", 128, 128, 128);
-addColorSettings(settingsManager, storageESP, "Dropper Color", 169, 169, 169);
-addColorSettings(settingsManager, storageESP, "Furnace Color", 160, 160, 160);
 
         settingsManager.rSetting(new Setting("Firework Level", elytraBoost, 1.0, 0.0, 3.0, true));
         settingsManager.rSetting(new Setting("Play Sound", elytraBoost, true));
@@ -283,28 +296,17 @@ addColorSettings(settingsManager, storageESP, "Furnace Color", 160, 160, 160);
         settingsManager.rSetting(new Setting("Only Players", wTap, true));
         settingsManager.rSetting(new Setting("Jitter Ticks", wTap, 1.0, 0.0, 5.0, true));
 
-        java.util.ArrayList<String> tbModes = new java.util.ArrayList<>();
-        tbModes.add("Legit"); tbModes.add("Blatant");
-        settingsManager.rSetting(new Setting("Mode", triggerbot, "Legit", tbModes));
-        settingsManager.rSetting(new Setting("Packet Bypass", triggerbot, false));
-
-        java.util.ArrayList<String> tbClickStyles = new java.util.ArrayList<>();
-        tbClickStyles.add("Virtual"); tbClickStyles.add("Direct");
-        settingsManager.rSetting(new Setting("Click Style", triggerbot, "Virtual", tbClickStyles));
         settingsManager.rSetting(new Setting("Range", triggerbot, 4.25, 1.0, 6.0, false));
         settingsManager.rSetting(new Setting("Min Delay (Ticks)", triggerbot, 1.0, 0.0, 20.0, true));
         settingsManager.rSetting(new Setting("Max Delay (Ticks)", triggerbot, 4.0, 0.0, 20.0, true));
-        settingsManager.rSetting(new Setting("Inventory Fix", triggerbot, true));
-        settingsManager.rSetting(new Setting("Require Click", triggerbot, false));
         settingsManager.rSetting(new Setting("Weapons Only", triggerbot, true));
         settingsManager.rSetting(new Setting("Players", triggerbot, true));
         settingsManager.rSetting(new Setting("Hostile Mobs", triggerbot, true));
         settingsManager.rSetting(new Setting("Passive Mobs", triggerbot, false));
 
         java.util.ArrayList<String> hsModes = new java.util.ArrayList<>();
-        hsModes.add("HurtTime"); hsModes.add("Criticals");
-        settingsManager.rSetting(new Setting("Mode", hitSelect, "HurtTime", hsModes));
-        settingsManager.rSetting(new Setting("Max HurtTime", hitSelect, 5.0, 0.0, 10.0, true));
+        hsModes.add("Pause"); hsModes.add("Dynamic");
+        settingsManager.rSetting(new Setting("Mode", hitSelect, "Pause", hsModes));
         settingsManager.rSetting(new Setting("Auto Punish", hitSelect, false));
         settingsManager.rSetting(new Setting("Punish Delay (Ticks)", hitSelect, 3.0, 0.0, 10.0, true));
 
@@ -334,10 +336,9 @@ addColorSettings(settingsManager, storageESP, "Furnace Color", 160, 160, 160);
         alAlignments.add("Left"); alAlignments.add("Right");
         settingsManager.rSetting(new Setting("Alignment", arrayListMod, "Left", alAlignments));
         settingsManager.rSetting(new Setting("Sync Theme", arrayListMod, true));
-        settingsManager.rSetting(new Setting("Red", arrayListMod, 230.0, 0.0, 255.0, true));
-        settingsManager.rSetting(new Setting("Green", arrayListMod, 10.0, 0.0, 255.0, true));
-        settingsManager.rSetting(new Setting("Blue", arrayListMod, 230.0, 0.0, 255.0, true));
+        settingsManager.rSetting(new Setting("Text Color", arrayListMod, new java.awt.Color(230, 10, 230)));
         settingsManager.rSetting(new Setting("Y Offset", arrayListMod, 5.0, 0.0, 100.0, true));
+        settingsManager.rSetting(new Setting("Scale", arrayListMod, 1.0, 0.5, 1.5, false));
 
         java.util.ArrayList<String> npNames = new java.util.ArrayList<>();
         npNames.add("Marlowww"); npNames.add("Hidden"); npNames.add("You");
@@ -416,11 +417,6 @@ settingsManager.rSetting(new Setting("Delay (Ticks)", pearlCatch, 4.0, 0.0, 20.0
         settingsManager.rSetting(new Setting("Delay Min (ms)", blink, 100.0, 0.0, 2000.0, true));
         settingsManager.rSetting(new Setting("Delay Max (ms)", blink, 500.0, 0.0, 2000.0, true));
 
-settingsManager.rSetting(new Setting("Show Mobs", tracers, false));
-
-    settingsManager.rSetting(new Setting("Players", nametags, true));
-settingsManager.rSetting(new Setting("Show Mobs", nametags, false));
-
 settingsManager.rSetting(new Setting("Range", silentAim, 4.5, 1.0, 8.0, false));
 settingsManager.rSetting(new Setting("FOV", silentAim, 120.0, 10.0, 360.0, true));
 settingsManager.rSetting(new Setting("Players", silentAim, true));
@@ -437,7 +433,7 @@ settingsManager.rSetting(new Setting("Dispenser", storageESP, false));
 settingsManager.rSetting(new Setting("Dropper", storageESP, false));
 settingsManager.rSetting(new Setting("Furnaces", storageESP, false));
 settingsManager.rSetting(new Setting("Range", storageESP, 64.0, 8.0, 128.0, true));
-settingsManager.rSetting(new Setting("FPS", storageESP, 30.0, 1.0, 60.0, true));
+settingsManager.rSetting(new Setting("FPS", storageESP, 144.0, 1.0, 1000.0, true));
 settingsManager.rSetting(new Setting("Tracers", storageESP, true));
 settingsManager.rSetting(new Setting("Fill", storageESP, true));
 settingsManager.rSetting(new Setting("Outline", storageESP, true));
@@ -453,7 +449,7 @@ addColorSettings(settingsManager, storageESP, "Dropper Color", 169, 169, 169);
 addColorSettings(settingsManager, storageESP, "Furnace Color", 160, 160, 160);
 
 settingsManager.rSetting(new Setting("Range", blockESP, 32.0, 8.0, 64.0, true));
-settingsManager.rSetting(new Setting("FPS", blockESP, 30.0, 1.0, 60.0, true));
+settingsManager.rSetting(new Setting("FPS", blockESP, 144.0, 1.0, 1000.0, true));
 settingsManager.rSetting(new Setting("Tracers", blockESP, true));
 settingsManager.rSetting(new Setting("Fill", blockESP, true));
 settingsManager.rSetting(new Setting("Outline", blockESP, true));
@@ -481,13 +477,13 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
         Module menu = new com.eclipseware.imnotcheatingyouare.client.module.impl.Menu();
         moduleManager.modules.add(menu);
 
-        addColorSettings(settingsManager, menu, "Primary", 155, 60, 255);
-        addColorSettings(settingsManager, menu, "Secondary", 20, 20, 20);
+        addColorSettings(settingsManager, menu, "Primary", 239, 142, 172);
+        addColorSettings(settingsManager, menu, "Secondary", 24, 24, 37);
 
-        settingsManager.rSetting(new Setting("Reworked UI", menu, false));
-        settingsManager.rSetting(new Setting("Use Verdana Font", menu, true));
 
-        addColorSettings(settingsManager, menu, "Background", 20, 20, 20);
+        settingsManager.rSetting(new Setting("Use Verdana Font", menu, false));
+
+        addColorSettings(settingsManager, menu, "Background", 30, 30, 46);
         settingsManager.rSetting(new Setting("Background Alpha", menu, 240.0, 0.0, 255.0, true));
 
         settingsManager.rSetting(new Setting("Corner Radius", menu, 12.0, 0.0, 30.0, true));
@@ -547,7 +543,7 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
                 .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal("gui")
                     .executes(context -> {
                         net.minecraft.client.Minecraft.getInstance().execute(() ->
-                            net.minecraft.client.Minecraft.getInstance().setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.ConfigGui())
+                            net.minecraft.client.Minecraft.getInstance().setScreenAndShow(new com.eclipseware.imnotcheatingyouare.client.clickgui.ConfigGui())
                         );
                         return 1;
                     })
@@ -615,7 +611,7 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
                             Module mod = moduleManager.getModule(modName);
                             if (mod != null) {
                                 net.minecraft.client.Minecraft.getInstance().execute(() ->
-                                    net.minecraft.client.Minecraft.getInstance().setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.ConfigGui())
+                                    net.minecraft.client.Minecraft.getInstance().setScreenAndShow(new com.eclipseware.imnotcheatingyouare.client.clickgui.ConfigGui())
                                 );
                             } else {
                                 context.getSource().sendFeedback(net.minecraft.network.chat.Component.literal("§d[EclipseWare] §cModule not found!"));

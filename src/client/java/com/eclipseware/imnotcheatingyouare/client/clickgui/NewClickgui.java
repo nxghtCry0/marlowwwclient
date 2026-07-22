@@ -309,7 +309,6 @@ public class NewClickgui extends Screen {
             int editX = startX + 345;
 
             if (button == 0) {
-                // [+ Create New Macro] click
                 if (mouseX >= listX && mouseX <= listX + listW && mouseY >= startY + PANEL_HEIGHT - 35 && mouseY <= startY + PANEL_HEIGHT - 15) {
                     com.eclipseware.imnotcheatingyouare.client.macro.Macro m = com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.createNewMacro("Macro " + (com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.getMacros().size() + 1));
                     com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.setActiveMacro(m);
@@ -318,7 +317,6 @@ public class NewClickgui extends Screen {
                     return true;
                 }
 
-                // Macros List item selection
                 List<com.eclipseware.imnotcheatingyouare.client.macro.Macro> macrosList = com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.getMacros();
                 int listAreaY = listY + 15;
                 int listAreaH = 260;
@@ -327,7 +325,6 @@ public class NewClickgui extends Screen {
                         com.eclipseware.imnotcheatingyouare.client.macro.Macro m = macrosList.get(i);
                         int itemY = listAreaY + 5 + i * 32 - (int)macroListScroll;
                         
-                        // Check click on delete button [X]
                         if (mouseX >= listX + listW - 20 && mouseX <= listX + listW - 8 && mouseY >= itemY + 8 && mouseY <= itemY + 20) {
                             com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.deleteMacro(m);
                             com.eclipseware.imnotcheatingyouare.client.macro.Macro active = com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.getActiveMacro();
@@ -336,7 +333,6 @@ public class NewClickgui extends Screen {
                             return true;
                         }
                         
-                        // Check click on item card
                         if (mouseX >= listX + 4 && mouseX <= listX + listW - 4 && mouseY >= itemY && mouseY <= itemY + 28) {
                             com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.setActiveMacro(m);
                             macroNameBox.setValue(m.getName());
@@ -346,17 +342,14 @@ public class NewClickgui extends Screen {
                     }
                 }
 
-                // Active macro editor clicks
                 com.eclipseware.imnotcheatingyouare.client.macro.Macro active = com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.getActiveMacro();
                 if (active != null) {
-                    // Bind button
                     if (mouseX >= editX + 160 && mouseX <= editX + 260 && mouseY >= startY + 30 && mouseY <= startY + 48) {
                         bindingMacro = active;
                         Clickgui.playSound();
                         return true;
                     }
 
-                    // Hold Mode toggle
                     if (mouseX >= editX && mouseX <= editX + 100 && mouseY >= startY + 56 && mouseY <= startY + 71) {
                         active.setHoldMode(!active.isHoldMode());
                         com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.save();
@@ -364,7 +357,6 @@ public class NewClickgui extends Screen {
                         return true;
                     }
 
-                    // Enabled toggle
                     if (mouseX >= editX + 110 && mouseX <= editX + 210 && mouseY >= startY + 56 && mouseY <= startY + 71) {
                         active.setEnabled(!active.isEnabled());
                         com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.save();
@@ -372,7 +364,6 @@ public class NewClickgui extends Screen {
                         return true;
                     }
 
-                    // Record button
                     if (mouseX >= editX && mouseX <= editX + 80 && mouseY >= startY + 78 && mouseY <= startY + 98) {
                         if (com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.isRecording()) {
                             com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.stopRecord();
@@ -383,7 +374,6 @@ public class NewClickgui extends Screen {
                         return true;
                     }
 
-                    // Play button
                     if (mouseX >= editX + 85 && mouseX <= editX + 165 && mouseY >= startY + 78 && mouseY <= startY + 98) {
                         if (com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.isPlaying()) {
                             com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.stopPlay();
@@ -394,7 +384,6 @@ public class NewClickgui extends Screen {
                         return true;
                     }
 
-                    // Clear button
                     if (mouseX >= editX + 170 && mouseX <= editX + 250 && mouseY >= startY + 78 && mouseY <= startY + 98) {
                         active.clear();
                         com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.save();
@@ -402,14 +391,12 @@ public class NewClickgui extends Screen {
                         return true;
                     }
 
-                    // Export Macro button
                     if (mouseX >= editX && mouseX <= editX + 145 && mouseY >= startY + PANEL_HEIGHT - 35 && mouseY <= startY + PANEL_HEIGHT - 15) {
                         com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.exportToClipboard(active);
                         Clickgui.playSound();
                         return true;
                     }
 
-                    // Import Macro button
                     if (mouseX >= editX + 155 && mouseX <= editX + 300 && mouseY >= startY + PANEL_HEIGHT - 35 && mouseY <= startY + PANEL_HEIGHT - 15) {
                         com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.importFromClipboard();
                         com.eclipseware.imnotcheatingyouare.client.macro.Macro activeNew = com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.getActiveMacro();
@@ -484,7 +471,6 @@ public class NewClickgui extends Screen {
         } 
         
         if (button == 0) {
-            // Category scrollbar track click check:
             int catContentH = Category.values().length * 28 + 10;
             int catSidebarH = panelHeight - 40;
             if (catContentH > catSidebarH) {
@@ -501,10 +487,8 @@ public class NewClickgui extends Screen {
         }
         
         if (button == 0) {
-            // Scrollbar track click check:
             int sbX = startX + panelWidth - 12;
             if (mouseX >= sbX && mouseX <= startX + panelWidth && mouseY >= listY && mouseY <= listY + listHeight) {
-                // Calculate total height of modules
                 int rowHeight = 35;
                 int totalHeight = filteredModules.size() * rowHeight;
                 for (int i = 0; i < filteredModules.size(); i++) {
@@ -581,7 +565,6 @@ public class NewClickgui extends Screen {
             int listY = startY + 20;
             int listHeight = panelHeight - 20 - 45;
             
-            // Calculate total height of modules
             int rowHeight = 35;
             int totalHeight = filteredModules.size() * rowHeight;
             for (int i = 0; i < filteredModules.size(); i++) {
@@ -651,7 +634,6 @@ public class NewClickgui extends Screen {
             int listX = startX + 145;
             
             if (sMouseX < listX + 190) {
-                // Scroll macros list
                 List<com.eclipseware.imnotcheatingyouare.client.macro.Macro> macros = com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.getMacros();
                 int contentH = macros.size() * 32 + 10;
                 int maxScroll = Math.max(0, contentH - 260);
@@ -659,7 +641,6 @@ public class NewClickgui extends Screen {
                 if (targetMacroListScroll < 0) targetMacroListScroll = 0;
                 if (targetMacroListScroll > maxScroll) targetMacroListScroll = maxScroll;
             } else {
-                // Scroll actions list
                 com.eclipseware.imnotcheatingyouare.client.macro.Macro active = com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.getActiveMacro();
                 if (active != null) {
                     int contentH = active.getActions().size() * 15 + 10;
@@ -830,7 +811,6 @@ public class NewClickgui extends Screen {
                 }
             }
             
-            // Hide all toggles that are not in the filtered list
             for (Map.Entry<Module, GlassyToggle> entry : moduleToggles.entrySet()) {
                 if (!filteredModules.contains(entry.getKey())) {
                     entry.getValue().visible = false;
@@ -863,7 +843,6 @@ public class NewClickgui extends Screen {
             targetScrollOffset = 0;
         }
 
-        // Enable scissor for modules list area
         graphics.extractor().enableScissor(listX, listY, listX + listWidth, listY + listHeight);
 
         int modY = listY - (int) scrollOffset;
@@ -942,7 +921,6 @@ public class NewClickgui extends Screen {
             }
         }
         
-        // Draw Scrollbar (with styling improvements)
         if (totalHeight > listHeight) {
             int sbX = startX + panelWidth - 10;
             int sbY = listY + 2;
@@ -964,7 +942,6 @@ public class NewClickgui extends Screen {
             graphics.fill(sbX, thumbY, sbX + sbWidth, thumbY + thumbHeight, thumbColor);
         }
 
-        // Temporarily hide non-list widgets during super.extractRenderState so they don't get scissored/clipped
         boolean oldSearchVisible = searchBox.visible;
         boolean oldMacroVisible = macroNameBox.visible;
         boolean oldFilterPlayerVisible = filterPlayerBox.visible;
@@ -982,10 +959,8 @@ public class NewClickgui extends Screen {
 
         super.extractRenderState(context, scaledMouseX, scaledMouseY, delta);
 
-        // Disable scissor after rendering list items
         graphics.extractor().disableScissor();
 
-        // Restore visibilities of non-list widgets
         searchBox.visible = oldSearchVisible;
         macroNameBox.visible = oldMacroVisible;
         filterPlayerBox.visible = oldFilterPlayerVisible;
@@ -994,7 +969,6 @@ public class NewClickgui extends Screen {
             categoryButtons.get(i).visible = oldCategoryVisibilities.get(i);
         }
 
-        // Render non-list widgets manually outside the scissor
         for (GlassyButton btn : categoryButtons) {
             if (btn.visible) {
                 btn.extractRenderState(context, scaledMouseX, scaledMouseY, delta);
@@ -1326,14 +1300,11 @@ public class NewClickgui extends Screen {
         }
         int accent = new java.awt.Color(r, g, b).getRGB();
 
-        // 1. Players Panel
         graphics.drawString(this.font, Component.literal("§b§lFiltered Players"), leftX, startY + 30, -1, false);
 
-        // Edit box layout
         filterPlayerBox.setX(leftX);
         filterPlayerBox.setY(startY + 45);
 
-        // Add button [+]
         boolean addHovered = mouseX >= leftX + 155 && mouseX <= leftX + 200 && mouseY >= startY + 45 && mouseY <= startY + 63;
         graphics.fill(leftX + 155, startY + 45, leftX + 200, startY + 63, addHovered ? accent : 0x14FFFFFF);
         graphics.renderOutline(leftX + 155, startY + 45, 45, 18, addHovered ? accent : 0x22FFFFFF);
@@ -1380,7 +1351,6 @@ public class NewClickgui extends Screen {
             graphics.fill(sbX, thumbY, sbX + sbW, thumbY + thumbH, accent);
         }
 
-        // 2. Entities Panel
         graphics.drawString(this.font, Component.literal("§b§lFiltered Entities"), rightX, startY + 30, -1, false);
 
         filterEntityBox.setX(rightX);

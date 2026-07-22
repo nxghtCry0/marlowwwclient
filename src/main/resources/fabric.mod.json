@@ -6,7 +6,7 @@
   "description": "Open Source Ghost Client that still uses Mods not injection yay",
   "authors": [],
   "contact": {},
-  "license": "All-Rights-Reserved",
+  "license": "GPL-3.0",
   "icon": "assets/imnotcheatingyouare/icon.png",
   "environment": "client",
   "entrypoints": {

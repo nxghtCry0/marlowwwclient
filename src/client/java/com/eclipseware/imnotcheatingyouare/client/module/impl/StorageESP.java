@@ -20,7 +20,7 @@ import java.util.List;
 public class StorageESP extends Module {
     private static final record CachedBlock(BlockPos pos, Color color) {}
     private final List<CachedBlock> cache = new java.util.ArrayList<>();
-    private int lastUpdateTick = -999;
+    private long lastUpdateTimeMs = 0L;
     public StorageESP() {
         super("StorageESP", Category.Render, "Highlights storage blocks like chests, barrels, and shulker boxes.");
     }
@@ -52,10 +52,11 @@ public class StorageESP extends Module {
 
         Setting fpsSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "FPS");
         double targetFPS = fpsSetting != null ? fpsSetting.getValDouble() : 30;
-        int interval = Math.max(1, (int)(60.0 / targetFPS));
+        long targetIntervalMs = (long)(1000.0 / targetFPS);
+        long currentTime = System.currentTimeMillis();
 
-        if (mc.player.tickCount - lastUpdateTick >= interval) {
-            lastUpdateTick = mc.player.tickCount;
+        if (currentTime - lastUpdateTimeMs >= targetIntervalMs) {
+            lastUpdateTimeMs = currentTime;
             cache.clear();
 
             Setting chestSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Chest");

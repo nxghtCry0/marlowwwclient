@@ -13,22 +13,24 @@ public class AutoWindcharge extends Module {
     private int originalSlot = -1;
 
     public AutoWindcharge() {
-        super("AutoWindcharge", Category.Utility, "Automatically throws a windcharge at your feet.");
+        super("AutoWindcharge", Category.Mace, "Automatically throws a windcharge at your feet.");
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Delay Ticks", this, 2.0, 1.0, 10.0, true));
     }
+
+    private int chargeSlot = -1;
 
     @Override
     public void onKeybind() {
         if (mc.player == null || mc.getConnection() == null || active) return;
 
-        int chargeSlot = findItem("wind_charge");
-        if (chargeSlot == -1) {
+        int slot = findItem("wind_charge");
+        if (slot == -1) {
             super.onKeybind();
             return;
         }
 
         originalSlot = com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.getSelectedSlot();
-        com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.setServerSlot(chargeSlot);
+        chargeSlot = slot;
         active = true;
         ticksElapsed = 0;
     }
@@ -37,25 +39,30 @@ public class AutoWindcharge extends Module {
     public void onTick() {
         if (!active || mc.player == null || mc.getConnection() == null) return;
 
-        com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.setRotation(mc.player.getYRot(), 90.0f, 2);
-
         ticksElapsed++;
 
         Setting delaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Delay Ticks");
         int delay = delaySetting != null ? (int) delaySetting.getValDouble() : 2;
 
-        if (ticksElapsed == delay) {
-            mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundUseItemPacket(InteractionHand.MAIN_HAND, 0, mc.player.getYRot(), 90.0f));
-            mc.player.swing(InteractionHand.MAIN_HAND);
-        } else if (ticksElapsed > delay) {
-            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.resetServerSlot();
-            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.setServerSlot(originalSlot);
+        if (ticksElapsed <= delay + 3) {
+            com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.setRotation(mc.player.getYRot(), 90.0f, 2);
+        }
+
+        if (ticksElapsed == 1) {
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(chargeSlot);
+        } else if (ticksElapsed == delay + 1) {
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.useItemPacket(mc.player.getYRot(), 90.0f);
+        } else if (ticksElapsed > delay + 3) {
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(originalSlot);
             active = false;
         }
     }
 
     @Override
     public void onDisable() {
+        if (active) {
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(originalSlot);
+        }
         active = false;
     }
 

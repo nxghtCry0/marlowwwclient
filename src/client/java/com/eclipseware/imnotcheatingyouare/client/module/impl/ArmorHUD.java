@@ -32,7 +32,7 @@ public class ArmorHUD extends Module {
 
     @Override
     public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDelta) {
-        boolean inEditor = mc.screen instanceof com.eclipseware.imnotcheatingyouare.client.clickgui.HudEditorScreen;
+        boolean inEditor = mc.gui.screen() instanceof com.eclipseware.imnotcheatingyouare.client.clickgui.HudEditorScreen;
         if (!isToggled() && !inEditor) return;
         if (mc.player == null) return;
 

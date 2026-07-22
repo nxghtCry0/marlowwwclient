@@ -29,7 +29,7 @@ public class PSAScreen extends Screen {
         int btnX = this.width / 2 - btnWidth / 2;
         int btnY = this.height - 40;
 
-        this.exitButton = this.addRenderableWidget(Button.builder(Component.literal("Exit (10s)"), btn -> {
+        this.exitButton = this.addRenderableWidget(Button.builder(Component.literal("Exit"), btn -> {
             try {
                 File dir = new File(this.minecraft.gameDirectory, "config/imnotcheatingyouare");
                 if (!dir.exists()) {
@@ -41,25 +41,16 @@ public class PSAScreen extends Screen {
                 e.printStackTrace();
             }
             if (this.minecraft != null) {
-                this.minecraft.setScreen(this.parentScreen);
+                this.minecraft.setScreenAndShow(this.parentScreen);
             }
         }).bounds(btnX, btnY, btnWidth, btnHeight).build());
 
-        this.exitButton.active = false;
+        this.exitButton.active = true;
     }
 
     @Override
     public void tick() {
         super.tick();
-        long elapsed = System.currentTimeMillis() - this.startTime;
-        long secondsRemaining = 10 - (elapsed / 1000);
-        if (secondsRemaining > 0) {
-            this.exitButton.active = false;
-            this.exitButton.setMessage(Component.literal("Exit (" + secondsRemaining + "s)"));
-        } else {
-            this.exitButton.active = true;
-            this.exitButton.setMessage(Component.literal("Exit"));
-        }
     }
 
     @Override

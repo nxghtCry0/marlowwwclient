@@ -24,7 +24,7 @@ public class MacroManager {
 
     private static final List<Macro> macros = new ArrayList<>();
     private static Macro activeMacro = null;
-    private static Macro currentMacro = null; // Currently recording or playing macro
+    private static Macro currentMacro = null; 
     
     private static boolean isRecording = false;
     private static boolean isPlaying = false;
@@ -220,7 +220,7 @@ public class MacroManager {
     }
 
     public static void tickKeybinds() {
-        if (mc.screen != null || mc.player == null) return;
+        if (mc.gui.screen() != null || mc.player == null) return;
         long win = 0;
         try {
             for (java.lang.reflect.Field f : mc.getWindow().getClass().getDeclaredFields()) {
@@ -351,7 +351,6 @@ public class MacroManager {
             String decoded = new String(Base64.getDecoder().decode(clipboard), StandardCharsets.UTF_8);
             Macro loaded = GSON.fromJson(decoded, Macro.class);
             if (loaded != null) {
-                // Ensure unique name
                 String baseName = loaded.getName();
                 String name = baseName;
                 int count = 1;

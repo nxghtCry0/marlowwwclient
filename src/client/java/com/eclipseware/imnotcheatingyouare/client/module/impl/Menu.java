@@ -28,7 +28,7 @@ public class Menu extends Module {
         }
 
         if (this.getKeyBind() == -1 || mc == null || mc.getWindow() == null || mc.player == null) return;
-        if (mc.screen != null) return;
+        if (mc.gui.screen() != null) return;
 
         long windowHandle = 0;
         try {
@@ -71,26 +71,16 @@ public class Menu extends Module {
             return;
         }
 
-        com.eclipseware.imnotcheatingyouare.client.setting.Setting reworkedSetting =
-                ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Reworked UI");
-        boolean useReworked = reworkedSetting != null && reworkedSetting.getValBoolean();
-
-        if (useReworked) {
-            mc.setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.ReworkedClickgui());
-            setToggled(false);
-            return;
-        }
-
         Module legacyUI = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("LegacyUI");
         if (legacyUI != null && legacyUI.isToggled()) {
             if (ImnotcheatingyouareClient.INSTANCE.clickGui == null) {
                 ImnotcheatingyouareClient.INSTANCE.clickGui = new Clickgui();
             }
-            if (!(mc.screen instanceof Clickgui)) {
-                mc.setScreen(ImnotcheatingyouareClient.INSTANCE.clickGui);
+            if (!(mc.gui.screen() instanceof Clickgui)) {
+                mc.setScreenAndShow(ImnotcheatingyouareClient.INSTANCE.clickGui);
             }
         } else {
-            mc.setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.NewClickgui());
+            mc.setScreenAndShow(new com.eclipseware.imnotcheatingyouare.client.clickgui.MarlowGUI());
         }
         setToggled(false);
     }

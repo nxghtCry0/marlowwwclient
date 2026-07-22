@@ -14,5 +14,8 @@ public enum Category {
     Configs,
     Client,
     Macros,
-    Filters
+    Filters,
+    CartPvP,
+    Mace,
+    UHC
 }

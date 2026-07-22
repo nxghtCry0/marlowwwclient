@@ -124,9 +124,16 @@ public class ReworkedClickgui extends Screen {
         if (settings == null) return;
 
         for (Setting s : settings) {
+            if (s.getParentMod() != null && s.getParentMod().getName().equalsIgnoreCase("Triggerbot") && s.getName().equalsIgnoreCase("Ignore Activation Click")) {
+                Setting req = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(s.getParentMod(), "Require Mouse Down");
+                if (req == null || !req.getValBoolean()) continue;
+            }
             activeSettings.add(s);
             if (s.isCheck()) {
-                RoundedToggle t = new RoundedToggle(0, 0, 45, 20, s::getValBoolean, s::setValBoolean);
+                RoundedToggle t = new RoundedToggle(0, 0, 45, 20, s::getValBoolean, val -> {
+                    s.setValBoolean(val);
+                    rebuildSettingWidgets();
+                });
                 settingWidgets.add(t);
                 this.addRenderableWidget(t);
             } else if (s.isSlider()) {
@@ -138,7 +145,10 @@ public class ReworkedClickgui extends Screen {
                 this.addRenderableWidget(sl);
             } else if (s.isCombo()) {
                 RoundedDropdown<String> dd = new RoundedDropdown<>(0, 0, 150, 20,
-                        s.getOptions(), s::getValString, s::setValString, str -> str);
+                        s.getOptions(), s::getValString, val -> {
+                    s.setValString(val);
+                    rebuildSettingWidgets();
+                }, str -> str);
                 settingWidgets.add(dd);
                 this.addRenderableWidget(dd);
             }
@@ -401,7 +411,7 @@ public class ReworkedClickgui extends Screen {
         String headerTitle = "§bMarlowww Client §f| §7Reworked UI";
         ReworkedFont.drawString(g, headerTitle, panelX + 14, panelY + 10, ReworkedTheme.text, false);
 
-        String subtitle = "v3.1 Reworked";
+        String subtitle = "v4.0 Release";
         ReworkedFont.drawRightAlignedString(g, subtitle, panelX + scaledPanelW - 14, panelY + 10, ReworkedTheme.textSubtle);
 
         context.fill(panelX + 140, panelY + headerH, panelX + 141, panelY + scaledPanelH, 0x33FFFFFF);

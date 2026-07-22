@@ -44,6 +44,7 @@ public class BlockBehaviourMixin {
         }
     }
 
+
     private boolean isImportant(BlockState state) {
         String name = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();
         if (Xray.INSTANCE != null) {

@@ -116,6 +116,19 @@ public class ConfigManager {
             modulesArray.add(moduleJson);
         }
         json.add("Modules", modulesArray);
+        
+        JsonArray panelsArray = new JsonArray();
+        try {
+            for (java.util.Map.Entry<com.eclipseware.imnotcheatingyouare.client.module.Category, com.eclipseware.imnotcheatingyouare.client.clickgui.MarlowGUI.Panel> entry : com.eclipseware.imnotcheatingyouare.client.clickgui.MarlowGUI.panels.entrySet()) {
+                JsonObject panelJson = new JsonObject();
+                panelJson.addProperty("Category", entry.getKey().name());
+                panelJson.addProperty("X", entry.getValue().getPosition().x());
+                panelJson.addProperty("Y", entry.getValue().getPosition().y());
+                panelJson.addProperty("IsOpen", entry.getValue().isOpen());
+                panelsArray.add(panelJson);
+            }
+        } catch (Exception ignored) {}
+        json.add("Panels", panelsArray);
 
         try {
             String rawJson = GSON.toJson(json);
@@ -170,6 +183,31 @@ public class ConfigManager {
                             }
                         }
                     }
+                }
+            }
+            if (json.has("Panels")) {
+                JsonArray panelsArray = json.getAsJsonArray("Panels");
+                for (JsonElement elem : panelsArray) {
+                    JsonObject panelJson = elem.getAsJsonObject();
+                    String catName = panelJson.get("Category").getAsString();
+                    try {
+                        com.eclipseware.imnotcheatingyouare.client.module.Category cat = com.eclipseware.imnotcheatingyouare.client.module.Category.valueOf(catName);
+                        float x = panelJson.get("X").getAsFloat();
+                        float y = panelJson.get("Y").getAsFloat();
+                        boolean isOpen = panelJson.get("IsOpen").getAsBoolean();
+                        
+                        java.util.List<com.eclipseware.imnotcheatingyouare.client.module.Module> modules = com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient.INSTANCE.moduleManager.getModules(cat);
+                        com.eclipseware.imnotcheatingyouare.client.clickgui.MarlowGUI.Panel panel = com.eclipseware.imnotcheatingyouare.client.clickgui.MarlowGUI.panels.get(cat);
+                        if (panel == null) {
+                            panel = new com.eclipseware.imnotcheatingyouare.client.clickgui.MarlowGUI.Panel(cat, isOpen, new org.joml.Vector2f(x, y));
+                            panel.setModules(modules);
+                            com.eclipseware.imnotcheatingyouare.client.clickgui.MarlowGUI.panels.put(cat, panel);
+                        } else {
+                            panel.setPosition(new org.joml.Vector2f(x, y));
+                            panel.setOpen(isOpen);
+                            panel.setModules(modules);
+                        }
+                    } catch (Exception ignored) {}
                 }
             }
         } catch (Exception e) {

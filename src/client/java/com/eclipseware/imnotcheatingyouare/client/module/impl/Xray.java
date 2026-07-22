@@ -41,11 +41,11 @@ public class Xray extends Module {
 
     @Override
     public void onEnable() {
-        if (mc.levelRenderer != null) mc.levelRenderer.allChanged(); 
+        if (mc.levelExtractor != null) mc.levelExtractor.allChanged(); 
     }
 
     @Override
     public void onDisable() {
-        if (mc.levelRenderer != null) mc.levelRenderer.allChanged(); 
+        if (mc.levelExtractor != null) mc.levelExtractor.allChanged(); 
     }
 }

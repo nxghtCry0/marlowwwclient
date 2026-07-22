@@ -57,9 +57,12 @@ public class JumpReset extends Module {
         }
     }
 
+    public static long lastExplosionTime = 0L;
+
     public void onKnockback() {
         if (!isToggled() || mc.player == null) return;
         if (mc.player.isBlocking()) return;
+        if (System.currentTimeMillis() - lastExplosionTime < 1000L) return;
         
         if (System.currentTimeMillis() - lastHitTime < 50) return;
 

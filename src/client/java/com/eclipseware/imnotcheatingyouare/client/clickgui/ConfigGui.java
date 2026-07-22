@@ -126,49 +126,39 @@ public class ConfigGui extends Screen {
         }
         int accent = new Color(r, g, b).getRGB();
 
-        // Main window background
         guiGraphics.fill(startX, startY, startX + PANEL_WIDTH, startY + PANEL_HEIGHT, GlassyTheme.PANEL_BG);
         drawBorder(guiGraphics, startX, startY, PANEL_WIDTH, PANEL_HEIGHT, GlassyTheme.PANEL_BORDER);
         guiGraphics.fill(startX, startY, startX + PANEL_WIDTH, startY + 2, accent);
 
-        // Header text
         FontUtils.drawString(guiGraphics, "Cloud Config Manager", startX + 20, startY + 12, accent, false);
         FontUtils.drawString(guiGraphics, "Customize and export/import your setups.", startX + 20, startY + 26, 0xFF8F8F8F, false);
 
-        // Sidebar background
         guiGraphics.fill(startX + 10, startY + 44, startX + 145, startY + PANEL_HEIGHT - 10, 0x15FFFFFF);
         drawBorder(guiGraphics, startX + 10, startY + 44, 135, PANEL_HEIGHT - 54, 0x22FFFFFF);
 
-        // Sidebar buttons
-        // Button 1: Export Config
         boolean exH = scaledMouseX >= startX + 15 && scaledMouseX <= startX + 140 && scaledMouseY >= startY + 50 && scaledMouseY <= startY + 75;
         guiGraphics.fill(startX + 15, startY + 50, startX + 140, startY + 75, exH ? 0x2EFFFFFF : 0x14FFFFFF);
         drawBorder(guiGraphics, startX + 15, startY + 50, 125, 25, exH ? 0x60FFFFFF : 0x20FFFFFF);
         FontUtils.drawCenteredString(guiGraphics, "Export Config", startX + 77, startY + 58, -1);
 
-        // Button 2: Import Config
         boolean imH = scaledMouseX >= startX + 15 && scaledMouseX <= startX + 140 && scaledMouseY >= startY + 85 && scaledMouseY <= startY + 110;
         guiGraphics.fill(startX + 15, startY + 85, startX + 140, startY + 110, imH ? accent : 0x14FFFFFF);
         drawBorder(guiGraphics, startX + 15, startY + 85, 125, 25, imH ? accent : 0x20FFFFFF);
         FontUtils.drawCenteredString(guiGraphics, "Import Config", startX + 77, startY + 93, imH ? -1 : accent);
 
-        // Button 3: Export Macros
         boolean exMH = scaledMouseX >= startX + 15 && scaledMouseX <= startX + 140 && scaledMouseY >= startY + 120 && scaledMouseY <= startY + 145;
         guiGraphics.fill(startX + 15, startY + 120, startX + 140, startY + 145, exMH ? 0x2EFFFFFF : 0x14FFFFFF);
         drawBorder(guiGraphics, startX + 15, startY + 120, 125, 25, exMH ? 0x60FFFFFF : 0x20FFFFFF);
         FontUtils.drawCenteredString(guiGraphics, "Export Macros", startX + 77, startY + 128, -1);
 
-        // Button 4: Import Macros
         boolean imMH = scaledMouseX >= startX + 15 && scaledMouseX <= startX + 140 && scaledMouseY >= startY + 155 && scaledMouseY <= startY + 180;
         guiGraphics.fill(startX + 15, startY + 155, startX + 140, startY + 180, imMH ? accent : 0x14FFFFFF);
         drawBorder(guiGraphics, startX + 15, startY + 155, 125, 25, imMH ? accent : 0x20FFFFFF);
         FontUtils.drawCenteredString(guiGraphics, "Import Macros", startX + 77, startY + 163, imMH ? -1 : accent);
 
-        // Right panel
         List<Module> filtered = getFilteredModules();
         List<Module> allModules = ImnotcheatingyouareClient.INSTANCE.moduleManager.modules;
 
-        // Bulk selectors
         boolean allH = scaledMouseX >= startX + 350 && scaledMouseX <= startX + 390 && scaledMouseY >= startY + 48 && scaledMouseY <= startY + 66;
         guiGraphics.fill(startX + 350, startY + 48, startX + 390, startY + 66, allH ? 0x2EFFFFFF : 0x14FFFFFF);
         drawBorder(guiGraphics, startX + 350, startY + 48, 40, 18, allH ? 0x60FFFFFF : 0x20FFFFFF);
@@ -184,7 +174,6 @@ public class ConfigGui extends Screen {
         drawBorder(guiGraphics, startX + 440, startY + 48, 50, 18, invH ? 0x60FFFFFF : 0x20FFFFFF);
         FontUtils.drawCenteredString(guiGraphics, "Invert", startX + 465, startY + 53, -1);
 
-        // Modules Checklist Area
         int listHeight = 220;
         guiGraphics.fill(startX + 160, startY + 75, startX + 500, startY + 75 + listHeight, 0x10FFFFFF);
         drawBorder(guiGraphics, startX + 160, startY + 75, 340, listHeight, 0x22FFFFFF);
@@ -205,11 +194,9 @@ public class ConfigGui extends Screen {
                 && scaledMouseY >= itemY + (int) scrollY && scaledMouseY <= itemY + 18 + (int) scrollY 
                 && scaledMouseY >= startY + 75 && scaledMouseY <= startY + 75 + listHeight;
 
-            // Row Card BG
             guiGraphics.fill(itemX, itemY, itemX + 160, itemY + 18, itemHovered ? 0x25FFFFFF : 0x15FFFFFF);
             drawBorder(guiGraphics, itemX, itemY, 160, 18, itemHovered ? 0x3EFFFFFF : 0x1EFFFFFF);
 
-            // Checkbox
             int checkColor = included ? accent : (itemHovered ? 0x2EFFFFFF : 0x14FFFFFF);
             guiGraphics.fill(itemX + 6, itemY + 3, itemX + 18, itemY + 15, checkColor);
             drawBorder(guiGraphics, itemX + 6, itemY + 3, 12, 12, included ? accent : (itemHovered ? 0x60FFFFFF : 0x20FFFFFF));
@@ -224,7 +211,6 @@ public class ConfigGui extends Screen {
         guiGraphics.pose().popMatrix();
         guiGraphics.disableScissor();
 
-        // Scrollbar logic & render
         int totalRows = (filtered.size() + 1) / 2;
         int contentHeight = totalRows * 22 + 10;
         if (contentHeight > listHeight) {
@@ -240,11 +226,9 @@ public class ConfigGui extends Screen {
             guiGraphics.fill(sbX, thumbY, sbX + sbW, thumbY + thumbH, draggingScrollbar ? accent : 0x44FFFFFF);
         }
 
-        // Selected module count & Info
         FontUtils.drawString(guiGraphics, includedModules.size() + " of " + allModules.size() + " modules included", startX + 160, startY + 308, 0xFFEAEAEA, false);
         FontUtils.drawString(guiGraphics, "Filter matches: " + filtered.size(), startX + 400, startY + 308, 0xFF8F8F8F, false);
 
-        // Status Message Toast Banner
         if (System.currentTimeMillis() < statusMessageTime) {
             long statusRemaining = statusMessageTime - System.currentTimeMillis();
             float alpha = 1f;
@@ -287,10 +271,8 @@ public class ConfigGui extends Screen {
         List<Module> allModules = ImnotcheatingyouareClient.INSTANCE.moduleManager.modules;
 
         if (button == 0) {
-            // Sidebar buttons click
             if (mouseX >= startX + 15 && mouseX <= startX + 140) {
                 if (mouseY >= startY + 50 && mouseY <= startY + 75) {
-                    // Export Config
                     String exported = ConfigManager.exportSpecific(includedModules);
                     Minecraft.getInstance().keyboardHandler.setClipboard(exported);
                     Clickgui.playSound();
@@ -298,7 +280,6 @@ public class ConfigGui extends Screen {
                     return true;
                 }
                 if (mouseY >= startY + 85 && mouseY <= startY + 110) {
-                    // Import Config
                     String clipboard = Minecraft.getInstance().keyboardHandler.getClipboard();
                     if (clipboard != null && !clipboard.isEmpty()) {
                         ConfigManager.importString(clipboard);
@@ -310,14 +291,12 @@ public class ConfigGui extends Screen {
                     return true;
                 }
                 if (mouseY >= startY + 120 && mouseY <= startY + 145) {
-                    // Export Macros
                     com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.exportToClipboard();
                     Clickgui.playSound();
                     showStatus("Macros copied to clipboard!");
                     return true;
                 }
                 if (mouseY >= startY + 155 && mouseY <= startY + 180) {
-                    // Import Macros
                     com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.importFromClipboard();
                     Clickgui.playSound();
                     showStatus("Macros imported successfully!");
@@ -325,23 +304,19 @@ public class ConfigGui extends Screen {
                 }
             }
 
-            // Bulk action clicks
             if (mouseY >= startY + 48 && mouseY <= startY + 66) {
                 if (mouseX >= startX + 350 && mouseX <= startX + 390) {
-                    // All
                     includedModules.clear();
                     includedModules.addAll(allModules);
                     Clickgui.playSound();
                     return true;
                 }
                 if (mouseX >= startX + 395 && mouseX <= startX + 435) {
-                    // None
                     includedModules.clear();
                     Clickgui.playSound();
                     return true;
                 }
                 if (mouseX >= startX + 440 && mouseX <= startX + 490) {
-                    // Invert
                     ArrayList<Module> temp = new ArrayList<>(allModules);
                     temp.removeAll(includedModules);
                     includedModules.clear();
@@ -351,13 +326,11 @@ public class ConfigGui extends Screen {
                 }
             }
 
-            // Scrollbar click detection
             if (mouseX >= startX + 502 && mouseX <= startX + 510 && mouseY >= startY + 75 && mouseY <= startY + 295) {
                 this.draggingScrollbar = true;
                 return true;
             }
 
-            // Checklist clicks
             if (mouseX >= startX + 160 && mouseX <= startX + 500 && mouseY >= startY + 75 && mouseY <= startY + 295) {
                 int i = 0;
                 for (Module m : filtered) {

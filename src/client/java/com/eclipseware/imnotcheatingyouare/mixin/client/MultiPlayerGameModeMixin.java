@@ -22,6 +22,21 @@ import net.minecraft.core.Direction;
 @Mixin(MultiPlayerGameMode.class)
 public class MultiPlayerGameModeMixin {
 
+    @org.spongepowered.asm.mixin.Shadow
+    private float destroyProgress;
+
+    @Inject(method = "continueDestroyBlock", at = @At("RETURN"))
+    private void onContinueDestroyBlock(BlockPos pos, Direction directionFace, CallbackInfoReturnable<Boolean> cir) {
+        Module fastBreak = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("FastBreak");
+        if (fastBreak != null && fastBreak.isToggled()) {
+            com.eclipseware.imnotcheatingyouare.client.setting.Setting speedSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(fastBreak, "Speed Multiplier");
+            if (speedSetting != null) {
+                float mult = (float) speedSetting.getValDouble();
+                this.destroyProgress *= mult;
+            }
+        }
+    }
+
     @Inject(method = "destroyBlock", at = @At("HEAD"))
     private void onDestroyBlock(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
         Module attributeSwapMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("AttributeSwap");
@@ -87,42 +102,16 @@ public class MultiPlayerGameModeMixin {
             Module kbMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("KBDisplacement");
             if (kbMod != null && kbMod.isToggled() && kbMod instanceof KnockbackDisplacement kbd) {
                 float[] flip = kbd.getFlipRotation(target);
-                if (flip != null && Minecraft.getInstance().getConnection() != null) {
-                    Minecraft.getInstance().getConnection().send(new ServerboundMovePlayerPacket.Rot(
-                        flip[0], flip[1], player.onGround(), false
-                    ));
-                    kbShouldRevert = true;
+                if (flip != null) {
+                    com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.queueRotation(flip[0], flip[1], 0, 1, 1, false, null);
                 }
             }
         }
 
         if (!ci.isCancelled() && !kbShouldRevert) {
             Module silentAim = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("SilentAim");
-            Module killAura = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("KillAura");
-            boolean kaSilent = false;
-            if (killAura != null && killAura.isToggled()) {
-                com.eclipseware.imnotcheatingyouare.client.setting.Setting s = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(killAura, "Silent");
-                if (s != null && s.getValBoolean()) {
-                    kaSilent = true;
-                }
-            }
             if (silentAim != null && silentAim.isToggled() && com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.isActive()) {
-                if (Minecraft.getInstance().getConnection() != null) {
-                    Minecraft.getInstance().getConnection().send(new ServerboundMovePlayerPacket.Rot(
-                        com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.getYaw(),
-                        com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.getPitch(),
-                        player.onGround(), false
-                    ));
-                }
                 com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.consume();
-            } else if (kaSilent && com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.isActive()) {
-                if (Minecraft.getInstance().getConnection() != null) {
-                    Minecraft.getInstance().getConnection().send(new ServerboundMovePlayerPacket.Rot(
-                        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getServerYaw(),
-                        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getServerPitch(),
-                        player.onGround(), false
-                    ));
-                }
             }
         }
     }
@@ -143,14 +132,6 @@ public class MultiPlayerGameModeMixin {
             com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack.INSTANCE.onAttack(target);
         }
 
-        if (kbShouldRevert) {
-            var mc = Minecraft.getInstance();
-            if (mc.getConnection() != null) {
-                mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(
-                    mc.player.getYRot(), mc.player.getXRot(), mc.player.onGround(), false
-                ));
-            }
-            kbShouldRevert = false;
-        }
+
     }
 }

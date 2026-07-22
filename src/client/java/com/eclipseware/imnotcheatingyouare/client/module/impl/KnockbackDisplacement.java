@@ -6,14 +6,12 @@ import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.phys.HitResult;
 
 public class KnockbackDisplacement extends Module {
-
     private int cooldown = 0;
 
     public KnockbackDisplacement() {
-        super("KBDisplacement", Category.Combat, "Silently displaces knockback direction on hit.");
+        super("KBDisplacement", Category.Blatant, "Silently displaces knockback direction on hit.");
     }
 
     @Override

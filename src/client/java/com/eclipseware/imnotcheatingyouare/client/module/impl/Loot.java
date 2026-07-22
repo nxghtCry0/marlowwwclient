@@ -26,7 +26,7 @@ public class Loot extends Module {
     private final Random random = new Random();
 
     public Loot() {
-        super("Loot", Category.World, "Automatically steals items from chests with configurable and safe delays.");
+        super("ChestStealer", Category.World, "Automatically steals items from chests with configurable and safe delays.");
         
         delaySetting = new Setting("Delay (ms)", this, 100.0, 0.0, 1000.0, true);
         autoCloseSetting = new Setting("Auto Close", this, true);
@@ -47,7 +47,7 @@ public class Loot extends Module {
             return;
         }
 
-        if (mc.screen instanceof ContainerScreen containerScreen) {
+        if (mc.gui.screen() instanceof ContainerScreen containerScreen) {
             if (!wasScreenOpen) {
                 openTime = System.currentTimeMillis();
                 lastClickTime = openTime;
@@ -80,7 +80,7 @@ public class Loot extends Module {
                 focusedItem = null;
                 if (autoCloseSetting.getValBoolean()) {
                     mc.player.closeContainer();
-                    mc.setScreen(null);
+                    mc.setScreenAndShow(null);
                     wasScreenOpen = false;
                 }
                 return;

@@ -3,6 +3,7 @@ package com.eclipseware.imnotcheatingyouare.mixin.client;
 import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.impl.ESP;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
+import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
@@ -22,16 +23,18 @@ public abstract class EntityGlowMixin {
         ESP esp = (ESP) ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("ESP");
         if (esp != null && esp.isToggled()) {
             Setting mode = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(esp, "Mode");
-            if (mode != null && (mode.getValString().equals("Outline") || mode.getValString().equals("Hybrid"))) {
-                
-                Entity entity = (Entity) (Object) this;
-                Setting showMobs = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(esp, "Show Mobs");
-                boolean mobs = showMobs != null && showMobs.getValBoolean();
+            if (mode != null) {
+                String modeStr = mode.getValString();
+                if (modeStr.equalsIgnoreCase("Glow") || modeStr.equalsIgnoreCase("Hybrid")) {
+                    Entity entity = (Entity) (Object) this;
+                    Setting showMobs = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(esp, "Show Mobs");
+                    boolean mobs = showMobs != null && showMobs.getValBoolean();
 
-                if (entity instanceof Player && entity != Minecraft.getInstance().player) {
-                    cir.setReturnValue(true);
-                } else if (entity instanceof Mob && mobs) {
-                    cir.setReturnValue(true);
+                    if (entity instanceof Player && entity != Minecraft.getInstance().player) {
+                        cir.setReturnValue(true);
+                    } else if (entity instanceof Mob && mobs) {
+                        cir.setReturnValue(true);
+                    }
                 }
             }
         }
@@ -44,16 +47,18 @@ public abstract class EntityGlowMixin {
         ESP esp = (ESP) ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("ESP");
         if (esp != null && esp.isToggled()) {
             Setting mode = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(esp, "Mode");
-            if (mode != null && (mode.getValString().equals("Outline") || mode.getValString().equals("Hybrid"))) {
-                
-                Entity entity = (Entity) (Object) this;
-                Setting showMobs = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(esp, "Show Mobs");
-                boolean mobs = showMobs != null && showMobs.getValBoolean();
+            if (mode != null) {
+                String modeStr = mode.getValString();
+                if (modeStr.equalsIgnoreCase("Glow") || modeStr.equalsIgnoreCase("Hybrid")) {
+                    Entity entity = (Entity) (Object) this;
+                    Setting showMobs = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(esp, "Show Mobs");
+                    boolean mobs = showMobs != null && showMobs.getValBoolean();
 
-                if (entity instanceof Player && entity != Minecraft.getInstance().player) {
-                    cir.setReturnValue(0x9B3CFF);
-                } else if (entity instanceof Mob && mobs) {
-                    cir.setReturnValue(0xFF6432); 
+                    if (entity instanceof Player && entity != Minecraft.getInstance().player) {
+                        cir.setReturnValue(RenderUtils.getThemeAccentColor().getRGB() & 0xFFFFFF);
+                    } else if (entity instanceof Mob && mobs) {
+                        cir.setReturnValue(0xFF6432); 
+                    }
                 }
             }
         }

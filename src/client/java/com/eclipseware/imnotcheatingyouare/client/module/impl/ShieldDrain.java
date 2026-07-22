@@ -23,13 +23,13 @@ public class ShieldDrain extends Module {
     public void onTick() {
         if (mc.player == null || mc.level == null) return;
 
-        if (mc.screen != null) {
+        if (mc.gui.screen() != null) {
             lastGuiTime = System.currentTimeMillis();
         }
 
         Setting legitSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Legit Mode");
         if (legitSetting != null && legitSetting.getValBoolean()) {
-            if (mc.screen != null) {
+            if (mc.gui.screen() != null) {
                 attackDebt = 0.0;
                 return;
             }

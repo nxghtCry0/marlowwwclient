@@ -13,7 +13,7 @@ public class Automine extends Module {
 
     @Override
     public void onTick() {
-        if (mc.player == null || mc.level == null || mc.screen != null) return;
+        if (mc.player == null || mc.level == null || mc.gui.screen() != null) return;
 
         if (mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.BLOCK) {
             BlockHitResult blockHit = (BlockHitResult) mc.hitResult;

@@ -10,13 +10,14 @@ import org.lwjgl.glfw.GLFW;
 
 public class GUIMove extends Module {
     public GUIMove() {
-        super("GUIMove", Category.Movement, "Allows you to walk and jump while in menus.");
+        super("GUIMove", Category.Blatant, "Allows you to walk and jump while in menus.");
     }
 
     @Override
     public void onTick() {
         if (mc.player == null) return;
-        if (mc.screen != null && !(mc.screen instanceof ChatScreen) && !(mc.screen instanceof SignEditScreen) && !(mc.screen instanceof AnvilScreen)) {
+        if (com.eclipseware.imnotcheatingyouare.client.module.impl.AutoTotem.shouldPauseInputs()) return;
+        if (mc.gui.screen() != null && !(mc.gui.screen() instanceof ChatScreen) && !(mc.gui.screen() instanceof SignEditScreen) && !(mc.gui.screen() instanceof AnvilScreen)) {
             long window = 0;
             try {
                 for (java.lang.reflect.Field f : mc.getWindow().getClass().getDeclaredFields()) {

@@ -23,6 +23,7 @@ public class CrystalHelper extends Module {
     @Override
     public void onTick() {
         if (mc == null || mc.player == null || mc.level == null) return;
+        if (mc.gui.screen() != null) return;
 
         Setting onCrystalSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "On Crystal");
         Setting onObiSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "On Obsidian");
@@ -69,7 +70,7 @@ public class CrystalHelper extends Module {
 
                 if (isCrystallable && blockHit.getDirection() == net.minecraft.core.Direction.UP) {
                     if (onCrystal) {
-                        int crystalSlot = findItem(Items.END_CRYSTAL);
+                        int crystalSlot = com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.getCrystalSlot();
                         if (crystalSlot != -1) {
                             silentUseItem(crystalSlot, blockHit);
                             lastPlaceTime = currentTime;
@@ -78,7 +79,7 @@ public class CrystalHelper extends Module {
                 } 
                 else if (!isCrystallable) {
                     if (onObi) {
-                        int obiSlot = findItem(Items.OBSIDIAN);
+                        int obiSlot = com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.getObsidianSlot();
                         if (obiSlot != -1) {
                             silentUseItem(obiSlot, blockHit);
                             lastPlaceTime = currentTime;
@@ -96,12 +97,10 @@ public class CrystalHelper extends Module {
         net.minecraft.world.item.ItemStack held = mc.player.getMainHandItem();
         if (held.isEmpty()) return false;
 
-        String name = held.getItem().getDescriptionId().toLowerCase();
-
-        if (onSword && name.contains("sword")) return true;
+        if (onSword && com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.isHoldingWeapon(held)) return true;
         if (onCrystalItem && held.is(Items.END_CRYSTAL)) return true;
         if (onObiItem && held.is(Items.OBSIDIAN)) return true;
-        if (onTotem && name.contains("totem")) return true;
+        if (onTotem && held.getItem().getDescriptionId().toLowerCase().contains("totem")) return true;
         if (onGlowstone && held.is(Items.GLOWSTONE)) return true;
         if (onAnchor && held.is(Items.RESPAWN_ANCHOR)) return true;
 
@@ -109,7 +108,13 @@ public class CrystalHelper extends Module {
     }
 
     private void silentUseItem(int targetSlot, BlockHitResult hitResult) {
-        com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.placeBlockSilent(hitResult, targetSlot);
+        int originalSlot = com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.getSelectedSlot();
+        com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(targetSlot);
+        mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+        mc.gameMode.useItemOn(mc.player, net.minecraft.world.InteractionHand.MAIN_HAND, hitResult);
+        if (originalSlot != targetSlot) {
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(originalSlot);
+        }
     }
 
     private int findItem(Item item) {

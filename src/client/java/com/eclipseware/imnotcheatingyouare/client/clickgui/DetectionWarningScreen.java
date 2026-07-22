@@ -30,13 +30,13 @@ public class DetectionWarningScreen extends Screen {
                 }
             }
             if (this.minecraft != null) {
-                this.minecraft.setScreen(null);
+                this.minecraft.setScreenAndShow(null);
             }
         }).bounds(this.width / 2 - 110, boxY, 100, 20).build());
 
         this.addRenderableWidget(Button.builder(Component.literal("No, ignore"), btn -> {
             if (this.minecraft != null) {
-                this.minecraft.setScreen(null);
+                this.minecraft.setScreenAndShow(null);
             }
         }).bounds(this.width / 2 + 10, boxY, 100, 20).build());
     }

@@ -34,6 +34,7 @@ public class CrystalAura extends Module {
     private Setting aimSpeed;
     private Setting antiSuicide;
     private Setting requireHeld;
+    private Setting excludeBedrock;
 
     private int placeTicks = 0;
     private int breakTicks = 0;
@@ -54,6 +55,7 @@ public class CrystalAura extends Module {
         requireHeld = new Setting("Require held", this, false);
         Setting facePlace = new Setting("Face Place Threshold", this, 10.0, 1.0, 20.0, true);
         Setting silentSwap = new Setting("Silent Swap", this, true);
+        excludeBedrock = new Setting("Exclude Bedrock", this, false);
 
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(range);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(placeDelay);
@@ -65,6 +67,7 @@ public class CrystalAura extends Module {
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(antiSuicide);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(requireHeld);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(facePlace);
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(excludeBedrock);
     }
 
     private int deferredRevertSlot = -1;
@@ -72,6 +75,8 @@ public class CrystalAura extends Module {
     @Override
     public void onTick() {
         if (mc.player == null || mc.level == null)
+            return;
+        if (mc.gui.screen() != null)
             return;
 
         Setting silentSwapS = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Silent Swap");
@@ -139,7 +144,7 @@ public class CrystalAura extends Module {
                 return;
             }
 
-            int crystalSlot = ModuleUtils.findItemInHotbar(Items.END_CRYSTAL);
+            int crystalSlot = ModuleUtils.getCrystalSlot();
             if (crystalSlot == -1)
                 return;
 
@@ -153,16 +158,13 @@ public class CrystalAura extends Module {
                 }
                 if (silentAim.getValBoolean())
                     aimAt(placeTarget);
-                if (silentSwap) {
-                    ModuleUtils.placeBlockSilent(targetPos, Direction.UP, crystalSlot);
-                } else {
-                    deferredRevertSlot = mc.player.getInventory().getSelectedSlot();
-                    ModuleUtils.switchToSlot(crystalSlot);
-                    ModuleUtils.placeBlockPacket(targetPos, Direction.UP);
-                }
+                int origSlot = ModuleUtils.getSelectedSlot();
+                ModuleUtils.switchToSlot(crystalSlot);
+                ((com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor) mc).invokeStartUseItem();
+                ModuleUtils.switchToSlot(origSlot);
                 placeTicks = Math.max(1, (int) placeDelay.getValDouble());
             } else {
-                int obbySlot = ModuleUtils.findItemInHotbar(Items.OBSIDIAN);
+                int obbySlot = ModuleUtils.getObsidianSlot();
                 if (obbySlot != -1) {
                     BlockPos obbyPos = findBestObbyPlacement();
                     if (obbyPos != null) {
@@ -175,13 +177,10 @@ public class CrystalAura extends Module {
                         if (silentAim.getValBoolean())
                             aimAt(obbyTarget);
 
-                        if (silentSwap) {
-                            ModuleUtils.placeBlockSilent(obbyPos.below(), Direction.UP, obbySlot);
-                        } else {
-                            deferredRevertSlot = mc.player.getInventory().getSelectedSlot();
-                            ModuleUtils.switchToSlot(obbySlot);
-                            ModuleUtils.placeBlockPacket(obbyPos.below(), Direction.UP);
-                        }
+                        int origSlot = ModuleUtils.getSelectedSlot();
+                        ModuleUtils.switchToSlot(obbySlot);
+                        ((com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor) mc).invokeStartUseItem();
+                        ModuleUtils.switchToSlot(origSlot);
                         recentObby.put(obbyPos.below(), now + 1500);
                         placeTicks = Math.max(1, (int) placeDelay.getValDouble());
                     }
@@ -272,7 +271,8 @@ public class CrystalAura extends Module {
                         continue;
                     BlockState state = mc.level.getBlockState(pos);
 
-                    if (state.is(Blocks.OBSIDIAN) || state.is(Blocks.BEDROCK) || recentObby.containsKey(pos)) {
+                    boolean allowBedrock = !excludeBedrock.getValBoolean();
+                    if (state.is(Blocks.OBSIDIAN) || (allowBedrock && state.is(Blocks.BEDROCK)) || recentObby.containsKey(pos)) {
                         if (mc.level.isEmptyBlock(pos.above()) && mc.level.isEmptyBlock(pos.above(2))) {
                             if (!RotationManager.hasLineOfSight(mc.player.getEyePosition(),
                                     new Vec3(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5)))

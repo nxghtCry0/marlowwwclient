@@ -18,7 +18,7 @@ if (sprintMod == null || !sprintMod.isToggled()) return;
     LocalPlayer player = (LocalPlayer) (Object) this;
     
     if (player.zza > 0 && !player.isShiftKeyDown() && !player.isUsingItem()) {
-        if (!com.eclipseware.imnotcheatingyouare.client.module.impl.WTap.shouldSilentStopSprint()) {
+        if (!com.eclipseware.imnotcheatingyouare.client.module.impl.WTap.shouldSilentStopSprint() && !com.eclipseware.imnotcheatingyouare.client.module.impl.AutoTotem.shouldPauseInputs()) {
             player.setSprinting(true);
         }
     }

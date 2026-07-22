@@ -18,7 +18,7 @@ public abstract class MouseMixin {
     @Inject(method = "turnPlayer", at = @At("HEAD"))
     private void velaris$applyAimDelta(double timeDelta, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.screen != null) return;
+        if (mc.player == null || mc.gui.screen() != null) return;
         
         double dx = MouseAimHelper.pollDX();
         double dy = MouseAimHelper.pollDY();
@@ -31,7 +31,7 @@ public abstract class MouseMixin {
 
     @Inject(method = "onButton", at = @At("HEAD"))
     private void onMousePress(long windowHandle, net.minecraft.client.input.MouseButtonInfo buttonInfo, int action, CallbackInfo ci) {
-        if (Minecraft.getInstance().screen != null) return;
+        if (Minecraft.getInstance().gui.screen() != null) return;
         if (com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.isRecording()) {
             if (action == 1) {
                 com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.recordMouse(buttonInfo.button(), true, windowHandle);

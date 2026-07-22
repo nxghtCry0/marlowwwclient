@@ -62,7 +62,7 @@ public class AutoWeb extends Module {
         }
 
         Vec3 eyes = mc.player.getEyePosition();
-        Vec3 targetCenter = currentTarget.getCenter();
+        Vec3 targetCenter = new Vec3(currentTarget.getX() + 0.5, currentTarget.getY() + 0.5, currentTarget.getZ() + 0.5);
         if (!RotationManager.hasLineOfSight(eyes, targetCenter)) { currentTarget = null; return; }
 
         int webSlot = ModuleUtils.findItemInHotbar(Items.COBWEB);
@@ -110,7 +110,7 @@ public class AutoWeb extends Module {
         if (mc.level.getBlockState(support).isAir()) return null;
 
         Vec3 eyes = mc.player.getEyePosition();
-        if (!RotationManager.hasLineOfSight(eyes, feetBlock.getCenter())) return null;
+        if (!RotationManager.hasLineOfSight(eyes, new Vec3(feetBlock.getX() + 0.5, feetBlock.getY() + 0.5, feetBlock.getZ() + 0.5))) return null;
 
         return feetBlock;
     }

@@ -106,8 +106,6 @@ public final class GlassyDropdown<T> extends CompatAbstractWidget {
         WwUiStyle.drawDropdownCaret(guiGraphics, x + w - 16, y, 16, h, this.active);
 
         if (this.menuOpen) {
-            // The overlay will be rendered by renderOverlay.
-            // We just need to update the hovered index here to ensure clicks work if not handled by renderOverlay.
             int menuY = y + h;
             int itemH = 14;
             this.hoveredIndex = -1;

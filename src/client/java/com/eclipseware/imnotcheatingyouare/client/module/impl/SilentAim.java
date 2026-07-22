@@ -28,38 +28,28 @@ public class SilentAim extends Module {
     }
 
     @Override
-public void onTick() {
-if (mc == null || mc.player == null || mc.level == null || mc.screen != null) {
-target = null;
-return;
-}
-if (!mc.options.keyAttack.isDown()) {
-target = null;
-return;
-}
-if (mc.player.isBlocking()) {
-target = null;
-return;
-}
-chooseTarget();
-if (target == null) return;
-AABB box = target.getBoundingBox();
-Vec3 aimPoint = new Vec3(box.getCenter().x, box.getCenter().y, box.getCenter().z);
-Vec3 eyes = mc.player.getEyePosition();
-double diffX = aimPoint.x - eyes.x;
-double diffY = aimPoint.y - eyes.y;
-double diffZ = aimPoint.z - eyes.z;
-double distXZ = Math.sqrt(diffX * diffX + diffZ * diffZ);
-float neededYaw = (float) (Math.toDegrees(Math.atan2(diffZ, diffX)) - 90.0F);
-float neededPitch = (float) -Math.toDegrees(Math.atan2(diffY, distXZ));
-SilentAimUtil.setRotation(neededYaw, neededPitch, 4);
-if (SilentAimUtil.isActive() && mc.getConnection() != null) {
-mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Rot(
-SilentAimUtil.getYaw(), SilentAimUtil.getPitch(), mc.player.onGround(), false
-));
-SilentAimUtil.consume();
-}
-}
+    public void onTick() {
+        if (mc == null || mc.player == null || mc.level == null || mc.gui.screen() != null) {
+            target = null;
+            return;
+        }
+        if (mc.player.isBlocking()) {
+            target = null;
+            return;
+        }
+        chooseTarget();
+        if (target == null) return;
+        AABB box = target.getBoundingBox();
+        Vec3 aimPoint = new Vec3(box.getCenter().x, box.getCenter().y, box.getCenter().z);
+        Vec3 eyes = mc.player.getEyePosition();
+        double diffX = aimPoint.x - eyes.x;
+        double diffY = aimPoint.y - eyes.y;
+        double diffZ = aimPoint.z - eyes.z;
+        double distXZ = Math.sqrt(diffX * diffX + diffZ * diffZ);
+        float neededYaw = (float) (Math.toDegrees(Math.atan2(diffZ, diffX)) - 90.0F);
+        float neededPitch = (float) -Math.toDegrees(Math.atan2(diffY, distXZ));
+        SilentAimUtil.setRotation(neededYaw, neededPitch, 2);
+    }
 
     private void chooseTarget() {
         if (System.currentTimeMillis() - lastTargetTime < TARGET_COOLDOWN) return;
@@ -73,7 +63,7 @@ SilentAimUtil.consume();
         Entity bestTarget = null;
         double bestAngle = maxFov / 2.0;
 
-        for (Entity entity : mc.level.entitiesForRendering()) {
+        for (Entity entity : mc.level.getEntities(mc.player, mc.player.getBoundingBox().inflate(range, range, range))) {
             if (entity == mc.player || !entity.isAlive() || !(entity instanceof LivingEntity)) continue;
             if (mc.player.distanceTo(entity) > range) continue;
             if (!isValidTarget(entity)) continue;

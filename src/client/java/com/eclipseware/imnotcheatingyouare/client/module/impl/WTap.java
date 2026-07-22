@@ -52,7 +52,7 @@ public class WTap extends Module {
 
     @Override
     public void onTick() {
-        if (mc.player == null || mc.options == null || phase == 0) return;
+        if (mc.player == null || mc.options == null || phase == 0 || AutoTotem.shouldPauseInputs()) return;
 
         switch (phase) {
             case 1 -> {

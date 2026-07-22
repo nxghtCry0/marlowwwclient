@@ -67,7 +67,7 @@ public class Module {
     public void tickKeybind() {
         if (this.keyBind == -1 || mc == null || mc.getWindow() == null) return;
 
-        if (mc.screen != null) {
+        if (mc.gui.screen() != null) {
             wasKeyPressed = false;
             return;
         }
@@ -118,4 +118,14 @@ public class Module {
     
     public boolean isHidden() { return hidden; }
     public void setHidden(boolean hidden) { this.hidden = hidden; }
+
+    private boolean expanded = false;
+    public boolean isExpanded() { return expanded; }
+    public void setExpanded(boolean expanded) { this.expanded = expanded; }
+
+    public java.util.List<com.eclipseware.imnotcheatingyouare.client.setting.Setting> getSettings() {
+        return com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingsByMod(this);
+    }
+    
+    public boolean isEnabled() { return isToggled(); }
 }

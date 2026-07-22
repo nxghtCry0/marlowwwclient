@@ -11,4 +11,7 @@ public interface MinecraftAccessor {
 
     @Invoker("startUseItem")
     void invokeStartUseItem();
+
+    @org.spongepowered.asm.mixin.gen.Accessor("missTime")
+    void setMissTime(int missTime);
 }

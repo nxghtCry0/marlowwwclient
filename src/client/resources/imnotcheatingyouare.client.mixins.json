@@ -35,7 +35,11 @@
 "MouseButtonEventMixin",
 "KeyboardHandlerMixin",
 "MouseHandlerAccessor",
-"KeyboardHandlerAccessor"
+"KeyboardHandlerAccessor",
+"KeyboardInputMixin",
+"ServerboundMovePlayerPacketAccessor",
+"BlockStateBaseMixin",
+"ClientBrandRetrieverMixin"
 ],
 "injectors": {
 "defaultRequire": 1

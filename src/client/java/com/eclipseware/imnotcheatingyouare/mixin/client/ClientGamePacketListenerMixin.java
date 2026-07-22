@@ -58,8 +58,14 @@ public class ClientGamePacketListenerMixin {
         }
     }
 
+    @Inject(method = "handleExplosion", at = @At("HEAD"))
+    private void onHandleExplosion(net.minecraft.network.protocol.game.ClientboundExplodePacket packet, CallbackInfo ci) {
+        com.eclipseware.imnotcheatingyouare.client.module.impl.JumpReset.lastExplosionTime = System.currentTimeMillis();
+    }
+
     @Inject(method = "handleSetEntityMotion", at = @At("TAIL"))
     private void onHandleSetEntityMotion(net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket packet, CallbackInfo ci) {
+        if (System.currentTimeMillis() - com.eclipseware.imnotcheatingyouare.client.module.impl.JumpReset.lastExplosionTime < 1000L) return;
         if (ImnotcheatingyouareClient.INSTANCE == null || ImnotcheatingyouareClient.INSTANCE.moduleManager == null) return;
         com.eclipseware.imnotcheatingyouare.client.module.impl.JumpReset jumpReset = (com.eclipseware.imnotcheatingyouare.client.module.impl.JumpReset) ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("JumpReset");
         if (jumpReset == null || !jumpReset.isToggled()) return;
@@ -74,6 +80,11 @@ public class ClientGamePacketListenerMixin {
                 jumpReset.onKnockback();
             }
         }
+    }
+
+    @Inject(method = "handleRespawn", at = @At("HEAD"))
+    private void onHandleRespawn(net.minecraft.network.protocol.game.ClientboundRespawnPacket packet, CallbackInfo ci) {
+        com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.resetServerSlot();
     }
 }
 

@@ -7,7 +7,11 @@ version = project.mod_version
 group = project.maven_group
 
 base {
-    archivesName = project.archives_base_name
+    archivesName = 'marlowwwclient-v4-beta-3'
+}
+
+tasks.matching { it.name == "jar" || it.name == "remapJar" || it.name == "remapClientJar" }.configureEach {
+    archiveFileName = "marlowwwclient-v4-beta-3.jar"
 }
 
 loom {

@@ -27,7 +27,7 @@ public class RenderUtils {
     }
 
     public static boolean project2D(double x, double y, double z, float partialTicks, Vector3d out) {
-        Camera camera = mc.gameRenderer.getMainCamera();
+        Camera camera = mc.gameRenderer.mainCamera();
         if (camera == null) return false;
         Vec3 camPos = camera.position();
         
@@ -109,7 +109,7 @@ public class RenderUtils {
                 return new Color((int) rS.getValDouble(), (int) gS.getValDouble(), (int) bS.getValDouble());
             }
         }
-        return new Color(155, 60, 255);
+        return new Color(239, 142, 172);
     }
     
     public static Color getThemeSecondaryColor() {
@@ -123,5 +123,52 @@ public class RenderUtils {
             }
         }
         return new Color(20, 20, 20);
+    }
+
+    public static void draw3DBox(GuiGraphicsExtractor guiGraphics, double minX, double minY, double minZ, double maxX, double maxY, double maxZ, Color faceColor, Color outlineColor, float partialTick) {
+        Vector3d[] boxProjBuffer = new Vector3d[8];
+        for (int i = 0; i < 8; i++) {
+            boxProjBuffer[i] = new Vector3d();
+        }
+        double min2dX = Double.MAX_VALUE, min2dY = Double.MAX_VALUE;
+        double max2dX = -Double.MAX_VALUE, max2dY = -Double.MAX_VALUE;
+        boolean behind = true;
+
+        Vec3[] corners = new Vec3[]{
+            new Vec3(minX, minY, minZ),
+            new Vec3(maxX, minY, minZ),
+            new Vec3(minX, maxY, minZ),
+            new Vec3(maxX, maxY, minZ),
+            new Vec3(minX, minY, maxZ),
+            new Vec3(maxX, minY, maxZ),
+            new Vec3(minX, maxY, maxZ),
+            new Vec3(maxX, maxY, maxZ)
+        };
+
+        for (int i = 0; i < 8; i++) {
+            if (project2D(corners[i].x, corners[i].y, corners[i].z, partialTick, boxProjBuffer[i])) {
+                if (boxProjBuffer[i].z > 0 && boxProjBuffer[i].z < 1.0) {
+                    behind = false;
+                    double px = boxProjBuffer[i].x;
+                    double py = boxProjBuffer[i].y;
+                    min2dX = Math.min(min2dX, px);
+                    min2dY = Math.min(min2dY, py);
+                    max2dX = Math.max(max2dX, px);
+                    max2dY = Math.max(max2dY, py);
+                }
+            }
+        }
+        if (behind) return;
+
+        if (faceColor != null && faceColor.getAlpha() > 0) {
+            guiGraphics.fill((int)min2dX, (int)min2dY, (int)max2dX, (int)max2dY, faceColor.getRGB());
+        }
+        if (outlineColor != null && outlineColor.getAlpha() > 0) {
+            int c = outlineColor.getRGB();
+            guiGraphics.fill((int)min2dX, (int)min2dY, (int)max2dX, (int)min2dY + 1, c);
+            guiGraphics.fill((int)min2dX, (int)max2dY, (int)max2dX, (int)max2dY + 1, c);
+            guiGraphics.fill((int)min2dX, (int)min2dY, (int)min2dX + 1, (int)max2dY, c);
+            guiGraphics.fill((int)max2dX, (int)min2dY, (int)max2dX + 1, (int)max2dY + 1, c);
+        }
     }
 }

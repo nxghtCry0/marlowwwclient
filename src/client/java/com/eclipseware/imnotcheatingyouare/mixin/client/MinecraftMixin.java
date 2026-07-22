@@ -26,12 +26,38 @@ public class MinecraftMixin {
         Minecraft mc = (Minecraft) (Object) this;
         if (mc.player == null) return;
 
+        if (com.eclipseware.imnotcheatingyouare.client.module.impl.Triggerbot.shouldCancelManualAttack()) {
+            cir.setReturnValue(false);
+            cir.cancel();
+            return;
+        }
+
+        Module lungeSwap = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("LungeSwap");
+        if (lungeSwap != null && lungeSwap.isToggled() && lungeSwap instanceof com.eclipseware.imnotcheatingyouare.client.module.impl.LungeAssist la) {
+            if (la.onPlayerAttack()) {
+                cir.setReturnValue(false);
+                cir.cancel();
+                return;
+            }
+        }
+
         Module crystalHelper = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("CrystalHelper");
         if (crystalHelper != null && crystalHelper.isToggled()) {
             if (this.hitResult != null && this.hitResult.getType() == HitResult.Type.BLOCK) {
                 cir.setReturnValue(false);
                 cir.cancel();
                 return;
+            }
+        }
+
+        Module silentAim = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("SilentAim");
+        if (silentAim != null && silentAim.isToggled() && silentAim instanceof com.eclipseware.imnotcheatingyouare.client.module.impl.SilentAim sa) {
+            Entity sat = sa.getTarget();
+            if (sat != null) {
+                if (this.hitResult == null || this.hitResult.getType() != HitResult.Type.ENTITY || ((EntityHitResult) this.hitResult).getEntity() != sat) {
+                    this.hitResult = new EntityHitResult(sat);
+                    mc.crosshairPickEntity = sat;
+                }
             }
         }
 
@@ -72,7 +98,7 @@ public class MinecraftMixin {
         }
     }
 
-    @Inject(method = "setScreen", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "setScreenAndShow", at = @At("HEAD"), cancellable = true)
     private void onSetScreen(net.minecraft.client.gui.screens.Screen screen, CallbackInfo ci) {
         if (screen != null && !(screen instanceof com.eclipseware.imnotcheatingyouare.client.clickgui.PSAScreen)) {
             Minecraft mc = Minecraft.getInstance();
@@ -80,7 +106,7 @@ public class MinecraftMixin {
                 java.io.File psaFile = new java.io.File(mc.gameDirectory, "config/imnotcheatingyouare/psa_accepted");
                 if (!psaFile.exists()) {
                     ci.cancel();
-                    mc.setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.PSAScreen(screen));
+                    mc.setScreenAndShow(new com.eclipseware.imnotcheatingyouare.client.clickgui.PSAScreen(screen));
                 }
             }
         }

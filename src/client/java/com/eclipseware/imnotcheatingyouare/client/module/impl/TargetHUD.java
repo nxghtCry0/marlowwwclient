@@ -92,7 +92,7 @@ public class TargetHUD extends Module {
 
     @Override
     public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDelta) {
-        boolean inEditor = mc.screen instanceof com.eclipseware.imnotcheatingyouare.client.clickgui.HudEditorScreen;
+        boolean inEditor = mc.gui.screen() instanceof com.eclipseware.imnotcheatingyouare.client.clickgui.HudEditorScreen;
         boolean active = isToggled() || inEditor;
         
         LivingEntity activeTarget = target;
@@ -134,8 +134,8 @@ public class TargetHUD extends Module {
         float scale = (active && activeTarget != null) ? AnimationUtil.easeOutBack(animationProgress) : animationProgress;
         float alpha = animationProgress;
 
-        Color themeColor = syncTheme ? RenderUtils.getThemeAccentColor() : new Color(155, 60, 255);
-        Color themeSecondary = syncTheme ? RenderUtils.getThemeSecondaryColor() : new Color(80, 20, 160);
+        Color themeColor = syncTheme ? RenderUtils.getThemeAccentColor() : new Color(239, 142, 172);
+        Color themeSecondary = syncTheme ? RenderUtils.getThemeSecondaryColor() : new Color(24, 24, 37);
         
         int fullAlpha = (int)(255 * alpha) & 0xFF;
 

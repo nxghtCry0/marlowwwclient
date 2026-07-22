@@ -350,8 +350,6 @@ bsModes.add("Swap"); bsModes.add("Silent");
         settingsManager.rSetting(new Setting("Swap Back", breachSwap, true));
         settingsManager.rSetting(new Setting("Swap Back Delay (ms)", breachSwap, 100.0, 0.0, 1000.0, true));
         
-        settingsManager.rSetting(new Setting("AutoJump", lungeAssist, true));
-
         java.util.ArrayList<String> jrModes = new java.util.ArrayList<>();
         jrModes.add("Smart"); jrModes.add("Classic"); jrModes.add("Blatant");
         settingsManager.rSetting(new Setting("Mode", jumpReset, "Smart", jrModes));

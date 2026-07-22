@@ -15,7 +15,7 @@ public class HUDEditor extends Module {
             setToggled(false);
             return;
         }
-        mc.setScreen(new com.eclipseware.imnotcheatingyouare.client.clickgui.HudEditorScreen());
+        mc.setScreenAndShow(new com.eclipseware.imnotcheatingyouare.client.clickgui.HudEditorScreen());
         setToggled(false);
     }
 }

@@ -30,17 +30,14 @@ public class HudEditorScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
-        // Draw translucent dark background
         context.fill(0, 0, this.width, this.height, 0x80000000);
 
-        // Render the active HUD elements so the user sees where they are
         for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.modules) {
             if (m.isToggled() || m.getName().equals("TargetHUD") || m.getName().equals("ArmorHUD")) {
                 m.onRenderHUD(context, delta);
             }
         }
 
-        // Draw HUD outline guides
         Color themeColor = RenderUtils.getThemeAccentColor();
         int accent = themeColor.getRGB();
 
@@ -61,7 +58,6 @@ public class HudEditorScreen extends Screen {
             FontUtils.drawString(context, m.getName(), x, y - 10, outlineColor, true);
         }
 
-        // Draw instructions
         FontUtils.drawCenteredString(context, "HUD Editor", this.width / 2, 10, accent);
         FontUtils.drawCenteredString(context, "Drag boxes with left-click to move. Press ESC to save & exit.", this.width / 2, 22, 0xFFBBBBBB);
     }

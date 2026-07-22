@@ -15,6 +15,8 @@ public class Setting {
     private double max;
     private boolean onlyint = false;
 
+    private String textVal = "";
+
     public Setting(String name, Module parent, String sval, ArrayList<String> options){
         this.name = name; this.parent = parent; this.sval = sval; this.options = options; this.mode = "Combo";
     }
@@ -27,6 +29,15 @@ public class Setting {
         this.name = name; this.parent = parent; this.min = min; this.max = max; this.onlyint = onlyint; this.mode = "Slider";
         this.dval = clamp(dval);
     }
+
+    public Setting(String name, Module parent, String defaultText, boolean isText) {
+        this.name = name; this.parent = parent; this.textVal = defaultText; this.mode = "Text";
+    }
+
+    private int colorVal = 0xFFFFFFFF;
+    public Setting(String name, Module parent, java.awt.Color defaultColor) {
+        this.name = name; this.parent = parent; this.colorVal = defaultColor.getRGB(); this.mode = "Color";
+    }
     
     public String getName() { return name; }
     public Module getParentMod() { return parent; }
@@ -37,11 +48,18 @@ public class Setting {
     public void setValBoolean(boolean in) { this.bval = in; }
     public double getValDouble(){ return this.onlyint ? (int)dval : this.dval; }
     public void setValDouble(double in) { this.dval = clamp(in); }
+    public void setValDoubleUnclamped(double in) { this.dval = in; }
     public double getMin() { return this.min; }
     public double getMax() { return this.max; }
     public boolean isCombo() { return this.mode.equalsIgnoreCase("Combo"); }
     public boolean isCheck() { return this.mode.equalsIgnoreCase("Check"); }
     public boolean isSlider() { return this.mode.equalsIgnoreCase("Slider"); }
+    public boolean isText() { return this.mode.equalsIgnoreCase("Text"); }
+    public boolean isColor() { return this.mode.equalsIgnoreCase("Color"); }
+    public String getValText() { return this.textVal; }
+    public void setValText(String in) { this.textVal = in; }
+    public int getValColor() { return this.colorVal; }
+    public void setValColor(int in) { this.colorVal = in; }
     public boolean onlyInt() { return this.onlyint; }
 
     private double clamp(double value) {

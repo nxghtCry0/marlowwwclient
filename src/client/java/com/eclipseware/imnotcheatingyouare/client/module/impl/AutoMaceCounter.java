@@ -22,7 +22,7 @@ public class AutoMaceCounter extends Module {
     private int swapDelay = 0;
 
     public AutoMaceCounter() {
-        super("AutoMaceCounter", Category.Utility, "Throws a wind charge at falling mace users to stop them.");
+        super("AutoMaceCounter", Category.Mace, "Throws a wind charge at falling mace users to stop them.");
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Distance", this, 6.0, 2.0, 10.0, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Cooldown (Ticks)", this, 20.0, 0.0, 100.0, true));
     }
@@ -120,7 +120,6 @@ public class AutoMaceCounter extends Module {
         Vec3 myEyes = mc.player.getEyePosition();
         double dist = myEyes.distanceTo(current);
 
-        // Wind charge is fairly quick, so a short lead window gives better consistency.
         double leadTime = Math.min(0.35, dist / 20.0);
         Vec3 predicted = current.add(velocity.scale(leadTime));
 

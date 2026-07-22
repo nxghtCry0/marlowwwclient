@@ -15,7 +15,7 @@ public class AutoClicker extends Module {
 
     @Override
     public void onTick() {
-        if (mc == null || mc.player == null || mc.screen != null) return;
+        if (mc == null || mc.player == null || mc.gui.screen() != null) return;
 
         Setting requireClick = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Require Click");
         Setting buttonSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Button");

@@ -20,5 +20,9 @@ public class WTapMixin {
         if (wTap != null && wTap.isToggled()) {
             wTap.onAttackLanded(target);
         }
+        com.eclipseware.imnotcheatingyouare.client.module.impl.STap sTap = (com.eclipseware.imnotcheatingyouare.client.module.impl.STap) ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("STap");
+        if (sTap != null && sTap.isToggled()) {
+            sTap.onAttackLanded(target);
+        }
     }
 }

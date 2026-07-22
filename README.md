@@ -1,16 +1,16 @@
 # IMPORTANT!
+
 Join the Discord!
 https://discord.gg/marlowwwclient
 Download releases or get early access here!
 ❤️
 
-
 My main account, @nxght_Cry0 on discord was TERMINATED!
 The only official account of mine is now @firefox.lol
 
-# Marlow Client 2.2.0
+# Marlow Client V4
 
-Marlow Client is an open-source Fabric client focused on combat automation, movement utilities, rendering tools, and quality-of-life systems for PvP-oriented gameplay. Newly rewritten and rearchitected for Minecraft 26.1.2.
+Marlow Client is an open-source Fabric client focused on combat automation, movement utilities, rendering tools, and quality-of-life systems for PvP-oriented gameplay. Newly rewritten and rearchitected for Minecraft 26.2.
 
 <a href="https://www.star-history.com/?repos=nxghtCry0%2Fmarlowwwclient&type=date&legend=top-left">
  <picture>
@@ -32,18 +32,18 @@ Marlow Client is an open-source Fabric client focused on combat automation, move
 
 [![Java](https://img.shields.io/badge/Java-25-ED8B00?logo=openjdk&logoColor=white)](https://adoptium.net/)
 [![Gradle](https://img.shields.io/badge/Gradle-Build-02303A?logo=gradle&logoColor=white)](https://gradle.org/)
-[![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.18.4-DBD0B4?logo=fabric&logoColor=black)](https://fabricmc.net/)
-[![Fabric API](https://img.shields.io/badge/Fabric_API-0.148.0%2B26.1.2-DBD0B4?logo=fabric&logoColor=black)](https://modrinth.com/mod/fabric-api)
-[![Minecraft](https://img.shields.io/badge/Minecraft-26.1.2-62B47A?logo=minecraft&logoColor=white)](https://www.minecraft.net/)
+[![Fabric Loader](https://img.shields.io/badge/Fabric_Loader-0.19.3-DBD0B4?logo=fabric&logoColor=black)](https://fabricmc.net/)
+[![Fabric API](https://img.shields.io/badge/Fabric_API-0.155.2%2B26.2-DBD0B4?logo=fabric&logoColor=black)](https://modrinth.com/mod/fabric-api)
+[![Minecraft](https://img.shields.io/badge/Minecraft-26.2-62B47A?logo=minecraft&logoColor=white)](https://www.minecraft.net/)
 [![Sponge Mixin](https://img.shields.io/badge/SpongePowered-Mixin-1E1E1E)](https://github.com/SpongePowered/Mixin)
 [![LWJGL](https://img.shields.io/badge/LWJGL-Input%20%26%20Rendering-FFFFFF?logo=lwjgl&logoColor=black)](https://www.lwjgl.org/)
 
 ## Compatibility
 
-- Minecraft: `26.1.2` *(Legacy `1.21.11` port available on the `port-1.21.11` branch)*
+- Minecraft: `26.2` _(Legacy `1.21.11` port available on the `port-1.21.11` branch)_
 - Java: `25+`
-- Fabric Loader: `0.18.4+`
-- Fabric API: `0.148.0+26.1.2`
+- Fabric Loader: `0.19.3+`
+- Fabric API: `0.155.2+26.2`
 
 ## Build and Run
 
@@ -68,37 +68,45 @@ Build a release jar:
 
 Build artifacts are generated in `build/libs/`. Use the main jar artifact, not the `-sources` jar.
 
-## Feature Catalog (66 Modules)
+## Feature Catalog (69 Modules)
 
 ### Combat
+
 - `AimAssist` | `AttributeSwap` | `AutoDrain` | `AutoMace`
 - `AutoMaceCounter` | `AutoShieldBreaker` | `AutoTotem` | `AutoWeb`
-- `AutoWindcharge` | `BreachSwap` | `HitSelect` | `HitSwap`
-- `Hitboxes` | `JumpReset` | `KnockbackDisplacement` | `LungeAssist`
-- `PearlBind` | `PearlCatch` | `ShieldDrain` | `SilentAim`
-- `SilentAimbot` | `Triggerbot` | `WTap` | `Weapons`
+- `AutoWindcharge` | `BreachSwap` | `FastThrowables` | `HitSelect`
+- `HitSwap` | `JumpReset` | `LungeSwap`
+- `PearlBind` | `PearlCatch` | `STap` | `ShieldDrain`
+- `SilentAim` | `SilentAimbot` | `Triggerbot` | `WTap`
+- `Weapons`
 
 ### Crystal
-- `AnchorMacro` | `AutoDHand` | `CrystalAura` | `CrystalHelper`
+
+- `AnchorMacro` | `AutoDHand` | `CrystalAura` | `CrystalHelper` | `Surround`
 
 ### Blatant
-- `Backtrack` | `BlinkModule` (`Blink`) | `KillAura` | `Reach`
+
+- `Backtrack` | `BlinkModule` (`Blink`) | `BoatFly` | `GUIMove`
+- `KBDisplacement` (`KnockbackDisplacement`) | `KillAura` | `Reach`
 
 ### Movement
-- `AutoWalk` | `AutoSprint` | `BoatFly` | `ElytraBoost`
-- `Flight` | `Freecam` | `GUIMove` | `NoJumpDelay`
-- `Scaffold`
+
+- `AutoWalk` | `AutoSprint` | `ElytraBoost` | `Flight`
+- `Freecam` | `NoJumpDelay` | `Scaffold`
 
 ### Render
+
 - `ArrayListMod` | `BlockESP` | `DetectionAlert` | `ESP`
 - `Fullbright` | `HandView` | `LowFire` | `Menu`
 - `NameProtect` | `Nametags` | `NoParticles` | `NoTotemPop`
-- `RenderOptimizer` | `StorageESP` | `Theme` | `Xray`
+- `RenderOptimizer` | `StorageESP` | `Theme` | `Trajectories` | `Xray`
 
 ### Misc & World
+
 - `AntiBot` | `AntiTranslationKey` | `AutoClicker` | `Automine`
-- `AutoSign` | `BridgeAssist` | `Bypass` | `Configurator`
-- `FastPlace` | `FriendProtector` | `NPC` | `Teams`
+- `AutoSign` | `BridgeAssist` | `Bypass` | `ChestStealer`
+- `Configurator` | `FastPlace` | `FriendProtector` | `NPC`
+- `Teams`
 
 ## Additional Systems
 

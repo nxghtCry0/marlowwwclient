@@ -41,7 +41,7 @@ public class ModuleUtils {
         if (selectedField != null) {
             try { return selectedField.getInt(mc.player.getInventory()); } catch (Exception ignored) {}
         }
-        return 0; 
+        return mc.player.getInventory().getSelectedSlot();
     }
 
     public static void setClientSlot(int slot) {
@@ -93,16 +93,18 @@ public class ModuleUtils {
             try { selectedField.setInt(mc.player.getInventory(), slot); } catch (Exception ignored) {}
         }
         updateCarriedIndex(slot);
-        if (mc.getConnection() != null) {
-            mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
-        }
+        setServerSlot(slot);
     }
     
     private static int lastSentSlot = -1;
 
     public static void setServerSlot(int slot) {
         if (mc.player == null || mc.getConnection() == null) return;
-        if (lastSentSlot == slot) return; 
+        if (mc.player.getInventory().getSelectedSlot() == slot && lastSentSlot == slot) return;
+        if (mc.player.getInventory().getSelectedSlot() == slot) {
+            lastSentSlot = slot;
+            return;
+        }
         
         mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
         lastSentSlot = slot;
@@ -129,32 +131,13 @@ public class ModuleUtils {
             Vec3.atCenterOf(pos), face, pos, false
         );
 
-        boolean rotationSpoof = com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.isActive();
-        boolean silentAimSpoof = com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.isActive();
-
         net.minecraft.client.multiplayer.prediction.BlockStatePredictionHandler handler = getPredictionHandler();
-        int seq = 0;
         if (handler != null) {
             handler.startPredicting();
-            seq = handler.currentSequence();
         }
 
-        if (rotationSpoof || silentAimSpoof) {
-            float yaw = silentAimSpoof ? com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.getYaw() : com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getServerYaw();
-            float pitch = silentAimSpoof ? com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.getPitch() : com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getServerPitch();
-            
-            mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Rot(
-                yaw, pitch, mc.player.onGround(), false
-            ));
-            
-            mc.player.swing(InteractionHand.MAIN_HAND);
-            mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundUseItemOnPacket(
-                InteractionHand.MAIN_HAND, hitResult, seq
-            ));
-        } else {
-            mc.player.swing(InteractionHand.MAIN_HAND);
-            mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
-        }
+        mc.player.swing(InteractionHand.MAIN_HAND);
+        mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
     }
 
     public static void useItemPacket() {
@@ -260,7 +243,7 @@ public class ModuleUtils {
         }
     }
 
-    public static int spoofState = 0; // 0 = idle, 1 = slot swapped, 2 = placing/placed, waiting to revert
+    public static int spoofState = 0; 
     private static PendingPlacement pendingPlacement = null;
     public static int revertSlot = -1;
 
@@ -276,12 +259,6 @@ public class ModuleUtils {
         
         spoofState = 1;
         revertSlot = originalSlot;
-        
-        if (originalSlot != targetSlot) {
-            mc.getConnection().send(new ServerboundSetCarriedItemPacket(targetSlot));
-            setClientSlot(targetSlot);
-            updateCarriedIndex(targetSlot);
-        }
     }
 
     public static void placeBlockSilent(BlockHitResult hitResult, int targetSlot) {
@@ -292,22 +269,31 @@ public class ModuleUtils {
         
         spoofState = 1;
         revertSlot = originalSlot;
-        
-        if (originalSlot != targetSlot) {
-            mc.getConnection().send(new ServerboundSetCarriedItemPacket(targetSlot));
-            setClientSlot(targetSlot);
-            updateCarriedIndex(targetSlot);
-        }
     }
 
     public static void processPostMovement() {
         if (spoofState != 2 || pendingPlacement == null || mc.player == null || mc.getConnection() == null) return;
         
         PendingPlacement placement = pendingPlacement;
-        pendingPlacement = null; // Clear to prevent loops
+        pendingPlacement = null; 
         
+        int curSlot = getSelectedSlot();
+        boolean slotChanged = curSlot != placement.targetSlot;
+        if (slotChanged) {
+            setServerSlot(placement.targetSlot);
+            setClientSlot(placement.targetSlot);
+            updateCarriedIndex(placement.targetSlot);
+        }
+
         mc.player.swing(InteractionHand.MAIN_HAND);
         mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, placement.hitResult);
+
+        if (revertSlot != -1 && revertSlot != placement.targetSlot) {
+            setClientSlot(revertSlot);
+            updateCarriedIndex(revertSlot);
+            revertSlot = -1;
+        }
+        spoofState = 0;
     }
 
     public static void onClientTickStart() {
@@ -319,10 +305,8 @@ public class ModuleUtils {
         }
 
         if (spoofState == 1) {
-            // Move to state 2, waiting for the movement packet to be sent in this tick
             spoofState = 2;
         } else if (spoofState == 2) {
-            // Revert back to original slot in this tick
             if (revertSlot != -1) {
                 int current = getSelectedSlot();
                 if (current != revertSlot) {
@@ -338,50 +322,29 @@ public class ModuleUtils {
     }
 
     public static void onClientTickEnd() {
-        if (spoofState == 2 && pendingPlacement != null && mc.player != null && mc.getConnection() != null) {
-            // No movement packet was sent during tick N+1 (player was still),
-            // so we manually send a Rot packet followed by the placement packets.
-            boolean rotationSpoof = com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.isActive();
-            boolean silentAimSpoof = com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.isActive();
-
-            float yaw, pitch;
-            if (rotationSpoof || silentAimSpoof) {
-                yaw = silentAimSpoof ? com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.getYaw() : com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getServerYaw();
-                pitch = silentAimSpoof ? com.eclipseware.imnotcheatingyouare.client.utils.SilentAimUtil.getPitch() : com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getServerPitch();
-            } else {
-                float[] rots = getRotations(mc.player.getEyePosition(), pendingPlacement.hitResult.getLocation());
-                yaw = rots[0];
-                pitch = rots[1];
-            }
-
-            float finalYaw = yaw;
-            float finalPitch = pitch;
-            float lastYaw = Float.isNaN(com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw) ? mc.player.getYRot() : com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw;
-            float lastPitch = Float.isNaN(com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch) ? mc.player.getXRot() : com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch;
-            
-            float gcd = com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.getGCD();
-            if (gcd < 0.001f) gcd = 0.15f;
-            
-            float yawDiff = net.minecraft.util.Mth.wrapDegrees(yaw - lastYaw);
-            float pitchDiff = pitch - lastPitch;
-            
-            int yawSteps = Math.round(yawDiff / gcd);
-            int pitchSteps = Math.round(pitchDiff / gcd);
-            
-            finalYaw = lastYaw + yawSteps * gcd;
-            finalPitch = lastPitch + pitchSteps * gcd;
-            finalPitch = net.minecraft.util.Mth.clamp(finalPitch, -90.0f, 90.0f);
-
-            isSpoofing = true;
-            mc.getConnection().send(new ServerboundMovePlayerPacket.Rot(
-                finalYaw, finalPitch, mc.player.onGround(), false
-            ));
-            isSpoofing = false;
-
-            com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw = finalYaw;
-            com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch = finalPitch;
-
-            processPostMovement();
+        if (spoofState != 0) {
+            spoofState = 0;
+            pendingPlacement = null;
         }
+    }
+
+    public static int getCrystalSlot() {
+        return findItemInHotbar(net.minecraft.world.item.Items.END_CRYSTAL);
+    }
+
+    public static int getObsidianSlot() {
+        return findItemInHotbar(net.minecraft.world.item.Items.OBSIDIAN);
+    }
+
+    public static boolean isHoldingWeapon(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+        String id = stack.getItem().getDescriptionId().toLowerCase();
+        return id.contains("sword") || id.contains("axe") || id.contains("mace");
+    }
+
+    public static boolean isHoldingCrystal(net.minecraft.world.entity.player.Player player) {
+        if (player == null) return false;
+        return player.getMainHandItem().is(net.minecraft.world.item.Items.END_CRYSTAL) ||
+               player.getOffhandItem().is(net.minecraft.world.item.Items.END_CRYSTAL);
     }
 }

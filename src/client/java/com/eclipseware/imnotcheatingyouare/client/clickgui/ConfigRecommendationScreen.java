@@ -32,7 +32,7 @@ public class ConfigRecommendationScreen extends Screen {
             }).bounds(centerX - 105, centerY + 30, 100, 20).build());
 
             this.addRenderableWidget(Button.builder(Component.literal("No"), button -> {
-                this.minecraft.setScreen(null);
+                this.minecraft.setScreenAndShow(null);
             }).bounds(centerX + 5, centerY + 30, 100, 20).build());
         } else {
             int yOffset = 40;
@@ -43,14 +43,14 @@ public class ConfigRecommendationScreen extends Screen {
                     ConfigManager.importString(config.base64);
                     this.minecraft.player.sendSystemMessage(Component.literal("\u00A7d[EclipseWare] \u00A7aLoaded config: " + config.name));
                     this.minecraft.player.sendSystemMessage(Component.literal("\u00A77(Tip: Press F3 + D to clear chat before screenshares)"));
-                    this.minecraft.setScreen(null);
+                    this.minecraft.setScreenAndShow(null);
                 }).bounds(centerX - 150, configY, 300, 20).build());
                 
                 yOffset += 45;
             }
 
             this.addRenderableWidget(Button.builder(Component.literal("Cancel"), button -> {
-                this.minecraft.setScreen(null);
+                this.minecraft.setScreenAndShow(null);
             }).bounds(centerX - 50, this.height - 30, 100, 20).build());
         }
     }

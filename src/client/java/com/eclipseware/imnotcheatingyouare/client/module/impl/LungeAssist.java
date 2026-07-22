@@ -1,107 +1,124 @@
 package com.eclipseware.imnotcheatingyouare.client.module.impl;
 
-import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
-import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
+import com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils;
 import com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 public class LungeAssist extends Module {
-    private boolean needsSwapBack = false;
-    private int originalSlot = -1;
-    private int swapDelayTicks = -1;
-    private boolean waitingForApex = false;
-
-    public LungeAssist() {
-        super("LungeAssist", Category.Combat);
-    }
-
-    @Override
-    public void onKeybind() {
-        if (mc == null || mc.player == null || mc.getConnection() == null) {
-            return;
-        }
-        int spearSlot = this.findLungeSpear(mc.player);
-        if (spearSlot == -1) {
-            super.onKeybind();
-            return;
-        }
-        Setting autoJump = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "AutoJump");
-        boolean doJump = autoJump != null && autoJump.getValBoolean();
-        if (doJump) {
-            if (mc.player.onGround()) {
-                mc.player.jumpFromGround();
-            }
-            this.waitingForApex = true;
-        } else {
-            this.executeLunge(spearSlot);
-        }
-    }
-
-    private void executeLunge(int spearSlot) {
-        int oldSlot = mc.player.getInventory().getSelectedSlot();
-        if (oldSlot == spearSlot) {
-            ((MinecraftAccessor) mc).invokeStartAttack();
-            return;
-        }
-        mc.player.getInventory().setSelectedSlot(spearSlot);
-        mc.getConnection().send((Packet) new ServerboundSetCarriedItemPacket(spearSlot));
-        ((MinecraftAccessor) mc).invokeStartAttack();
-        this.needsSwapBack = true;
-        this.originalSlot = oldSlot;
-        this.swapDelayTicks = 1;
-    }
-
-    @Override
-    public void onTick() {
-        if (mc == null || mc.player == null || mc.getConnection() == null) {
-            return;
-        }
-        if (this.waitingForApex && (mc.player.getDeltaMovement().y <= 0.0 || mc.player.onGround())) {
-            int spearSlot = this.findLungeSpear(mc.player);
-            if (spearSlot != -1) {
-                this.executeLunge(spearSlot);
-            }
-            this.waitingForApex = false;
-        }
-        if (this.needsSwapBack && !this.waitingForApex) {
-            --this.swapDelayTicks;
-            if (this.swapDelayTicks <= 0) {
-                mc.player.getInventory().setSelectedSlot(this.originalSlot);
-                mc.getConnection().send((Packet) new ServerboundSetCarriedItemPacket(this.originalSlot));
-                this.needsSwapBack = false;
-            }
-        }
-    }
-
-    @Override
-    public void onDisable() {
-        this.needsSwapBack = false;
-        this.waitingForApex = false;
-    }
-
-    private int findLungeSpear(Player player) {
-        for (int i = 0; i < 9; ++i) {
-            ItemStack stack = player.getInventory().getItem(i);
-            String itemName = BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
-            if (!itemName.contains("spear")) {
-                continue;
-            }
-            for (Holder<?> enchant : stack.getEnchantments().keySet()) {
-                if (!enchant.unwrapKey().isPresent()
-                        || !((ResourceKey<?>) enchant.unwrapKey().get()).toString().contains("lunge")) {
-                    continue;
-                }
-                return i;
-            }
-        }
-        return -1;
-    }
+  public static LungeAssist INSTANCE;
+  
+  private boolean isSwapping = false;
+  private int originalSlot = -1;
+  private int swapTicks = 0;
+  private int targetTicks = 3;
+  
+  public LungeAssist() {
+    super("LungeSwap", Category.Mace, "Automatically swaps to lunge spear and attacks.");
+    INSTANCE = this;
+  }
+  
+  @Override
+  public void onEnable() {
+    if (mc == null || mc.player == null || mc.level == null) {
+      setToggled(false);
+      return;
+    } 
+    int currentSlot = mc.player.getInventory().getSelectedSlot();
+    int lungeSlot = findLungeSlot((Player)mc.player);
+    if (lungeSlot == -1) {
+      setToggled(false);
+      return;
+    } 
+    if (currentSlot == lungeSlot) {
+      Minecraft minecraft = mc;
+      if (minecraft instanceof MinecraftAccessor) {
+        MinecraftAccessor accessor = (MinecraftAccessor)minecraft;
+        accessor.invokeStartAttack();
+      } 
+      setToggled(false);
+      return;
+    } 
+    this.originalSlot = currentSlot;
+    this.targetTicks = 3;
+    this.isSwapping = true;
+    this.swapTicks = 0;
+    equip(lungeSlot);
+    if (mc.player.getAttackStrengthScale(0.0F) >= 1.0F) {
+      Minecraft minecraft = mc;
+      if (minecraft instanceof MinecraftAccessor) {
+        MinecraftAccessor accessor = (MinecraftAccessor)minecraft;
+        accessor.invokeStartAttack();
+      } 
+      this.swapTicks = 1;
+    } 
+  }
+  
+  public boolean onPlayerAttack() {
+    return false;
+  }
+  
+  @Override
+  public void onTick() {
+    if (!this.isSwapping || mc == null || mc.player == null)
+      return; 
+    this.swapTicks++;
+    if (this.swapTicks >= this.targetTicks) {
+      if (this.originalSlot != -1 && this.originalSlot != mc.player.getInventory().getSelectedSlot())
+        equip(this.originalSlot); 
+      setToggled(false);
+    } 
+  }
+  
+  @Override
+  public void onDisable() {
+    this.isSwapping = false;
+    this.originalSlot = -1;
+    this.swapTicks = 0;
+  }
+  
+  private void equip(int slot) {
+    if (mc.player == null)
+      return; 
+    if (mc.player.getInventory().getSelectedSlot() != slot) {
+      ModuleUtils.switchToSlot(slot);
+      mc.player.getInventory().setSelectedSlot(slot);
+    } 
+  }
+  
+  private int findLungeSlot(Player player) {
+    int fallback = -1;
+    for (int i = 0; i < 9; i++) {
+      ItemStack stack = player.getInventory().getItem(i);
+      if (isLungeSpear(stack))
+        return i; 
+      if (fallback == -1 && !stack.isEmpty() && isSpearItem(stack))
+        fallback = i; 
+    } 
+    return fallback;
+  }
+  
+  private boolean isLungeSpear(ItemStack stack) {
+    if (stack.isEmpty())
+      return false; 
+    if (!isSpearItem(stack))
+      return false; 
+    for (Holder<?> enchant : stack.getEnchantments().keySet()) {
+      if (enchant.unwrapKey().isPresent() && ((ResourceKey)enchant.unwrapKey().get()).toString().toLowerCase().contains("lunge"))
+        return true; 
+    } 
+    return false;
+  }
+  
+  private boolean isSpearItem(ItemStack stack) {
+    String itemName = stack.getItem().toString().toLowerCase();
+    String registryName = BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath().toLowerCase();
+    return (itemName.contains("spear") || registryName.contains("spear") || itemName.contains("trident") || registryName.contains("trident"));
+  }
 }

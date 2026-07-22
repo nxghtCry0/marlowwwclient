@@ -21,7 +21,7 @@ public class Scaffold extends Module {
 
     @Override
     public void onTick() {
-        if (mc != null && mc.player != null && mc.screen == null) {
+        if (mc != null && mc.player != null && mc.gui.screen() == null) {
             mc.options.keyDown.setDown(true);
             mc.options.keyUse.setDown(true);
         }

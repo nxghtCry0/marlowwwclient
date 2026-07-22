@@ -16,7 +16,7 @@ public class ChatScreenMixin {
 private void onHandleChatInput(String message, boolean addToHistory, CallbackInfo ci) {
     if (message.toLowerCase().startsWith("/config")) {
         if (message.toLowerCase().contains("gui")) {
-            Minecraft.getInstance().setScreen(new ConfigGui());
+            Minecraft.getInstance().setScreenAndShow(new ConfigGui());
         } else if (message.toLowerCase().contains("export")) {
             String exp = ConfigManager.exportSpecific(com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient.INSTANCE.moduleManager.modules);
             Minecraft.getInstance().keyboardHandler.setClipboard(exp);

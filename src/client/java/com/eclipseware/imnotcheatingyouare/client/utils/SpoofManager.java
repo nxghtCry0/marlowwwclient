@@ -41,17 +41,17 @@ public class SpoofManager {
             currentTask = tasks.poll();
             ModuleUtils.setClientSlot(currentTask.targetSlot);
             currentTask.state = 1;
-            currentTask.waitTicks = 1; // Wait 1 tick before using item
+            currentTask.waitTicks = 1; 
         } else if (currentTask != null) {
             currentTask.waitTicks--;
             if (currentTask.waitTicks <= 0) {
                 if (currentTask.state == 1) {
                     currentTask.action.run();
                     currentTask.state = 2;
-                    currentTask.waitTicks = 1; // Wait 1 tick before switching back
+                    currentTask.waitTicks = 1; 
                 } else if (currentTask.state == 2) {
                     ModuleUtils.setClientSlot(currentTask.originalSlot);
-                    currentTask = null; // Task finished
+                    currentTask = null; 
                 }
             }
         }

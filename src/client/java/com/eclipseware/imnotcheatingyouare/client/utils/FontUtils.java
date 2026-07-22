@@ -17,11 +17,29 @@ public class FontUtils {
         }
     };
 
+    public static boolean useVerdana() {
+        try {
+            com.eclipseware.imnotcheatingyouare.client.module.Module menu = 
+                com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Menu");
+            if (menu != null) {
+                com.eclipseware.imnotcheatingyouare.client.setting.Setting setting = 
+                    com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(menu, "Use Verdana Font");
+                if (setting != null) {
+                    return setting.getValBoolean();
+                }
+            }
+        } catch (Exception ignore) {}
+        return false;
+    }
+
     public static Component get(String text) {
         if (text == null) return Component.empty();
+        if (!useVerdana()) {
+            return Component.literal(text);
+        }
         Component cached = componentCache.get(text);
         if (cached == null) {
-            cached = Component.literal(text);
+            cached = Component.literal(text).withStyle(Style.EMPTY.withFont(new FontDescription.Resource(VERDANA)));
             componentCache.put(text, cached);
         }
         return cached;
@@ -42,6 +60,6 @@ public class FontUtils {
 
     public static int width(String text) {
         if (text == null) return 0;
-        return Minecraft.getInstance().font.width(text);
+        return Minecraft.getInstance().font.width(get(text));
     }
 }

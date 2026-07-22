@@ -14,7 +14,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 public class AutoMace extends Module {
-
     private final TimerUtil attackTimer = new TimerUtil();
     private int savedSlot = -1;
     private double fallStartY = -1;
@@ -25,8 +24,7 @@ public class AutoMace extends Module {
     private int attackDelayOverride = -1;
 
     public AutoMace() {
-        super("AutoMace", Category.Utility, "Automatically attacks with mace");
-        
+        super("AutoMace", Category.Mace, "Automatically attacks with mace");
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Min Fall Distance", this, 3.0, 1.0, 10.0, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Attack Delay", this, 100.0, 0.0, 500.0, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Density Threshold", this, 7.0, 1.0, 20.0, false));
@@ -35,6 +33,8 @@ public class AutoMace extends Module {
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Stun Slam", this, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Only Axe", this, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Auto Switch Mace", this, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Detect Mace", this, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Require Full Cooldown", this, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Stay On Mace", this, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Swing Prevention", this, true));
     }
@@ -43,7 +43,6 @@ public class AutoMace extends Module {
     public void onTick() {
         if (mc.player == null || mc.level == null)
             return;
-
         updateFall();
         attack();
     }
@@ -64,12 +63,10 @@ public class AutoMace extends Module {
             }
             return;
         }
-
         if (rising && maceHit) {
             maceHit = false;
             fallStartY = currentY;
         }
-
         if (!isFalling) {
             isFalling = true;
             fallStartY = currentY;
@@ -84,22 +81,17 @@ public class AutoMace extends Module {
     private void attack() {
         if (!isFalling || mc.player.getDeltaMovement().y >= -0.1)
             return;
-
         double fallDist = fallStartY == -1 ? 0 : Math.max(0, fallStartY - mc.player.getY());
         if (fallDist < getDoubleSetting("Min Fall Distance"))
             return;
-
         Entity target = mc.hitResult != null && mc.hitResult.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY 
             ? ((net.minecraft.world.phys.EntityHitResult) mc.hitResult).getEntity() 
             : null;
-        
         if (!isValidTarget(target))
             return;
-
         if (getBoolSetting("Stun Slam")) {
             handleSlam(target, fallDist);
         }
-
         if (!getBoolSetting("Stun Slam") || slamExecuted || slamTick == 0) {
             handleMaceAttack(target);
         }
@@ -109,17 +101,14 @@ public class AutoMace extends Module {
         boolean targetBlocking = target instanceof Player player &&
                 player.isBlocking() &&
                 net.minecraft.world.item.Items.SHIELD.equals(player.getUseItem().getItem());
-
         if (getBoolSetting("Only Axe") && !isAxe(mc.player.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND))) {
             return;
         }
-
         if (targetBlocking && fallDist > getDoubleSetting("Min Fall Distance") && !slamExecuted && slamTick == 0) {
             if (savedSlot == -1)
                 savedSlot = mc.player.getInventory().getSelectedSlot();
             slamTick = 1;
         }
-
         if (slamTick == 1) {
             int axeSlot = getBoolSetting("Only Axe") ? mc.player.getInventory().getSelectedSlot() : getAxeSlotId();
             if (axeSlot != -1) {
@@ -136,22 +125,22 @@ public class AutoMace extends Module {
 
     private void handleMaceAttack(Entity target) {
         if (maceHit) return;
-        
         double fallDist = fallStartY == -1 ? 0 : Math.max(0, fallStartY - mc.player.getY());
-
         if (!hasMace()) {
             if (savedSlot == -1)
                 savedSlot = mc.player.getInventory().getSelectedSlot();
-            if (getBoolSetting("Auto Switch Mace")) {
+            if (getBoolSetting("Auto Switch Mace") || getBoolSetting("Detect Mace")) {
                 switchToAppropriateMace(fallDist);
             } else {
                 switchToMace();
             }
-        } else if (getBoolSetting("Auto Switch Mace")) {
+        } else if (getBoolSetting("Auto Switch Mace") || getBoolSetting("Detect Mace")) {
             switchToAppropriateMace(fallDist);
         }
-
-        if (hasMace() && mc.player.getAttackStrengthScale(0.5f) >= 1.0f && attackTimer.hasElapsedTime(getEffectiveAttackDelay(), true)) {
+        if (getBoolSetting("Require Full Cooldown") && mc.player.getAttackStrengthScale(0.5f) < 1.0f) {
+            return;
+        }
+        if (hasMace() && attackTimer.hasElapsedTime(getEffectiveAttackDelay(), true)) {
             ((MinecraftAccessor) mc).invokeStartAttack();
             maceHit = true;
         }
@@ -164,7 +153,6 @@ public class AutoMace extends Module {
             return false;
         if (!livingEntity.isAlive())
             return false;
-
         if (entity instanceof Player) {
             return getBoolSetting("Target Players");
         } else {
@@ -200,14 +188,25 @@ public class AutoMace extends Module {
     }
 
     private void switchToAppropriateMace(double fallDistance) {
+        if (getBoolSetting("Detect Mace")) {
+            boolean useBreach = fallDistance <= 20.0;
+            int targetSlot = useBreach ? findBreachMaceSlot() : findDensityMaceSlot();
+            if (targetSlot == -1) {
+                targetSlot = useBreach ? findDensityMaceSlot() : findBreachMaceSlot();
+            }
+            if (targetSlot == -1) {
+                targetSlot = findAnyMaceSlot();
+            }
+            if (targetSlot != -1) {
+                mc.player.getInventory().setSelectedSlot(targetSlot);
+            }
+            return;
+        }
         boolean useDensity = fallDistance >= getDoubleSetting("Density Threshold");
-
         int targetSlot = useDensity ? findDensityMaceSlot() : findBreachMaceSlot();
-
         if (targetSlot == -1) {
             targetSlot = findAnyMaceSlot();
         }
-
         if (targetSlot != -1) {
             mc.player.getInventory().setSelectedSlot(targetSlot);
         }

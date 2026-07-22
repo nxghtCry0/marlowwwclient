@@ -76,7 +76,7 @@ public class AttributeSwap extends Module {
                 swapMode = "Silent";
                 dDelay = (int) getDouble("Swap Back Delay (Ticks)");
             }
-            return true; // Cancel default attack
+            return true; 
         } else {
             if (swapBackVal) {
                 if (prevSlot == -1) {
@@ -101,7 +101,6 @@ public class AttributeSwap extends Module {
 
         boolean swapBackVal = getBool("Swap Back");
 
-        // Check if we are already swapped
         boolean alreadySwapped = false;
         if (swapBackVal && prevSlot != -1) {
             if (mode.equals("Silent") && swapMode.equals("Silent")) {
@@ -112,7 +111,6 @@ public class AttributeSwap extends Module {
         }
 
         if (alreadySwapped) {
-            // Just refresh the delay
             dDelay = (int) getDouble("Swap Back Delay (Ticks)");
             return;
         }
@@ -129,7 +127,6 @@ public class AttributeSwap extends Module {
                 dDelay = (int) getDouble("Swap Back Delay (Ticks)");
             }
         } else {
-            // Swap mode
             if (swapBackVal) {
                 prevSlot = oldSlot;
                 swapMode = "Swap";

@@ -238,12 +238,6 @@ public class RotationManager {
             float finalPitch = lastPitch + pitchSteps * gcd;
             finalPitch = Mth.clamp(finalPitch, -90.0f, 90.0f);
             
-            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.isSpoofing = true;
-            mc.getConnection().send(new net.minecraft.network.protocol.game.ServerboundMovePlayerPacket.Rot(
-                finalYaw, finalPitch, mc.player.onGround(), false
-            ));
-            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.isSpoofing = false;
-            
             lastSentYaw = finalYaw;
             lastSentPitch = finalPitch;
             packetSentThisTick = true;

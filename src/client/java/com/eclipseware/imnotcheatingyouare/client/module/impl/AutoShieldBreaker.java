@@ -4,7 +4,9 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
+import com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -19,6 +21,10 @@ public class AutoShieldBreaker extends Module {
     private int originalSlot = -1;
     private int axeSlot = -1;
     private int ticksWaited = 0;
+
+    private boolean pendingStunAttack = false;
+    private Entity stunTarget = null;
+    private long stunAttackTime = 0;
 
     public AutoShieldBreaker() {
         super("AutoShieldBreaker", Category.Combat);
@@ -44,18 +50,20 @@ public class AutoShieldBreaker extends Module {
         int oldSlot = mc.player.getInventory().getSelectedSlot();
         if (oldSlot == axeSlot) {
             lastBreakTime = System.currentTimeMillis();
+            triggerStun(target);
             return false;
         }
         if (mode.equals("Silent")) {
-            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(axeSlot);
+            ModuleUtils.switchToSlot(axeSlot);
             needsSwapBack = true;
             originalSlot = oldSlot;
             ticksWaited = 0;
             swapBackTime = 0;
             lastBreakTime = System.currentTimeMillis();
+            triggerStun(target);
             return false;
         } else {
-            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(axeSlot);
+            ModuleUtils.switchToSlot(axeSlot);
             Setting swapBackSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Swap Back");
             if (swapBackSetting != null && swapBackSetting.getValBoolean()) {
                 Setting swapDelaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Swap Back Delay (ms)");
@@ -65,6 +73,7 @@ public class AutoShieldBreaker extends Module {
                 originalSlot = oldSlot;
             }
             lastBreakTime = System.currentTimeMillis();
+            triggerStun(target);
             return false;
         }
     }
@@ -86,18 +95,20 @@ public class AutoShieldBreaker extends Module {
         int oldSlot = player.getInventory().getSelectedSlot();
         if (oldSlot == axeSlot) {
             lastBreakTime = System.currentTimeMillis();
+            triggerStun(target);
             return false;
         }
         if (mode.equals("Silent")) {
-            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(axeSlot);
+            ModuleUtils.switchToSlot(axeSlot);
             needsSwapBack = true;
             originalSlot = oldSlot;
             ticksWaited = 0;
             swapBackTime = 0;
             lastBreakTime = System.currentTimeMillis();
+            triggerStun(target);
             return false;
         } else {
-            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(axeSlot);
+            ModuleUtils.switchToSlot(axeSlot);
             Setting swapBackSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Swap Back");
             if (swapBackSetting != null && swapBackSetting.getValBoolean()) {
                 Setting swapDelaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Swap Back Delay (ms)");
@@ -107,7 +118,22 @@ public class AutoShieldBreaker extends Module {
                 originalSlot = oldSlot;
             }
             lastBreakTime = System.currentTimeMillis();
+            triggerStun(target);
             return false;
+        }
+    }
+
+    private void triggerStun(Entity target) {
+        Setting stunSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Stun");
+        if (stunSetting != null && stunSetting.getValBoolean()) {
+            pendingStunAttack = true;
+            stunTarget = target;
+            Setting hitDelaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Hit Delay");
+            double hitDelayVal = 100.0;
+            if (hitDelaySetting != null) {
+                hitDelayVal = hitDelaySetting.getValDouble();
+            }
+            stunAttackTime = System.currentTimeMillis() + (long) hitDelayVal;
         }
     }
 
@@ -117,14 +143,23 @@ public class AutoShieldBreaker extends Module {
             if (swapBackTime == 0) {
                 ticksWaited++;
                 if (ticksWaited >= 1) {
-                    com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(originalSlot);
+                    ModuleUtils.switchToSlot(originalSlot);
                     needsSwapBack = false;
                     axeSlot = -1;
                 }
             } else if (System.currentTimeMillis() >= swapBackTime) {
-                com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(originalSlot);
+                ModuleUtils.switchToSlot(originalSlot);
                 needsSwapBack = false;
                 swapBackTime = 0;
+            }
+        }
+
+        if (pendingStunAttack && mc.player != null && mc.gameMode != null && stunTarget != null) {
+            if (System.currentTimeMillis() >= stunAttackTime) {
+                ((com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor) mc).invokeStartAttack();
+                mc.player.swing(InteractionHand.MAIN_HAND);
+                pendingStunAttack = false;
+                stunTarget = null;
             }
         }
     }
@@ -132,11 +167,13 @@ public class AutoShieldBreaker extends Module {
     @Override
     public void onDisable() {
         if (needsSwapBack && mc.player != null && mc.getConnection() != null) {
-            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(originalSlot);
+            ModuleUtils.switchToSlot(originalSlot);
         }
         needsSwapBack = false;
         swapBackTime = 0;
         axeSlot = -1;
+        pendingStunAttack = false;
+        stunTarget = null;
     }
 
     private int findAxeInHotbar(Player player) {

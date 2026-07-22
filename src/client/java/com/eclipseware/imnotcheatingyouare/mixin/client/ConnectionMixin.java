@@ -18,6 +18,10 @@ public class ConnectionMixin {
 
     @Inject(method = "send(Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"), cancellable = true)
     private void onSend(Packet<?> packet, CallbackInfo ci) {
+        if (com.eclipseware.imnotcheatingyouare.client.module.impl.PacketAuditor.INSTANCE != null && com.eclipseware.imnotcheatingyouare.client.module.impl.PacketAuditor.INSTANCE.isToggled()) {
+            com.eclipseware.imnotcheatingyouare.client.module.impl.PacketAuditor.auditPacket(packet);
+        }
+
         if (packet instanceof net.minecraft.network.protocol.game.ServerboundCommandSuggestionPacket) {
             if (ImnotcheatingyouareClient.INSTANCE != null && ImnotcheatingyouareClient.INSTANCE.moduleManager != null) {
                 Module bypass = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Bypass");
@@ -39,10 +43,26 @@ public class ConnectionMixin {
             }
         }
 
+        if (com.eclipseware.imnotcheatingyouare.client.module.impl.FakeLag.isActive()) {
+            if (packet instanceof ServerboundMovePlayerPacket) {
+                com.eclipseware.imnotcheatingyouare.client.module.impl.FakeLag.queuePacket(packet);
+                ci.cancel();
+                return;
+            }
+        }
+
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
         if (packet instanceof ServerboundMovePlayerPacket movePacket && !com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.isSpoofing) {
+             Module noFallMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("NoFall");
+             if (noFallMod != null && noFallMod.isToggled() && mc.player != null && mc.player.fallDistance > 2.0f) {
+                 com.eclipseware.imnotcheatingyouare.client.setting.Setting modeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(noFallMod, "Mode");
+                 if (modeSetting == null || modeSetting.getValString().equalsIgnoreCase("Packet")) {
+                     ((ServerboundMovePlayerPacketAccessor) movePacket).setOnGround(true);
+                 }
+             }
+
             com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.packetSentThisTick = true;
             boolean rotationSpoof = com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.hasPendingPlacement() || com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.isActive() || SilentAimUtil.isActive();
             boolean silentAimSpoof = SilentAimUtil.isActive();
@@ -68,6 +88,12 @@ public class ConnectionMixin {
                 finalPitch = net.minecraft.util.Mth.clamp(finalPitch, -90.0f, 90.0f);
                 
                 boolean onGround = mc.player.onGround();
+                if (noFallMod != null && noFallMod.isToggled() && mc.player.fallDistance > 2.0f) {
+                    com.eclipseware.imnotcheatingyouare.client.setting.Setting modeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(noFallMod, "Mode");
+                    if (modeSetting == null || modeSetting.getValString().equalsIgnoreCase("Packet")) {
+                        onGround = true;
+                    }
+                }
                 double px = movePacket.getX(mc.player.getX());
                 double py = movePacket.getY(mc.player.getY());
                 double pz = movePacket.getZ(mc.player.getZ());
@@ -76,10 +102,10 @@ public class ConnectionMixin {
                 boolean isRot = movePacket.hasRotation();
                 boolean isPos = movePacket.hasPosition();
                 
-                boolean forceRot = com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.hasPendingPlacement();
-                boolean rotChanged = forceRot || Math.abs(finalYaw - com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw) >= 0.01f || Math.abs(finalPitch - com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch) >= 0.01f;
+                boolean actualRotChanged = Math.abs(finalYaw - com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw) >= 0.01f 
+                    || Math.abs(finalPitch - com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch) >= 0.01f;
 
-                if (rotChanged) {
+                if (actualRotChanged) {
                     if (isPos) {
                         spoofed = new ServerboundMovePlayerPacket.PosRot(px, py, pz, finalYaw, finalPitch, onGround, true);
                     } else {
@@ -88,29 +114,9 @@ public class ConnectionMixin {
                     com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw = finalYaw;
                     com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch = finalPitch;
                 } else if (isPos) {
-                    if (forceRot) {
-                        spoofed = new ServerboundMovePlayerPacket.PosRot(px, py, pz, finalYaw, finalPitch, onGround, true);
-                        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw = finalYaw;
-                        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch = finalPitch;
-                    } else {
-                        spoofed = new ServerboundMovePlayerPacket.Pos(px, py, pz, onGround, false);
-                    }
-                } else if (isRot) {
-                    if (forceRot) {
-                        spoofed = new ServerboundMovePlayerPacket.Rot(finalYaw, finalPitch, onGround, false);
-                        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw = finalYaw;
-                        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch = finalPitch;
-                    } else {
-                        ci.cancel();
-                        if (silentAimSpoof) SilentAimUtil.consume();
-                        com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.processPostMovement();
-                        if (com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.postMovementCallback != null) {
-                            Runnable cb = com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.postMovementCallback;
-                            com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.postMovementCallback = null;
-                            cb.run();
-                        }
-                        return;
-                    }
+                    spoofed = new ServerboundMovePlayerPacket.Pos(px, py, pz, onGround, false);
+                } else {
+                    spoofed = new ServerboundMovePlayerPacket.Rot(com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentYaw, com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.lastSentPitch, onGround, false);
                 }
 
                 if (silentAimSpoof) SilentAimUtil.consume();
@@ -164,6 +170,9 @@ public class ConnectionMixin {
         }
     @Inject(method = "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"), cancellable = true)
     private void onChannelRead(io.netty.channel.ChannelHandlerContext context, Packet<?> packet, CallbackInfo ci) {
+        if (packet instanceof net.minecraft.network.protocol.game.ClientboundSetTimePacket) {
+            com.eclipseware.imnotcheatingyouare.client.module.impl.Triggerbot.onUpdateTimePacket();
+        }
         if (com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack.isActive()) {
             if (Minecraft.getInstance().player != null && Minecraft.getInstance().level != null) {
                 if (!(packet instanceof net.minecraft.network.protocol.common.ClientboundKeepAlivePacket) &&

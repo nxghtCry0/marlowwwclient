@@ -78,50 +78,49 @@ public class BlockESP extends Module {
 
     @Override
     public void onTick() {
-        if (!isToggled() || mc.player == null || mc.level == null) return;
-        
-        Setting fpsSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "FPS");
-        double targetFPS = fpsSetting != null ? fpsSetting.getValDouble() : 30;
-        int interval = Math.max(1, (int)(20.0 / targetFPS)); 
-        
-        if (mc.player.tickCount - lastCacheTick < 10) return;
-        lastCacheTick = mc.player.tickCount;
-
-        updateResolvedBlocks();
-        if (resolvedTargetBlocks.isEmpty()) {
-            cachedBlocks.clear();
-            return;
-        }
-
-        Setting rangeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Range");
-        int range = rangeSetting != null ? (int) rangeSetting.getValDouble() : 32;
-
-        BlockPos playerPos = mc.player.blockPosition();
-        java.util.List<CachedBlock> newCache = new java.util.ArrayList<>();
-
-        for (int x = -range; x <= range; x++) {
-            for (int y = -range; y <= range; y++) {
-                for (int z = -range; z <= range; z++) {
-                    BlockPos pos = playerPos.offset(x, y, z);
-                    BlockState state = mc.level.getBlockState(pos);
-                    Block block = state.getBlock();
-                    
-                    if (resolvedTargetBlocks.contains(block)) {
-                        String blockName = BuiltInRegistries.BLOCK.getKey(block).getPath();
-                        Color color = getColorForBlock(blockName);
-                        newCache.add(new CachedBlock(pos, color, blockName));
-                    }
-                }
-            }
-        }
-        
-        cachedBlocks.clear();
-        cachedBlocks.addAll(newCache);
     }
 
     @Override
     public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickCounterObj) {
         if (!isToggled() || mc.player == null || mc.level == null) return;
+        
+        Setting fpsSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "FPS");
+        double targetFPS = fpsSetting != null ? fpsSetting.getValDouble() : 30;
+        long targetIntervalMs = (long)(1000.0 / targetFPS);
+        long currentTime = System.currentTimeMillis();
+        
+        if (currentTime - lastCacheTick >= targetIntervalMs) {
+            lastCacheTick = currentTime;
+            updateResolvedBlocks();
+            if (resolvedTargetBlocks.isEmpty()) {
+                cachedBlocks.clear();
+            } else {
+                Setting rangeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Range");
+                int range = rangeSetting != null ? (int) rangeSetting.getValDouble() : 32;
+
+                BlockPos playerPos = mc.player.blockPosition();
+                java.util.List<CachedBlock> newCache = new java.util.ArrayList<>();
+
+                for (int x = -range; x <= range; x++) {
+                    for (int y = -range; y <= range; y++) {
+                        for (int z = -range; z <= range; z++) {
+                            BlockPos pos = playerPos.offset(x, y, z);
+                            BlockState state = mc.level.getBlockState(pos);
+                            Block block = state.getBlock();
+                            
+                            if (resolvedTargetBlocks.contains(block)) {
+                                String blockName = BuiltInRegistries.BLOCK.getKey(block).getPath();
+                                Color color = getColorForBlock(blockName);
+                                newCache.add(new CachedBlock(pos, color, blockName));
+                            }
+                        }
+                    }
+                }
+                
+                cachedBlocks.clear();
+                cachedBlocks.addAll(newCache);
+            }
+        }
         
         float partialTick = getTickDelta(tickCounterObj);
         

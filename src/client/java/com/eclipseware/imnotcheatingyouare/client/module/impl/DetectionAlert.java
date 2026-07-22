@@ -43,7 +43,7 @@ public class DetectionAlert extends Module {
             previouslyEnabled.clear();
         }
 
-        if (fetched && currentServer != null && mc.screen == null) {
+        if (fetched && currentServer != null && mc.gui.screen() == null) {
             List<Module> currentlyEnabled = new ArrayList<>();
             for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.modules) {
                 if (m.isToggled()) currentlyEnabled.add(m);
@@ -58,7 +58,7 @@ public class DetectionAlert extends Module {
                 }
             }
             if (!newlyFlagged.isEmpty()) {
-                mc.setScreen(new DetectionWarningScreen(newlyFlagged));
+                mc.setScreenAndShow(new DetectionWarningScreen(newlyFlagged));
             }
             previouslyEnabled = currentlyEnabled;
         }
@@ -107,7 +107,7 @@ public class DetectionAlert extends Module {
         }
 
         if (!flagged.isEmpty()) {
-            mc.setScreen(new DetectionWarningScreen(flagged));
+            mc.setScreenAndShow(new DetectionWarningScreen(flagged));
         }
     }
 

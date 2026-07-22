@@ -58,9 +58,9 @@ public class AutoDHand extends Module {
 
     private void performSilentSwap(int slot) {
         if (mc.player == null) return;
-        mc.player.setSprinting(false);
+        AutoTotem.triggerInputPause();
 
-        if (mc.screen == null || mc.screen instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen) {
+        if (mc.gui.screen() == null || mc.gui.screen() instanceof net.minecraft.client.gui.screens.inventory.InventoryScreen) {
             int containerId = mc.player.inventoryMenu.containerId;
             mc.gameMode.handleContainerInput(containerId, slot, 40, net.minecraft.world.inventory.ContainerInput.SWAP, mc.player);
         }

@@ -22,6 +22,8 @@ public class ShaderManager {
     private static int uSoftness = -1;
     private static int uModelViewMat = -1;
 
+    private static final java.nio.FloatBuffer MATRIX_BUFFER = org.lwjgl.BufferUtils.createFloatBuffer(16);
+
     private static final String VERTEX_SHADER = 
         "#version 150\n" +
         "in vec2 Position;\n" +
@@ -30,7 +32,7 @@ public class ShaderManager {
         "uniform mat4 u_modelViewMat;\n" +
         "void main() {\n" +
         "    vec4 transformed = u_modelViewMat * vec4(Position, 0.0, 1.0);\n" +
-        "    gl_Position = vec4((transformed.x / u_screenSize.x) * 2.0 - 1.0, 1.0 - (transformed.y / u_screenSize.y) * 2.0, transformed.z, 1.0);\n" +
+        "    gl_Position = vec4((transformed.x / u_screenSize.x) * 2.0 - 1.0, 1.0 - (transformed.y / u_screenSize.y) * 2.0, 0.0, 1.0);\n" +
         "    v_texCoord = Position;\n" +
         "}\n";
 
@@ -46,17 +48,17 @@ public class ShaderManager {
         "uniform int u_gradientType;\n" +
         "uniform float u_thickness;\n" +
         "uniform float u_softness;\n" +
-        "float squircleSDF(vec2 p, vec2 b, float r) {\n" +
+        "float roundedBoxSDF(vec2 p, vec2 b, float r) {\n" +
+        "    r = min(r, min(b.x, b.y));\n" +
         "    vec2 q = abs(p) - b + vec2(r);\n" +
-        "    float n = 4.0;\n" +
-        "    return min(max(q.x, q.y), 0.0) + pow(pow(max(q.x, 0.0), n) + pow(max(q.y, 0.0), n), 1.0 / n) - r;\n" +
+        "    return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;\n" +
         "}\n" +
         "void main() {\n" +
         "    vec2 rectSize = u_rectMax - u_rectMin;\n" +
         "    vec2 halfSize = rectSize * 0.5;\n" +
         "    vec2 rectCenter = u_rectMin + halfSize;\n" +
         "    vec2 p = v_texCoord - rectCenter;\n" +
-        "    float distance = squircleSDF(p, halfSize, u_radius);\n" +
+        "    float distance = roundedBoxSDF(p, halfSize, u_radius);\n" +
         "    float alphaFactor;\n" +
         "    if (u_thickness > 0.0) {\n" +
         "        float borderDist = abs(distance + u_thickness * 0.5) - u_thickness * 0.5;\n" +
@@ -82,14 +84,14 @@ public class ShaderManager {
         glShaderSource(vertexShader, VERTEX_SHADER);
         glCompileShader(vertexShader);
         if (glGetShaderi(vertexShader, GL_COMPILE_STATUS) == GL_FALSE) {
-            System.err.println("Failed to compile vertex shader: " + glGetShaderInfoLog(vertexShader));
+            System.out.println("Failed to compile vertex shader: " + glGetShaderInfoLog(vertexShader));
         }
 
         int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(fragmentShader, FRAGMENT_SHADER);
         glCompileShader(fragmentShader);
         if (glGetShaderi(fragmentShader, GL_COMPILE_STATUS) == GL_FALSE) {
-            System.err.println("Failed to compile fragment shader: " + glGetShaderInfoLog(fragmentShader));
+            System.out.println("Failed to compile fragment shader: " + glGetShaderInfoLog(fragmentShader));
         }
 
         programId = glCreateProgram();
@@ -98,7 +100,7 @@ public class ShaderManager {
         glBindAttribLocation(programId, 0, "Position");
         glLinkProgram(programId);
         if (glGetProgrami(programId, GL_LINK_STATUS) == GL_FALSE) {
-            System.err.println("Failed to link shader program: " + glGetProgramInfoLog(programId));
+            System.out.println("Failed to link shader program: " + glGetProgramInfoLog(programId));
         }
 
         glDeleteShader(vertexShader);
@@ -125,7 +127,7 @@ public class ShaderManager {
         glBindVertexArray(0);
     }
 
-    public static void drawSquircle(org.joml.Matrix4f matrix, float x, float y, float width, float height, float radius, float thickness, float softness, int color, int color2, int gradientType) {
+    public static void drawSquircle(Object matrix, float x, float y, float width, float height, float radius, float thickness, float softness, int color, int color2, int gradientType) {
         init();
 
         int activeProgram = glGetInteger(GL_CURRENT_PROGRAM);
@@ -159,19 +161,33 @@ public class ShaderManager {
         glUniform1i(uGradientType, gradientType);
 
         if (uModelViewMat != -1) {
-            java.nio.FloatBuffer buffer = org.lwjgl.BufferUtils.createFloatBuffer(16);
-            if (matrix != null) {
-                matrix.get(buffer);
+            MATRIX_BUFFER.clear();
+            if (matrix instanceof org.joml.Matrix4f m4) {
+                m4.get(MATRIX_BUFFER);
+            } else if (matrix instanceof org.joml.Matrix3x2fStack m32) {
+                MATRIX_BUFFER.put(new float[]{
+                    m32.m00, m32.m01, 0.0f, 0.0f,
+                    m32.m10, m32.m11, 0.0f, 0.0f,
+                    0.0f,    0.0f,    1.0f, 0.0f,
+                    m32.m20, m32.m21, 0.0f, 1.0f
+                });
+            } else if (matrix instanceof org.joml.Matrix3x2f m32) {
+                MATRIX_BUFFER.put(new float[]{
+                    m32.m00, m32.m01, 0.0f, 0.0f,
+                    m32.m10, m32.m11, 0.0f, 0.0f,
+                    0.0f,    0.0f,    1.0f, 0.0f,
+                    m32.m20, m32.m21, 0.0f, 1.0f
+                });
             } else {
-                buffer.put(new float[]{
+                MATRIX_BUFFER.put(new float[]{
                     1, 0, 0, 0,
                     0, 1, 0, 0,
                     0, 0, 1, 0,
                     0, 0, 0, 1
                 });
             }
-            buffer.flip();
-            glUniformMatrix4fv(uModelViewMat, false, buffer);
+            MATRIX_BUFFER.flip();
+            glUniformMatrix4fv(uModelViewMat, false, MATRIX_BUFFER);
         }
 
         float r = ((color >> 16) & 0xFF) / 255.0f;
@@ -208,20 +224,24 @@ public class ShaderManager {
         if (cullEnabled) glEnable(GL_CULL_FACE);
     }
 
-    public static void drawRoundedRect(org.joml.Matrix4f matrix, float x, float y, float width, float height, float radius, int color) {
+    public static void drawRoundedRect(Object matrix, float x, float y, float width, float height, float radius, int color) {
         drawSquircle(matrix, x, y, width, height, radius, 0.0f, 1.0f, color, color, 0);
     }
 
-    public static void drawRoundedRect(org.joml.Matrix4f matrix, float x, float y, float width, float height, float radius, int color, float softness) {
+    public static void drawRoundedRect(Object matrix, float x, float y, float width, float height, float radius, int color, float softness) {
         drawSquircle(matrix, x, y, width, height, radius, 0.0f, softness, color, color, 0);
     }
 
-    public static void drawRoundedOutline(org.joml.Matrix4f matrix, float x, float y, float width, float height, float radius, float thickness, int color) {
+    public static void drawRoundedOutline(Object matrix, float x, float y, float width, float height, float radius, float thickness, int color) {
         drawSquircle(matrix, x, y, width, height, radius, thickness, 1.0f, color, color, 0);
     }
 
-    public static void drawHorizontalGradient(org.joml.Matrix4f matrix, float x, float y, float width, float height, float radius, int startColor, int endColor) {
+    public static void drawHorizontalGradient(Object matrix, float x, float y, float width, float height, float radius, int startColor, int endColor) {
         drawSquircle(matrix, x, y, width, height, radius, 0.0f, 1.0f, startColor, endColor, 1);
+    }
+
+    public static void drawVerticalGradient(Object matrix, float x, float y, float width, float height, float radius, int startColor, int endColor) {
+        drawSquircle(matrix, x, y, width, height, radius, 0.0f, 1.0f, startColor, endColor, 2);
     }
 
     public static void drawRoundedRect(float x, float y, float width, float height, float radius, int color) {
@@ -238,5 +258,9 @@ public class ShaderManager {
 
     public static void drawHorizontalGradient(float x, float y, float width, float height, float radius, int startColor, int endColor) {
         drawSquircle(null, x, y, width, height, radius, 0.0f, 1.0f, startColor, endColor, 1);
+    }
+
+    public static void drawVerticalGradient(float x, float y, float width, float height, float radius, int startColor, int endColor) {
+        drawSquircle(null, x, y, width, height, radius, 0.0f, 1.0f, startColor, endColor, 2);
     }
 }

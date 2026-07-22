@@ -26,7 +26,7 @@ public class AutoElytraSwap extends Module {
     private int originalHotbarSlot = -1;
 
     public AutoElytraSwap() {
-        super("Auto Elytra Swap", Category.Utility, "Automatically swaps Elytra with Chestplate when falling towards a target.");
+        super("Elytra Swap", Category.Mace, "Swaps Elytra with Chestplate when triggered.");
         ArrayList<String> modes = new ArrayList<>();
         modes.add("Silent");
         modes.add("Interact");
@@ -78,8 +78,7 @@ public class AutoElytraSwap extends Module {
                         if (hotbarSlot != -1) {
                             originalHotbarSlot = mc.player.getInventory().getSelectedSlot();
                             mc.getConnection().send(new ServerboundSetCarriedItemPacket(hotbarSlot));
-                            mc.getConnection().send(new ServerboundUseItemPacket(InteractionHand.MAIN_HAND, 0, mc.player.getYRot(), mc.player.getXRot()));
-                            mc.player.swing(InteractionHand.MAIN_HAND);
+                            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.useItemPacket(mc.player.getYRot(), mc.player.getXRot());
                             mc.getConnection().send(new ServerboundSetCarriedItemPacket(originalHotbarSlot));
                             swapped = true;
                             swappedFromSlot = hotbarSlot + 36;
