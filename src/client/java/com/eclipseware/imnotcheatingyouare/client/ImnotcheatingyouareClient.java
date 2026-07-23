@@ -272,6 +272,7 @@ moduleManager.modules.add(ghostBlockMacro);
         settingsManager.rSetting(new Setting("Mode", bridgeAssist, "Normal", safewalkModes));
         settingsManager.rSetting(new Setting("Edge Distance", bridgeAssist, 0.25, 0.00, 0.30, false));
         settingsManager.rSetting(new Setting("Pitch Check", bridgeAssist, true));
+        settingsManager.rSetting(new Setting("Require Sneak", bridgeAssist, false));
 
 
 

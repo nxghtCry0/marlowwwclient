@@ -28,6 +28,12 @@ public class BridgeAssist extends Module {
             return;
         }
 
+        Setting requireSneakSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Require Sneak");
+        if (requireSneakSet != null && requireSneakSet.getValBoolean() && !isPhysicallyHoldingSneak()) {
+            unShift();
+            return;
+        }
+
         Setting edgeSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Edge Distance");
         double edgeDistance = edgeSet != null ? edgeSet.getValDouble() : 0.25;
 
@@ -52,6 +58,37 @@ public class BridgeAssist extends Module {
             mc.options.keyShift.setDown(false);
             isShifting = false;
         }
+    }
+
+    private boolean isPhysicallyHoldingSneak() {
+        long window = getWindowHandle();
+        if (window == 0) return false;
+        return org.lwjgl.glfw.GLFW.glfwGetKey(window, getKeyCode(mc.options.keyShift)) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+    }
+
+    private int getKeyCode(net.minecraft.client.KeyMapping mapping) {
+        try {
+            for (java.lang.reflect.Method m : mapping.getClass().getMethods()) {
+                if (m.getParameterCount() == 0 && m.getReturnType().getName().contains("InputConstants$Key")) {
+                    Object keyObj = m.invoke(mapping);
+                    java.lang.reflect.Method getValue = keyObj.getClass().getMethod("getValue");
+                    return (int) getValue.invoke(keyObj);
+                }
+            }
+        } catch (Exception ignored) {}
+        return mapping.getDefaultKey().getValue();
+    }
+
+    private long getWindowHandle() {
+        try {
+            for (java.lang.reflect.Field f : mc.getWindow().getClass().getDeclaredFields()) {
+                if (f.getType() == long.class) {
+                    f.setAccessible(true);
+                    return f.getLong(mc.getWindow());
+                }
+            }
+        } catch (Exception ignored) {}
+        return 0;
     }
 
     @Override

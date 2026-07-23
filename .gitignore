@@ -2,6 +2,7 @@
 .gradle/
 build/
 out/
+bin/
 
 # Loom (Fabric/MC modding)
 .loom/
