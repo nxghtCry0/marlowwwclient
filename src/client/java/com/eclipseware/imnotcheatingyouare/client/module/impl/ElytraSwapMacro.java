@@ -4,33 +4,38 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
+import com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils;
+import com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor;
+
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
-import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
 
 import java.util.ArrayList;
 
-public class AutoElytraSwap extends Module {
+public class ElytraSwapMacro extends Module {
 
+    private int originalSlot = -1;
+    private int targetSlot = -1;
+    private int step = 0; // 0: Idle/Start, 1: Switched to target, 2: Right-clicked, 3: Swapped back
     private boolean swapped = false;
-    private int swappedFromSlot = -1;
-    private int originalHotbarSlot = -1;
+    private long lastExecuteMs = 0L;
 
-    public AutoElytraSwap() {
-        super("Elytra Swap", Category.Mace, "Swaps Elytra with Chestplate when triggered.");
+    public ElytraSwapMacro() {
+        super("ElytraSwapMacro", Category.Mace, "Silently right-click swaps Elytra with Chestplate across multi-tick sequence like water bucket macros.");
+        
         ArrayList<String> modes = new ArrayList<>();
+        modes.add("RightClick");
         modes.add("Silent");
-        modes.add("Interact");
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Mode", this, "Silent", modes));
+        
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Mode", this, "RightClick", modes));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Ticks Ahead", this, 3.0, 1.0, 10.0, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Min Fall Height", this, 2.0, 1.0, 10.0, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Target Players", this, true));
@@ -39,14 +44,76 @@ public class AutoElytraSwap extends Module {
     }
 
     @Override
+    public void onEnable() {
+        if (step != 0 || System.currentTimeMillis() - lastExecuteMs < 200L) {
+            this.setToggled(false);
+            return;
+        }
+
+        if (mc.player != null) {
+            initiateSwapSequence();
+        }
+    }
+
+    @Override
+    public void onKeybind() {
+        if (step == 0 && mc.player != null && System.currentTimeMillis() - lastExecuteMs >= 200L) {
+            initiateSwapSequence();
+        }
+    }
+
+    private void initiateSwapSequence() {
+        ItemStack chestStack = mc.player.getItemBySlot(EquipmentSlot.CHEST);
+        boolean wearingElytra = chestStack.is(Items.ELYTRA);
+        targetSlot = wearingElytra ? findChestplateInHotbar() : findElytraInHotbar();
+
+        if (targetSlot == -1) {
+            resetState();
+            this.setToggled(false);
+            return;
+        }
+
+        originalSlot = ModuleUtils.getSelectedSlot();
+        if (targetSlot != originalSlot) {
+            ModuleUtils.switchToSlot(targetSlot);
+        }
+        step = 1;
+    }
+
+    @Override
     public void onTick() {
-        if (mc.player == null || mc.level == null || mc.gameMode == null || mc.getConnection() == null) return;
+        if (mc.player == null || mc.level == null || mc.gameMode == null) {
+            resetState();
+            this.setToggled(false);
+            return;
+        }
+
+        // Multi-tick state machine prevents BadPacketsA (slot changes within same tick)
+        if (step == 1) {
+            ((MinecraftAccessor) mc).invokeStartUseItem();
+            mc.player.swing(InteractionHand.MAIN_HAND);
+            step = 2;
+        } else if (step == 2) {
+            if (originalSlot >= 0 && originalSlot < 9 && originalSlot != ModuleUtils.getSelectedSlot()) {
+                ModuleUtils.switchToSlot(originalSlot);
+            }
+            lastExecuteMs = System.currentTimeMillis();
+            swapped = true;
+            resetState();
+            this.setToggled(false);
+        } else {
+            handleAutoFallSwap();
+        }
+    }
+
+    private void handleAutoFallSwap() {
+        if (mc.player == null) return;
 
         if (mc.player.onGround()) {
-            if (swapped && getBoolSetting("Swap Back") && swappedFromSlot != -1) {
-                performEquipmentSwap(swappedFromSlot);
+            if (swapped && getBoolSetting("Swap Back") && step == 0) {
+                initiateSwapSequence();
+                swapped = false;
             }
-            resetState();
             return;
         }
 
@@ -65,56 +132,17 @@ public class AutoElytraSwap extends Module {
             double speed = mc.player.getDeltaMovement().length();
             double distance = mc.player.position().distanceTo(target.position());
 
-            if (speed > 0.05 && (distance / speed <= ticksAhead * 0.1)) {
-                int chestplateSlot = findChestplateInInventory();
-                if (chestplateSlot != -1) {
-                    String mode = getStringSetting("Mode");
-                    if ("Silent".equalsIgnoreCase(mode)) {
-                        performEquipmentSwap(chestplateSlot);
-                        swapped = true;
-                        swappedFromSlot = chestplateSlot;
-                    } else {
-                        int hotbarSlot = findChestplateInHotbar();
-                        if (hotbarSlot != -1) {
-                            originalHotbarSlot = mc.player.getInventory().getSelectedSlot();
-                            mc.getConnection().send(new ServerboundSetCarriedItemPacket(hotbarSlot));
-                            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.useItemPacket(mc.player.getYRot(), mc.player.getXRot());
-                            mc.getConnection().send(new ServerboundSetCarriedItemPacket(originalHotbarSlot));
-                            swapped = true;
-                            swappedFromSlot = hotbarSlot + 36;
-                        }
-                    }
-                }
+            if (speed > 0.05 && (distance / speed <= ticksAhead * 0.1) && step == 0) {
+                initiateSwapSequence();
             }
         } else {
-            if (getBoolSetting("Swap Back") && swappedFromSlot != -1) {
+            if (getBoolSetting("Swap Back") && step == 0) {
                 if (mc.player.getDeltaMovement().y > 0.1 || mc.player.onGround()) {
-                    performEquipmentSwap(swappedFromSlot);
-                    resetState();
+                    initiateSwapSequence();
+                    swapped = false;
                 }
             }
         }
-    }
-
-    private void performEquipmentSwap(int targetSlot) {
-        if (mc.player == null || mc.gameMode == null) return;
-        int containerId = mc.player.inventoryMenu.containerId;
-        int equipmentSlot = 6;
-        mc.gameMode.handleContainerInput(containerId, targetSlot, 0, ContainerInput.PICKUP, mc.player);
-        mc.gameMode.handleContainerInput(containerId, equipmentSlot, 0, ContainerInput.PICKUP, mc.player);
-        mc.gameMode.handleContainerInput(containerId, targetSlot, 0, ContainerInput.PICKUP, mc.player);
-    }
-
-    private int findChestplateInInventory() {
-        for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getItem(i);
-            if (isChestplate(stack)) return i + 36;
-        }
-        for (int i = 9; i < 36; i++) {
-            ItemStack stack = mc.player.getInventory().getItem(i);
-            if (isChestplate(stack)) return i;
-        }
-        return -1;
     }
 
     private int findChestplateInHotbar() {
@@ -125,9 +153,17 @@ public class AutoElytraSwap extends Module {
         return -1;
     }
 
+    private int findElytraInHotbar() {
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = mc.player.getInventory().getItem(i);
+            if (stack.is(Items.ELYTRA)) return i;
+        }
+        return -1;
+    }
+
     private boolean isChestplate(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        net.minecraft.world.item.Item item = stack.getItem();
+        Item item = stack.getItem();
         return item == Items.NETHERITE_CHESTPLATE ||
                item == Items.DIAMOND_CHESTPLATE ||
                item == Items.IRON_CHESTPLATE ||
@@ -168,15 +204,15 @@ public class AutoElytraSwap extends Module {
     }
 
     private void resetState() {
-        swapped = false;
-        swappedFromSlot = -1;
-        originalHotbarSlot = -1;
+        originalSlot = -1;
+        targetSlot = -1;
+        step = 0;
     }
 
     @Override
     public void onDisable() {
-        if (swapped && swappedFromSlot != -1 && mc.player != null && mc.gameMode != null) {
-            performEquipmentSwap(swappedFromSlot);
+        if (originalSlot >= 0 && originalSlot < 9 && mc.player != null && originalSlot != ModuleUtils.getSelectedSlot()) {
+            ModuleUtils.switchToSlot(originalSlot);
         }
         resetState();
     }
@@ -189,10 +225,5 @@ public class AutoElytraSwap extends Module {
     private boolean getBoolSetting(String name) {
         Setting s = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, name);
         return s != null && s.getValBoolean();
-    }
-
-    private String getStringSetting(String name) {
-        Setting s = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, name);
-        return s != null ? s.getValString() : "";
     }
 }

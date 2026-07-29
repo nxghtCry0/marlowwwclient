@@ -39,7 +39,8 @@
 "KeyboardInputMixin",
 "ServerboundMovePlayerPacketAccessor",
 "BlockStateBaseMixin",
-"ClientBrandRetrieverMixin"
+"ClientBrandRetrieverMixin",
+"CameraMixin"
 ],
 "injectors": {
 "defaultRequire": 1

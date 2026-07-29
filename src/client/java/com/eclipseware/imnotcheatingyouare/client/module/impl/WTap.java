@@ -9,8 +9,9 @@ import org.lwjgl.glfw.GLFW;
 
 public class WTap extends Module {
 
-    private int phase           = 0;
-    private int ticksRemaining  = 0;
+    private int phase = 0;
+    private long lastPhaseTimeMs = 0L;
+    private long targetDelayMs = 0L;
 
     public WTap() {
         super("WTap", Category.Combat, "Releases forward key on hit to reset sprint knockback.");
@@ -24,10 +25,6 @@ public class WTap extends Module {
         return AntiCheatProfile.wtapSilentMode();
     }
 
-    /**
-     * Called from the mixin when attack() returns without being cancelled.
-     * Only starts a sequence if the player is currently holding W.
-     */
     public void onAttackLanded(net.minecraft.world.entity.Entity target) {
         if (!isToggled() || mc.player == null || mc.options == null) return;
         if (phase != 0) return;
@@ -41,40 +38,56 @@ public class WTap extends Module {
         boolean onlyPlayers = onlyPlayersSetting != null && onlyPlayersSetting.getValBoolean();
         if (onlyPlayers && !(target instanceof net.minecraft.world.entity.player.Player)) return;
 
-        phase = 1;
-        Setting waitSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Wait Ticks");
-        int base = waitSetting != null ? (int) waitSetting.getValDouble() : 0;
+        Setting waitSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Wait Delay (ms)");
+        long baseWait = waitSetting != null ? (long) waitSetting.getValDouble() : 0L;
 
-        Setting jitterSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Jitter Ticks");
-        int jitter = jitterSetting != null ? (int) jitterSetting.getValDouble() : 1;
-        ticksRemaining = base + (int) (Math.random() * (jitter + 1));
+        Setting jitterSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Jitter (ms)");
+        long jitter = jitterSetting != null ? (long) jitterSetting.getValDouble() : 20L;
+
+        long waitMs = baseWait + (long) (Math.random() * (jitter + 1));
+
+        lastPhaseTimeMs = System.currentTimeMillis();
+        if (waitMs <= 0) {
+            phase = 2;
+            if (isSilent()) {
+                mc.player.setSprinting(false);
+            } else {
+                mc.options.keyUp.setDown(false);
+            }
+            Setting actionSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Action Delay (ms)");
+            long baseAction = actionSetting != null ? (long) actionSetting.getValDouble() : 100L;
+            targetDelayMs = baseAction + (long) (Math.random() * (jitter + 1));
+        } else {
+            phase = 1;
+            targetDelayMs = waitMs;
+        }
     }
 
     @Override
     public void onTick() {
         if (mc.player == null || mc.options == null || phase == 0 || AutoTotem.shouldPauseInputs()) return;
 
+        long now = System.currentTimeMillis();
         switch (phase) {
             case 1 -> {
                 if (!mc.options.keyUp.isDown()) { phase = 0; return; }
-                ticksRemaining--;
-                if (ticksRemaining <= 0) {
+                if (now - lastPhaseTimeMs >= targetDelayMs) {
                     if (isSilent()) {
                         mc.player.setSprinting(false);
                     } else {
                         mc.options.keyUp.setDown(false);
                     }
                     phase = 2;
-                    Setting actionSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Action Ticks");
-                    int base = actionSetting != null ? (int) actionSetting.getValDouble() : 1;
-                    Setting jitterSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Jitter Ticks");
-                    int jitter = jitterSetting != null ? (int) jitterSetting.getValDouble() : 1;
-                    ticksRemaining = base + (int) (Math.random() * (jitter + 1));
+                    lastPhaseTimeMs = now;
+                    Setting actionSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Action Delay (ms)");
+                    long baseAction = actionSetting != null ? (long) actionSetting.getValDouble() : 100L;
+                    Setting jitterSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Jitter (ms)");
+                    long jitter = jitterSetting != null ? (long) jitterSetting.getValDouble() : 20L;
+                    targetDelayMs = baseAction + (long) (Math.random() * (jitter + 1));
                 }
             }
             case 2 -> {
-                ticksRemaining--;
-                if (ticksRemaining <= 0) {
+                if (now - lastPhaseTimeMs >= targetDelayMs) {
                     if (isSilent()) {
                         mc.player.setSprinting(true);
                     } else if (isPhysicallyHoldingW()) {
@@ -136,7 +149,8 @@ public class WTap extends Module {
                 mc.options.keyUp.setDown(true);
             }
         }
-        phase          = 0;
-        ticksRemaining = 0;
+        phase = 0;
+        lastPhaseTimeMs = 0L;
+        targetDelayMs = 0L;
     }
 }

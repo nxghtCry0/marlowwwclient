@@ -4,18 +4,18 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
-import com.eclipseware.imnotcheatingyouare.client.utils.cheat.AntiCheatProfile;
 import org.lwjgl.glfw.GLFW;
 
 public class STap extends Module {
     private int phase = 0;
-    private int ticksRemaining = 0;
+    private long lastPhaseTimeMs = 0L;
+    private long targetDelayMs = 0L;
 
     public STap() {
         super("STap", Category.Combat, "Briefly taps backward key on hit to reset sprint knockback.");
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Chance (%)", this, 100.0, 0.0, 100.0, false));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Wait Ticks", this, 0.0, 0.0, 5.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Action Ticks", this, 5.0, 1.0, 10.0, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Wait Delay (ms)", this, 0.0, 0.0, 500.0, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Action Delay (ms)", this, 150.0, 10.0, 500.0, true));
         java.util.ArrayList<String> modes = new java.util.ArrayList<>();
         modes.add("Normal");
         modes.add("Silent");
@@ -37,32 +37,46 @@ public class STap extends Module {
         double chance = chanceSetting != null ? chanceSetting.getValDouble() : 100.0;
         if (Math.random() * 100.0 > chance) return;
 
-        phase = 1;
-        Setting waitSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Wait Ticks");
-        ticksRemaining = waitSetting != null ? (int) waitSetting.getValDouble() : 0;
+        Setting waitSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Wait Delay (ms)");
+        long waitMs = waitSetting != null ? (long) waitSetting.getValDouble() : 0L;
+
+        lastPhaseTimeMs = System.currentTimeMillis();
+        if (waitMs <= 0) {
+            phase = 2;
+            if (isSilent()) {
+                mc.player.setSprinting(false);
+            } else {
+                mc.options.keyDown.setDown(true);
+            }
+            Setting actionSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Action Delay (ms)");
+            targetDelayMs = actionSetting != null ? (long) actionSetting.getValDouble() : 150L;
+        } else {
+            phase = 1;
+            targetDelayMs = waitMs;
+        }
     }
 
     @Override
     public void onTick() {
         if (mc.player == null || mc.options == null || phase == 0 || AutoTotem.shouldPauseInputs()) return;
 
+        long now = System.currentTimeMillis();
         switch (phase) {
             case 1 -> {
-                ticksRemaining--;
-                if (ticksRemaining <= 0) {
+                if (now - lastPhaseTimeMs >= targetDelayMs) {
                     if (isSilent()) {
                         mc.player.setSprinting(false);
                     } else {
                         mc.options.keyDown.setDown(true);
                     }
                     phase = 2;
-                    Setting actionSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Action Ticks");
-                    ticksRemaining = actionSetting != null ? (int) actionSetting.getValDouble() : 5;
+                    lastPhaseTimeMs = now;
+                    Setting actionSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Action Delay (ms)");
+                    targetDelayMs = actionSetting != null ? (long) actionSetting.getValDouble() : 150L;
                 }
             }
             case 2 -> {
-                ticksRemaining--;
-                if (ticksRemaining <= 0) {
+                if (now - lastPhaseTimeMs >= targetDelayMs) {
                     if (isSilent()) {
                         mc.player.setSprinting(true);
                     } else if (!isPhysicallyHoldingS()) {
@@ -117,6 +131,7 @@ public class STap extends Module {
             }
         }
         phase = 0;
-        ticksRemaining = 0;
+        lastPhaseTimeMs = 0L;
+        targetDelayMs = 0L;
     }
 }

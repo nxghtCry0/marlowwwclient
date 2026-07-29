@@ -21,8 +21,7 @@ public class Triggerbot extends Module {
     private static long lastTimePacketMs = 0;
     private static float serverTps = 20.0f;
 
-    private int tickCounter        = 0;
-    private int currentTargetDelay = 0;
+    private long targetDelayMs = 0L;
     private long lastAttackMs = 0L;
     private boolean wasMouseDown = false;
 
@@ -51,8 +50,8 @@ public class Triggerbot extends Module {
 
     @Override
     public void onEnable() {
-        tickCounter = 0;
-        currentTargetDelay = 0;
+        targetDelayMs = 0L;
+        lastAttackMs = System.currentTimeMillis();
         wasMouseDown = false;
     }
 
@@ -64,7 +63,7 @@ public class Triggerbot extends Module {
     }
 
     private void runTriggerbot() {
-        if (mc.gui.screen() != null) { tickCounter = 0; wasMouseDown = false; return; }
+        if (mc.gui.screen() != null) { wasMouseDown = false; return; }
 
         Setting reqMouseSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Require Mouse Down");
         boolean requireMouseDown = reqMouseSetting != null && reqMouseSetting.getValBoolean();
@@ -72,19 +71,18 @@ public class Triggerbot extends Module {
 
         if (requireMouseDown && !isMouseDown) {
             wasMouseDown = false;
-            tickCounter = 0;
             return;
         }
 
         boolean isActivationClick = isMouseDown && !wasMouseDown;
         wasMouseDown = isMouseDown;
 
-        if (mc.hitResult == null || mc.hitResult.getType() != HitResult.Type.ENTITY) { tickCounter = 0; return; }
+        if (mc.hitResult == null || mc.hitResult.getType() != HitResult.Type.ENTITY) return;
         Entity target = ((EntityHitResult) mc.hitResult).getEntity();
-        if (!isValidTarget(target)) { tickCounter = 0; return; }
+        if (!isValidTarget(target)) return;
         Setting rangeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Range");
         double range = rangeSetting != null ? rangeSetting.getValDouble() : 4.25;
-        if (mc.player.distanceToSqr(target) > (range * range)) { tickCounter = 0; return; }
+        if (mc.player.distanceToSqr(target) > (range * range)) return;
         
         float attackCooldown = mc.player.getAttackStrengthScale(0.5f);
 
@@ -99,7 +97,7 @@ public class Triggerbot extends Module {
             float scale = 20.0f / serverTps;
             attackCooldown *= scale;
         }
-        if (attackCooldown < 1.0f) { tickCounter = 0; return; }
+        if (attackCooldown < 1.0f) return;
 
         Setting critOnlySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "CritOnly");
         if (critOnlySetting != null && critOnlySetting.getValBoolean()) {
@@ -115,8 +113,7 @@ public class Triggerbot extends Module {
             }
         }
 
-        tickCounter++;
-        if (tickCounter >= currentTargetDelay) {
+        if (System.currentTimeMillis() - lastAttackMs >= targetDelayMs) {
             long profileMin = AntiCheatProfile.safeTriggerMinDelayMs();
             if (!ClickConsistency.shouldClick(profileMin, 14)) return;
             Module hitSelectMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("HitSelect");
@@ -132,13 +129,12 @@ public class Triggerbot extends Module {
             mc.player.resetAttackStrengthTicker();
             
             lastAttackMs = System.currentTimeMillis();
-            Setting minSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Min Delay (Ticks)");
-            Setting maxSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Max Delay (Ticks)");
-            int min = minSetting != null ? (int) minSetting.getValDouble() : 1;
-            int max = maxSetting != null ? (int) maxSetting.getValDouble() : 4;
+            Setting minSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Min Delay (ms)");
+            Setting maxSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Max Delay (ms)");
+            int min = minSetting != null ? (int) minSetting.getValDouble() : 50;
+            int max = maxSetting != null ? (int) maxSetting.getValDouble() : 150;
             if (min > max) { int t = min; min = max; max = t; }
-            currentTargetDelay = min + (int) (Math.random() * ((max - min) + 1));
-            tickCounter = 0;
+            targetDelayMs = min + (long) (Math.random() * ((max - min) + 1));
         }
     }
 

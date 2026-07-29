@@ -55,7 +55,8 @@ Module breachSwap = new com.eclipseware.imnotcheatingyouare.client.module.impl.B
 Module lungeAssist = new com.eclipseware.imnotcheatingyouare.client.module.impl.LungeAssist();
 Module webStun = new com.eclipseware.imnotcheatingyouare.client.module.impl.WebStun();
 Module autoMace = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoMace();
-Module autoElytraSwap = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoElytraSwap();
+Module elytraSwapMacro = new com.eclipseware.imnotcheatingyouare.client.module.impl.ElytraSwapMacro();
+Module elytraBounce = new com.eclipseware.imnotcheatingyouare.client.module.impl.ElytraBounce();
 Module pearlCatch = new com.eclipseware.imnotcheatingyouare.client.module.impl.PearlCatch();
 Module jumpReset = new com.eclipseware.imnotcheatingyouare.client.module.impl.JumpReset();
 Module pearlGrapple = new com.eclipseware.imnotcheatingyouare.client.module.impl.PearlGrapple();
@@ -121,7 +122,8 @@ moduleManager.modules.add(breachSwap);
 moduleManager.modules.add(lungeAssist);
 moduleManager.modules.add(webStun);
 moduleManager.modules.add(autoMace);
-moduleManager.modules.add(autoElytraSwap);
+moduleManager.modules.add(elytraSwapMacro);
+moduleManager.modules.add(elytraBounce);
 moduleManager.modules.add(pearlCatch);
 moduleManager.modules.add(jumpReset);
 moduleManager.modules.add(pearlGrapple);
@@ -284,8 +286,8 @@ moduleManager.modules.add(ghostBlockMacro);
         settingsManager.rSetting(new Setting("Mode", fullbright, "Night Vision", fbModes));
 
 
-        settingsManager.rSetting(new Setting("Wait Ticks", wTap, 0.0, 0.0, 10.0, true));
-        settingsManager.rSetting(new Setting("Action Ticks", wTap, 1.0, 1.0, 5.0, true));
+        settingsManager.rSetting(new Setting("Wait Delay (ms)", wTap, 0.0, 0.0, 500.0, true));
+        settingsManager.rSetting(new Setting("Action Delay (ms)", wTap, 100.0, 10.0, 500.0, true));
 
         java.util.ArrayList<String> wtapModes = new java.util.ArrayList<>();
         wtapModes.add("Auto");
@@ -294,11 +296,11 @@ moduleManager.modules.add(ghostBlockMacro);
         settingsManager.rSetting(new Setting("WTap Mode", wTap, "Auto", wtapModes));
         settingsManager.rSetting(new Setting("Chance (%)", wTap, 100.0, 0.0, 100.0, true));
         settingsManager.rSetting(new Setting("Only Players", wTap, true));
-        settingsManager.rSetting(new Setting("Jitter Ticks", wTap, 1.0, 0.0, 5.0, true));
+        settingsManager.rSetting(new Setting("Jitter (ms)", wTap, 20.0, 0.0, 200.0, true));
 
         settingsManager.rSetting(new Setting("Range", triggerbot, 4.25, 1.0, 6.0, false));
-        settingsManager.rSetting(new Setting("Min Delay (Ticks)", triggerbot, 1.0, 0.0, 20.0, true));
-        settingsManager.rSetting(new Setting("Max Delay (Ticks)", triggerbot, 4.0, 0.0, 20.0, true));
+        settingsManager.rSetting(new Setting("Min Delay (ms)", triggerbot, 50.0, 0.0, 500.0, true));
+        settingsManager.rSetting(new Setting("Max Delay (ms)", triggerbot, 150.0, 0.0, 500.0, true));
         settingsManager.rSetting(new Setting("Weapons Only", triggerbot, true));
         settingsManager.rSetting(new Setting("Players", triggerbot, true));
         settingsManager.rSetting(new Setting("Hostile Mobs", triggerbot, true));

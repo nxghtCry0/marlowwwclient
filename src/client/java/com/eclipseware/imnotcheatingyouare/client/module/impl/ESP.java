@@ -122,7 +122,10 @@ public class ESP extends Module {
             int oa = (int)(alpha * 255);
             int oc = (oa << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
             int black = (oa << 24);
-            int ix = (int) minX, iy = (int) minY, ix2 = (int) maxX, iy2 = (int) maxY;
+            int ix = (int) Math.floor(minX);
+            int iy = (int) Math.floor(minY);
+            int ix2 = (int) Math.ceil(maxX);
+            int iy2 = (int) Math.ceil(maxY);
             int t = outlineThickness;
 
             if (doFill) {
