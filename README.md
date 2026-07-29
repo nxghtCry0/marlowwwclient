@@ -5,8 +5,9 @@ https://discord.gg/marlowwwclient
 Download releases or get early access here!
 ❤️
 
-My main account, @nxght_Cry0 on discord was TERMINATED!
-The only official account of mine is now @firefox.lol
+# The GitHub has been terminated
+
+This GitLab is the only official source
 
 # Marlow Client V4
 
