@@ -67,7 +67,6 @@ public class AutoTotem extends Module {
             triggerInputPause();
         }
 
-        // Direct container swap into offhand (slot 40 button in menu 0)
         mc.gameMode.handleContainerInput(
                 0,
                 totemSlot,
@@ -93,14 +92,12 @@ public class AutoTotem extends Module {
         if (mc.player == null)
             return -1;
 
-        // Search hotbar first (slots 36-44 in container menu 0)
         for (int i = 0; i < 9; i++) {
             if (mc.player.getInventory().getItem(i).is(Items.TOTEM_OF_UNDYING)) {
                 return i + 36;
             }
         }
 
-        // Search main inventory (slots 9-35 in container menu 0)
         for (int i = 9; i < 36; i++) {
             if (mc.player.getInventory().getItem(i).is(Items.TOTEM_OF_UNDYING)) {
                 return i;

@@ -59,7 +59,6 @@ public class AutoPlaceCrystal extends Module {
         if (requireHoldingWeapon.getValBoolean() && !ModuleUtils.isHoldingWeapon(mc.player.getMainHandItem()))
             return;
 
-        // If AutoHitCrystal has a crystal to hit this tick, yield to maintain 2-tick cycle
         if (AutoHitCrystal.hasCrystalTarget() || AutoHitCrystal.lastHitTick == mc.player.tickCount) {
             return;
         }
@@ -89,10 +88,8 @@ public class AutoPlaceCrystal extends Module {
                         }
                     }
 
-                    // Zero right click delay so vanilla placement fires cleanly
                     ((MinecraftAccessor) mc).setRightClickDelay(0);
 
-                    // If not holding keyUse (macro mode), invoke placement once
                     if (!mc.options.keyUse.isDown()) {
                         ((MinecraftAccessor) mc).invokeStartUseItem();
                     }

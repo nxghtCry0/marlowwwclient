@@ -51,7 +51,6 @@ public class ElytraBounce extends Module {
             }
         }
 
-        // Release jump pulse on subsequent tick
         if (jumpPulsed) {
             mc.options.keyJump.setDown(false);
             jumpPulsed = false;
@@ -59,7 +58,6 @@ public class ElytraBounce extends Module {
 
         if (mc.player.onGround()) {
             airTicks = 0;
-            // Initiate / Bounce: Pulse jump key on ground contact when moving forward
             if (mc.options.keyUp != null && mc.options.keyUp.isDown()) {
                 mc.options.keyJump.setDown(true);
                 jumpPulsed = true;
@@ -67,7 +65,6 @@ public class ElytraBounce extends Module {
         } else {
             airTicks++;
 
-            // Step 2: Mid-air Elytra deployment when falling without container interactions during flight
             if (!mc.player.isFallFlying()) {
                 if (airTicks >= 2 && mc.player.getDeltaMovement().y < 0.0) {
                     mc.player.tryToStartFallFlying();

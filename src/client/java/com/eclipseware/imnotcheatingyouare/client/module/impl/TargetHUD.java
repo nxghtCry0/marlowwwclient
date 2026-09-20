@@ -97,7 +97,6 @@ public class TargetHUD extends Module {
 
     @Override
     public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDelta) {
-        // High-performance ImGui overlay handles rendering on frame render
     }
 
     public void renderImGuiOverlay() {
@@ -168,11 +167,9 @@ public class TargetHUD extends Module {
         int dmgBarColor = RenderUtils.toImGuiColor(226, 76, 76, (int)(alpha * 255.0f * 0.7f));
         int hpBarColor = RenderUtils.toImGuiColor(hpColor, alpha);
 
-        // 1. Card Container & Glow Border
         drawList.addRectFilled(x, y, x + width, y + height, cardBgColor, 6.0f * guiScale);
         drawList.addRect(x, y, x + width, y + height, cardBorderColor, 6.0f * guiScale, 0, 1.2f * guiScale);
 
-        // 2. Target Name
         String name = inEditor ? "Target Preview" : lastTarget.getName().getString();
         if (name.length() > 16) {
             name = name.substring(0, 14) + "..";
@@ -180,13 +177,11 @@ public class TargetHUD extends Module {
         int nameTextColor = RenderUtils.toImGuiColor(255, 255, 255, (int)(alpha * 255.0f));
         drawList.addText(x + 10f * guiScale, y + 8f * guiScale, nameTextColor, name);
 
-        // 3. Health Numbers
         String hpStr = String.format("%.1f / %.1f", hp, maxHp);
         ImGui.calcTextSize(hpSizeBuf, hpStr);
         int hpTextColor = RenderUtils.toImGuiColor(170, 170, 185, (int)(alpha * 255.0f));
         drawList.addText(x + width - 10f * guiScale - hpSizeBuf.x, y + 8f * guiScale, hpTextColor, hpStr);
 
-        // 4. Smooth Health Track & Damage Catch-up Bar
         float barX = x + 10f * guiScale;
         float barY = y + 26f * guiScale;
         float barW = width - 20f * guiScale - (comboCount > 0 ? 30f * guiScale : 0f);
@@ -204,7 +199,6 @@ public class TargetHUD extends Module {
             drawList.addRectFilled(barX, barY, barX + animatedW, barY + barH, hpBarColor, 3.0f * guiScale);
         }
 
-        // 5. Combo Hits Badge
         if (comboCount > 0) {
             String comboStr = "+" + comboCount;
             ImGui.calcTextSize(comboSizeBuf, comboStr);

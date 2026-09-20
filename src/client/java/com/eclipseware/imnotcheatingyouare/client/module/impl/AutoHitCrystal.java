@@ -79,7 +79,6 @@ public class AutoHitCrystal extends Module {
             mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
             lastHitTick = mc.player.tickCount;
 
-            // Block placement on this tick to prevent MultiActionsC
             ((MinecraftAccessor) mc).setRightClickDelay(1);
         }
     }

@@ -34,9 +34,9 @@ public final class InputUtil {
      */
     public static int toLegacyOrdinal(int sdlButton) {
         return switch (sdlButton) {
-            case 1 -> 0;  // left
-            case 3 -> 1;  // right
-            case 2 -> 2;  // middle
+            case 1 -> 0;  
+            case 3 -> 1;  
+            case 2 -> 2;  
             case 4 -> 3;
             case 5 -> 4;
             default -> sdlButton;
@@ -48,7 +48,6 @@ public final class InputUtil {
     }
 
     private static int sdlButtonFor(int mouseCode) {
-        // mouseCode is negative: -(ordinal+1) where ordinal is 0=left,1=right,2=middle,3=x1,4=x2
         int ordinal = -mouseCode - 1;
         return switch (ordinal) {
             case 0 -> SDLMouse.SDL_BUTTON_LEFT;

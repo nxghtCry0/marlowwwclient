@@ -57,7 +57,6 @@ public class BlockESP extends Module {
         sm.rSetting(new Setting("Block Color", this, new Color(0, 220, 255)));
         sm.rSetting(new Setting("Open Block Selector", this, false));
 
-        // Default Meteor block selections
         addDefaultBlock("minecraft:diamond_ore", new Color(0, 220, 255));
         addDefaultBlock("minecraft:deepslate_diamond_ore", new Color(0, 220, 255));
         addDefaultBlock("minecraft:ancient_debris", new Color(200, 120, 80));
@@ -114,10 +113,8 @@ public class BlockESP extends Module {
             ImGui.textColored(0.0f, 0.85f, 1.0f, 1.0f, "Select blocks to highlight (" + selectedBlocks.size() + " selected)");
             ImGui.separator();
 
-            // Search input
             ImGui.inputText("Search", searchFilter);
 
-            // Category Filter Buttons
             if (ImGui.button("All")) selectedCategory = "All";
             ImGui.sameLine();
             if (ImGui.button("Ores")) selectedCategory = "Ores";
@@ -136,7 +133,6 @@ public class BlockESP extends Module {
 
             ImGui.separator();
 
-            // Scrollable Block Grid / List
             if (ImGui.beginChild("BlockListRegion", 0, 0, true)) {
                 String filter = searchFilter.get().trim().toLowerCase();
 

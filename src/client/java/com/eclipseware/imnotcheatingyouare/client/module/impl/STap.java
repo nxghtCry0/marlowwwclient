@@ -9,7 +9,7 @@ import com.eclipseware.imnotcheatingyouare.client.utils.cheat.AntiCheatProfile;
 import java.util.ArrayList;
 
 public class STap extends Module {
-    private int phase = 0; // 0: Idle, 1: Waiting before tap, 2: Tapping (holding S / silent stop)
+    private int phase = 0; 
     private long lastPhaseTimeMs = 0L;
     private long targetDelayMs = 0L;
 

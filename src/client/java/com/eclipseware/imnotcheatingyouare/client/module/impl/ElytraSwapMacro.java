@@ -24,7 +24,7 @@ public class ElytraSwapMacro extends Module {
 
     private int originalSlot = -1;
     private int targetSlot = -1;
-    private int step = 0; // 0: Idle/Start, 1: Switched to target, 2: Right-clicked, 3: Swapped back
+    private int step = 0; 
     private boolean swapped = false;
     private long lastExecuteMs = 0L;
 
@@ -88,7 +88,6 @@ public class ElytraSwapMacro extends Module {
             return;
         }
 
-        // Multi-tick state machine prevents BadPacketsA (slot changes within same tick)
         if (step == 1) {
             ((MinecraftAccessor) mc).invokeStartUseItem();
             mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);

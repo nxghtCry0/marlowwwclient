@@ -34,7 +34,6 @@ public class Chams extends Module {
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Show Crystals", this, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Show Items", this, false));
 
-        // Relaxing pastel/neon default colors
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Player Color", this, new Color(0, 235, 215)));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Self Color", this, new Color(167, 139, 250)));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Mob Color", this, new Color(251, 191, 36)));

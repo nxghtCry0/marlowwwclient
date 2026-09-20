@@ -26,7 +26,6 @@ public class Tracers extends Module {
 
     @Override
     public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
-        // ImGui overlay handles rendering on frame render
     }
 
     public void renderImGuiOverlay() {

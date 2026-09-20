@@ -32,7 +32,6 @@ public class Nametags extends Module {
 
     @Override
     public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
-        // High-performance ImGui overlay handles rendering on frame render
     }
 
     public void renderImGuiOverlay() {
@@ -102,18 +101,15 @@ public class Nametags extends Module {
             int nameTextColor = RenderUtils.toImGuiColor(255, 255, 255, oa);
             int distTextColor = RenderUtils.toImGuiColor(170, 210, 255, oa);
 
-            // Card Backdrop & Outline
             drawList.addRectFilled(drawX, drawY, drawX + cardWidth, drawY + cardHeight, cardBgColor, 4.0f);
             drawList.addRect(drawX, drawY, drawX + cardWidth, drawY + cardHeight, cardBorderColor, 4.0f, 0, 1.2f);
 
             float curX = drawX + paddingX;
             float textY = drawY + (cardHeight - nameSizeBuf.y) / 2f;
 
-            // Name
             drawList.addText(curX, textY, nameTextColor, name);
             curX += nameSizeBuf.x;
 
-            // HP
             if (!hpStr.isEmpty() && entity instanceof LivingEntity living) {
                 Color hpColor = RenderUtils.getHealthColor(living.getHealth() / Math.max(1f, living.getMaxHealth()));
                 int hpTextColor = RenderUtils.toImGuiColor(hpColor, alpha);
@@ -121,10 +117,8 @@ public class Nametags extends Module {
                 curX += hpSizeBuf.x;
             }
 
-            // Distance
             drawList.addText(curX, textY, distTextColor, distStr);
 
-            // Equipment Badges
             if (entity instanceof LivingEntity living) {
                 ItemStack mainHand = living.getMainHandItem();
                 ItemStack offHand = living.getOffhandItem();

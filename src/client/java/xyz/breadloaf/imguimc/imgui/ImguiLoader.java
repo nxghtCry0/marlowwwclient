@@ -313,8 +313,7 @@ public class ImguiLoader {
 
         final ImGuiIO io = ImGui.getIO();
 
-        io.setIniFilename(null);                               // We don't want to save .ini file
-        // Disabled keyboard nav and docking window popups so Ctrl+Tab won't spawn dock windows
+        io.setIniFilename(null);                               
         io.removeConfigFlags(ImGuiConfigFlags.NavEnableKeyboard);
         io.removeConfigFlags(ImGuiConfigFlags.DockingEnable);
 
@@ -325,9 +324,6 @@ public class ImguiLoader {
     private static void applyDisplayScale() {
         float scale = getWindowContentScale();
         ImGuiIO io = ImGui.getIO();
-        // The font atlas is baked at `scale`x pixel density for crispness (see rebuildCustomFont),
-        // but ImGui draws text at the font's baked pixel size in *display* (logical) units, not
-        // framebuffer pixels. Without the inverse scale here, text renders `scale`x too large.
         io.setFontGlobalScale(scale > 0f ? 1.0f / scale : 1.0f);
 
         if (!fontLoaded || (customFontAvailable && Math.abs(scale - loadedFontScale) > 0.15f)) {
@@ -367,7 +363,6 @@ public class ImguiLoader {
     }
 
     private static void endFrame(long windowPtr) {
-        // Full OpenGL 3.3 state backup to prevent state leakage between ImGui and Minecraft/Sodium/ImmediatelyFast.
         int activeTexture = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         int texture0Binding = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
@@ -399,8 +394,6 @@ public class ImguiLoader {
         try {
             prepareImGuiGlState();
             imGuiGl3.renderDrawData(ImGui.getDrawData());
-            // Multi-viewport rendering (ImGuiConfigFlags.ViewportsEnable) is never enabled, so no
-            // platform-window pass is needed here.
         } finally {
             org.lwjgl.opengl.GL20.glUseProgram(program);
             org.lwjgl.opengl.GL30.glBindVertexArray(vao);

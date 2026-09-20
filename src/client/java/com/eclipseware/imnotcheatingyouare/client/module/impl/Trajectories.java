@@ -35,7 +35,6 @@ public class Trajectories extends Module {
 
     @Override
     public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
-        // Uncapped ImGui overlay handles rendering on frame render
     }
 
     public void renderImGuiOverlay() {

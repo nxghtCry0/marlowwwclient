@@ -68,7 +68,6 @@ public class ESP extends Module {
 
     @Override
     public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
-        // Uncapped ImGui overlay handles rendering on frame render
     }
 
     public void renderImGuiOverlay() {
@@ -156,12 +155,10 @@ public class ESP extends Module {
             int fillColor = toImGuiColor(15, 15, 20, (int)(alpha * 255.0f * 0.25f));
             float t = (float) outlineThickness;
 
-            // 1. Box Fill
             if (doFill && (ix2 - t > ix + t) && (iy2 - t > iy + t)) {
                 drawList.addRectFilled(ix + t, iy + t, ix2 - t, iy2 - t, fillColor, 2.0f);
             }
 
-            // 2. Bounding Box Outline / Corner
             if (useCorner) {
                 float gapPct = Math.min(1f, Math.max(0f, cornerGap / 100f));
                 float cw = Math.max(4f, rectW * (1f - gapPct) / 2f);
@@ -184,7 +181,6 @@ public class ESP extends Module {
                 drawList.addRect(ix, iy, ix2, iy2, oc, 2.0f, 0, t);
             }
 
-            // 3. Health Bar
             if (showHealth) {
                 float maxHp = le.getMaxHealth();
                 float currentHp = le.getHealth();
@@ -197,17 +193,14 @@ public class ESP extends Module {
                 int bgImColor = toImGuiColor(15, 15, 20, (int)(alpha * 255.0f * 0.8f));
                 int borderImColor = toImGuiColor(0, 0, 0, (int)(alpha * 255.0f * 0.9f));
 
-                // Background track
                 drawList.addRectFilled(barX - 1f, iy - 1f, barX + 3f, iy2 + 1f, bgImColor, 2.0f);
                 drawList.addRect(barX - 1f, iy - 1f, barX + 3f, iy2 + 1f, borderImColor, 2.0f, 0, 1.0f);
 
-                // Filled Health Bar
                 if (barH > 0) {
                     drawList.addRectFilled(barX, iy2 - barH, barX + 2f, iy2, hpImColor, 1.5f);
                 }
             }
 
-            // 4. Beautiful Modern Nametag Card & Equipment
             if (showNames) {
                 String name = entity.getName().getString();
                 double d = Math.round(dist * 10.0) / 10.0;
@@ -236,26 +229,20 @@ public class ESP extends Module {
                 Color hpColor = RenderUtils.getHealthColor(pct);
                 int hpTextColor = toImGuiColor(hpColor, alpha);
 
-                // Main Nametag Card Backdrop & Accent Border
                 drawList.addRectFilled(cardX, cardY, cardX + cardWidth, cardY + cardHeight, cardBgColor, 4.0f);
                 drawList.addRect(cardX, cardY, cardX + cardWidth, cardY + cardHeight, cardBorderColor, 4.0f, 0, 1.2f);
 
-                // Text Layout Inside Card
                 float curX = cardX + paddingX;
                 float textY = cardY + (cardHeight - nameSizeBuf.y) / 2f;
 
-                // Name
                 drawList.addText(curX, textY, nameTextColor, name);
                 curX += nameSizeBuf.x;
 
-                // Distance
                 drawList.addText(curX, textY, distTextColor, distStr);
                 curX += distSizeBuf.x;
 
-                // HP
                 drawList.addText(curX, textY, hpTextColor, hpStr);
 
-                // Held Item Badge
                 ItemStack mainHand = le.getMainHandItem();
                 if (mainHand != null && !mainHand.isEmpty()) {
                     String itemText = mainHand.getHoverName().getString();

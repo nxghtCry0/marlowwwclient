@@ -24,7 +24,6 @@ public class WeakDevice extends Module {
     private final Map<Module, Boolean> expandedModules = new HashMap<>();
     private final Map<Category, float[]> categoryPosMap = new HashMap<>();
 
-    // Pastel purple palette
     private static final Color PASTEL_PURPLE_ACCENT = new Color(195, 140, 245);
     private static final Color PASTEL_PURPLE_DIM = new Color(140, 100, 190);
     private static final Color CARD_BG = new Color(22, 22, 32, 235);
@@ -67,7 +66,6 @@ public class WeakDevice extends Module {
     public void renderImGuiOverlay() {
         if (!isToggled() || mc.player == null) return;
 
-        // Auto-close if screen is closed externally
         if (guiOpen && mc.gui != null && !(mc.gui.screen() instanceof EmptyScreen)) {
             guiOpen = false;
         }
@@ -83,7 +81,6 @@ public class WeakDevice extends Module {
         int cardBgColor = RenderUtils.toImGuiColor(CARD_BG, 1.0f);
         int cardHeaderBgColor = RenderUtils.toImGuiColor(CARD_HEADER_BG, 1.0f);
 
-        // --- 1. TOP BAR / HEADER MENU ---
         ImGui.setNextWindowPos(15f, 15f, ImGuiCond.FirstUseEver);
         ImGui.setNextWindowSize(600f, 45f, ImGuiCond.FirstUseEver);
 
@@ -94,7 +91,6 @@ public class WeakDevice extends Module {
         ImGui.pushStyleVar(imgui.flag.ImGuiStyleVar.WindowRounding, 8.0f);
 
         if (ImGui.begin("DarkClient_TopBar", topBarFlags)) {
-            // Brand title
             ImGui.alignTextToFramePadding();
             ImGui.textColored(PASTEL_PURPLE_ACCENT.getRed()/255f, PASTEL_PURPLE_ACCENT.getGreen()/255f, PASTEL_PURPLE_ACCENT.getBlue()/255f, 1.0f, "DarkClient");
             ImGui.sameLine();
@@ -129,7 +125,6 @@ public class WeakDevice extends Module {
         ImGui.popStyleVar();
         ImGui.popStyleColor(2);
 
-        // --- 2. CATEGORY WINDOW PANELS ---
         Category[] categories = new Category[]{
             Category.Combat, Category.Movement, Category.Render, Category.World, Category.Misc, Category.Client
         };
@@ -161,7 +156,6 @@ public class WeakDevice extends Module {
             ImGui.pushStyleVar(imgui.flag.ImGuiStyleVar.FrameRounding, 4.0f);
 
             if (ImGui.begin(category.name() + "##DarkClient", windowFlags)) {
-                // Top pastel purple line under title bar
                 float winX = ImGui.getWindowPosX();
                 float winY = ImGui.getWindowPosY();
                 float winW = ImGui.getWindowWidth();
@@ -173,7 +167,6 @@ public class WeakDevice extends Module {
                     boolean isToggled = mod.isToggled();
                     boolean isExpanded = expandedModules.getOrDefault(mod, false);
 
-                    // Module row background accent if toggled
                     if (isToggled) {
                         float curY = ImGui.getCursorScreenPosY();
                         float curX = ImGui.getCursorScreenPosY();
@@ -182,7 +175,6 @@ public class WeakDevice extends Module {
 
                     ImGui.pushID(mod.getName());
 
-                    // Module toggle button
                     String label = mod.getName();
                     if (isToggled) {
                         ImGui.pushStyleColor(imgui.flag.ImGuiCol.Text, accentColor);
@@ -194,7 +186,6 @@ public class WeakDevice extends Module {
                         mod.toggle();
                     }
 
-                    // Right click menu or click arrow
                     if (ImGui.isItemClicked(1)) {
                         expandedModules.put(mod, !isExpanded);
                     }
@@ -206,7 +197,6 @@ public class WeakDevice extends Module {
                         expandedModules.put(mod, !isExpanded);
                     }
 
-                    // Render inline settings if expanded
                     if (isExpanded) {
                         ImGui.indent(8f);
                         List<Setting> settings = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingsByMod(mod);
