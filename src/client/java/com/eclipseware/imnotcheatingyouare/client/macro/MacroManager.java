@@ -221,29 +221,13 @@ public class MacroManager {
 
     public static void tickKeybinds() {
         if (mc.gui.screen() != null || mc.player == null) return;
-        long win = 0;
-        try {
-            for (java.lang.reflect.Field f : mc.getWindow().getClass().getDeclaredFields()) {
-                if (f.getType() == long.class) {
-                    f.setAccessible(true);
-                    win = f.getLong(mc.getWindow());
-                    break;
-                }
-            }
-        } catch (Exception ignored) {}
-        if (win == 0) return;
 
         for (Macro m : macros) {
             if (!m.isEnabled()) continue;
             int bind = m.getKeybind();
-            if (bind == -1 || bind == 0) continue;
+            if (bind == 0) continue;
 
-            boolean isPressed;
-            if (bind >= 0 && bind <= 7) {
-                isPressed = org.lwjgl.glfw.GLFW.glfwGetMouseButton(win, bind) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
-            } else {
-                isPressed = org.lwjgl.glfw.GLFW.glfwGetKey(win, bind) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
-            }
+            boolean isPressed = com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.isDown(bind);
 
             boolean wasPressed = macroKeyStates.getOrDefault(m, false);
             if (isPressed && !wasPressed) {

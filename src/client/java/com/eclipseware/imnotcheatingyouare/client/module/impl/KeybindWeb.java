@@ -48,7 +48,7 @@ public class KeybindWeb extends Module {
             }
             
             ((MinecraftAccessor) mc).invokeStartUseItem();
-            mc.player.swing(InteractionHand.MAIN_HAND);
+            mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
 
             if (!swapped) {
                 ModuleUtils.switchToSlot(originalSlot);

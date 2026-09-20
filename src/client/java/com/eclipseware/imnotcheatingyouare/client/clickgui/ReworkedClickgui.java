@@ -160,11 +160,11 @@ public class ReworkedClickgui extends Screen {
         float scale = getScaleFactor();
         double mx = event.x() / scale;
         double my = event.y() / scale;
-        int button = event.button();
+        int button = com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.toLegacyOrdinal(event.button());
 
         if (bindingModule != null) {
             if (button != 0 && button != 1) {
-                bindingModule.setKeyBind(button);
+                bindingModule.setKeyBind(com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.fromClickOrdinal(button));
                 try { com.eclipseware.imnotcheatingyouare.client.setting.ConfigManager.save(); } catch (Exception ignored) {}
                 bindingModule = null;
                 return true;
@@ -644,27 +644,7 @@ public class ReworkedClickgui extends Screen {
     }
 
     private String getKeyName(int key) {
-        if (key == -1) return "NONE";
-        if (key >= 0 && key <= 7) {
-            if (key == 1) return "RMB";
-            if (key == 2) return "MMB";
-            return "MB" + (key + 1);
-        }
-        switch (key) {
-            case org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT: return "RSHIFT";
-            case org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT: return "LSHIFT";
-            case org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_CONTROL: return "RCTRL";
-            case org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL: return "LCTRL";
-            case org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_ALT: return "RALT";
-            case org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_ALT: return "LALT";
-            case org.lwjgl.glfw.GLFW.GLFW_KEY_TAB: return "TAB";
-            case org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE: return "SPACE";
-            case org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER: return "ENTER";
-            case org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE: return "NONE";
-        }
-        String str = org.lwjgl.glfw.GLFW.glfwGetKeyName(key, 0);
-        if (str == null) return "KEY " + key;
-        return str.toUpperCase();
+        return com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.getName(key);
     }
 
     @Override
@@ -672,17 +652,17 @@ public class ReworkedClickgui extends Screen {
         if (bindingModule != null) {
             int key = input.input();
             int targetKey = key;
-            if (key == org.lwjgl.glfw.GLFW.GLFW_KEY_DELETE || key == org.lwjgl.glfw.GLFW.GLFW_KEY_BACKSPACE || key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
-                targetKey = -1;
+            if (key == com.mojang.blaze3d.platform.InputConstants.KEY_DELETE || key == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE || key == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
+                targetKey = 0;
             }
             bindingModule.setKeyBind(targetKey);
             try { com.eclipseware.imnotcheatingyouare.client.setting.ConfigManager.save(); } catch (Exception ignored) {}
             bindingModule = null;
-            if (key == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) return true;
+            if (key == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) return true;
         }
 
         Module menuMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Menu");
-        int menuKey = menuMod != null ? menuMod.getKeyBind() : org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT;
+        int menuKey = menuMod != null ? menuMod.getKeyBind() : com.mojang.blaze3d.platform.InputConstants.KEY_RSHIFT;
         if (input.input() == menuKey) {
             boolean anyFocused = (searchBox != null && searchBox.isFocused());
             if (!anyFocused) {
@@ -690,7 +670,7 @@ public class ReworkedClickgui extends Screen {
                 return true;
             }
         }
-        if (input.input() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE && !closing) {
+        if (input.input() == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE && !closing) {
             closing = true;
             return true;
         }

@@ -33,7 +33,7 @@ public final class RoundedButton extends CompatAbstractWidget {
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (event != null && this.active && this.visible
-                && event.button() == 0 && isMouseOver(event.x(), event.y())) {
+                && event.button() == 1 && isMouseOver(event.x(), event.y())) {
             this.pressedVisual = true;
             this.pressAnim = 1f;
             if (this.onPress != null) this.onPress.run();
@@ -44,7 +44,7 @@ public final class RoundedButton extends CompatAbstractWidget {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        if (event != null && event.button() == 0) this.pressedVisual = false;
+        if (event != null && event.button() == 1) this.pressedVisual = false;
         return super.mouseReleased(event);
     }
 

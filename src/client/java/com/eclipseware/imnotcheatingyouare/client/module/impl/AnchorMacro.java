@@ -147,7 +147,7 @@ public class AnchorMacro extends Module {
                     AutoTotem.triggerInputPause();
                     int prevSlot = ModuleUtils.getSelectedSlot();
                     ModuleUtils.switchToSlot(shieldSlot);
-                    mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+                    mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
                     mc.gameMode.useItemOn(mc.player, net.minecraft.world.InteractionHand.MAIN_HAND, shieldHit);
                     ModuleUtils.switchToSlot(prevSlot);
                     lastActionTime = System.currentTimeMillis();

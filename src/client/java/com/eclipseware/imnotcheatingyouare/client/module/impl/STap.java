@@ -5,7 +5,6 @@ import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.cheat.AntiCheatProfile;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 
@@ -161,9 +160,7 @@ public class STap extends Module {
     }
 
     private boolean isPhysicallyHoldingS() {
-        long window = getWindowHandle();
-        if (window == 0) return false;
-        return GLFW.glfwGetKey(window, getKeyCode(mc.options.keyDown)) == GLFW.GLFW_PRESS;
+        return com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.isDown(getKeyCode(mc.options.keyDown));
     }
 
     private int getKeyCode(net.minecraft.client.KeyMapping mapping) {

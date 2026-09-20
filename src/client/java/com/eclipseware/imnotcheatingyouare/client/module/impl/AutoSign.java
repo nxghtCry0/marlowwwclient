@@ -21,7 +21,10 @@ public class AutoSign extends Module {
                 signField.setAccessible(true);
                 net.minecraft.world.level.block.entity.SignBlockEntity signEntity = (net.minecraft.world.level.block.entity.SignBlockEntity) signField.get(screen);
                 
-                Minecraft.getInstance().getConnection().send(new ServerboundSignUpdatePacket(signEntity.getBlockPos(), isFront, savedLines[0], savedLines[1], savedLines[2], savedLines[3]));
+                net.minecraft.world.level.block.entity.SignTextSlot slot = isFront
+                        ? net.minecraft.world.level.block.entity.SignTextSlot.FRONT
+                        : net.minecraft.world.level.block.entity.SignTextSlot.BACK;
+                Minecraft.getInstance().getConnection().send(new ServerboundSignUpdatePacket(signEntity.getBlockPos(), java.util.List.of(savedLines), slot));
                 screen.onClose();
             } catch (Exception ignored) {}
         }

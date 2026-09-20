@@ -111,7 +111,7 @@ public class WebStun extends Module {
             seq = handler.currentSequence();
         }
 
-        mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+        mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
         mc.getConnection().send(new ServerboundUseItemOnPacket(
             net.minecraft.world.InteractionHand.MAIN_HAND, hitResult, seq
         ));

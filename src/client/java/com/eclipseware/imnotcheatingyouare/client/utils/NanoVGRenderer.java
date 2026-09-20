@@ -4,7 +4,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.pipeline.RenderTarget;
-import org.lwjgl.glfw.GLFW;
 import org.lwjgl.nanovg.NanoVGGL3;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryUtil;
@@ -27,7 +26,6 @@ public class NanoVGRenderer {
 
     public static void initialize() {
         if (initialized) return;
-        if (GLFW.glfwGetCurrentContext() == MemoryUtil.NULL) return;
 
         vg = NanoVGGL3.nvgCreate(NanoVGGL3.NVG_ANTIALIAS | NanoVGGL3.NVG_STENCIL_STROKES);
         if (vg == MemoryUtil.NULL) {

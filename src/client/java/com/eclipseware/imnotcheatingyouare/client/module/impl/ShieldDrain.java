@@ -68,7 +68,7 @@ public class ShieldDrain extends Module {
             if (attacksThisTick > 0) {
                 for (int i = 0; i < attacksThisTick; i++) {
                     mc.gameMode.attack(mc.player, bestTarget);
-                    mc.player.swing(InteractionHand.MAIN_HAND);
+                    mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
                 }
                 attackDebt -= attacksThisTick;
             }

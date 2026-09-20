@@ -4,7 +4,8 @@ import com.eclipseware.imnotcheatingyouare.client.clickgui.Clickgui;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import org.lwjgl.glfw.GLFW;
+import com.eclipseware.imnotcheatingyouare.client.utils.InputUtil;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.HashMap;
 
@@ -19,33 +20,10 @@ public class BindButton extends Button {
     }
 
     private String getKeyName(int key) {
-        if (key == -1) return "NONE";
-        
-        if (key >= 0 && key <= 7) {
-            if (key == 1) return "RMB";
-            if (key == 2) return "MMB";
-            return "MB" + (key + 1);
-        }
-
-        switch (key) {
-            case GLFW.GLFW_KEY_RIGHT_SHIFT: return "RSHIFT";
-            case GLFW.GLFW_KEY_LEFT_SHIFT: return "LSHIFT";
-            case GLFW.GLFW_KEY_RIGHT_CONTROL: return "RCTRL";
-            case GLFW.GLFW_KEY_LEFT_CONTROL: return "LCTRL";
-            case GLFW.GLFW_KEY_RIGHT_ALT: return "RALT";
-            case GLFW.GLFW_KEY_LEFT_ALT: return "LALT";
-            case GLFW.GLFW_KEY_TAB: return "TAB";
-            case GLFW.GLFW_KEY_SPACE: return "SPACE";
-            case GLFW.GLFW_KEY_ENTER: return "ENTER";
-            case GLFW.GLFW_KEY_ESCAPE: return "NONE";
-        }
-
-        String str = GLFW.glfwGetKeyName(key, 0);
-        if (str == null) return "UNKNOWN: " + key;
-        return str.toUpperCase();
+        return InputUtil.getName(key);
     }
 
-    private int lastKeyBind = -2;
+    private int lastKeyBind = Integer.MIN_VALUE;
     private String cachedDisplayString = null;
 
     private String getDisplayString() {
@@ -77,8 +55,8 @@ public class BindButton extends Button {
         boolean wasListening = this.isListening;
         super.mouseClicked(mouseX, mouseY, mouseButton);
         if (wasListening) {
-            if (mouseButton != 0 && mouseButton != 1) { 
-                this.module.setKeyBind(mouseButton);
+            if (mouseButton != 0 && mouseButton != 1) {
+                this.module.setKeyBind(InputUtil.fromClickOrdinal(mouseButton));
             }
             this.isListening = false;
         } else if (this.isHovering(mouseX, mouseY)) {
@@ -90,8 +68,8 @@ public class BindButton extends Button {
     public void onKeyPressed(int key) {
         if (this.isListening) {
             int targetKey = key;
-            if (key == GLFW.GLFW_KEY_DELETE || key == GLFW.GLFW_KEY_BACKSPACE || key == GLFW.GLFW_KEY_ESCAPE) {
-                targetKey = -1;
+            if (key == InputConstants.KEY_DELETE || key == InputConstants.KEY_BACKSPACE || key == InputConstants.KEY_ESCAPE) {
+                targetKey = 0;
             }
             this.module.setKeyBind(targetKey);
             this.isListening = false;

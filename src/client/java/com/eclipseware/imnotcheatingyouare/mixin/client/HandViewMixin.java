@@ -4,9 +4,10 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.impl.HandView;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.renderer.ItemInHandRenderer;
+import net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState;
+import net.minecraft.client.renderer.state.level.PlayerRenderState;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,11 +15,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ItemInHandRenderer.class)
+@Mixin(FirstPersonHandsAndItemsRenderer.class)
 public class HandViewMixin {
 
     @Inject(method = "submitArmWithItem", at = @At("HEAD"))
-    private void onRenderArmWithItem(AbstractClientPlayer player, float partialTicks, float pitch, InteractionHand hand, float swingProgress, ItemStack stack, float equipProgress, PoseStack poseStack, SubmitNodeCollector buffer, int combinedLight, CallbackInfo ci) {
+    private void onRenderArmWithItem(PlayerRenderState playerRenderState, FirstPersonHandsAndItemsRenderState handRenderState, float partialTicks, float pitch, InteractionHand hand, float swingProgress, ItemStack stack, float equipProgress, PoseStack poseStack, SubmitNodeCollector buffer, int combinedLight, CallbackInfo ci) {
         if (HandView.INSTANCE != null && HandView.INSTANCE.isToggled()) {
             
             String handPrefix = (hand == InteractionHand.MAIN_HAND) ? "Main " : "Off ";

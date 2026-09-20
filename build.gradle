@@ -28,7 +28,13 @@ loom {
         client {
             vmArg "--enable-native-access=ALL-UNNAMED"
             vmArg "-Doshi.os.windows.perfos.disabled=true"
+            vmArg "-Doshi.os.windows.perfproc.disabled=true"
+            vmArg "-Doshi.os.windows.perfdisk.disabled=true"
             vmArg "-Dorg.joml.unsafe=false"
+            vmArg "-Duser.language=en"
+            vmArg "-Duser.country=US"
+            vmArg "-XX:ErrorFile=${project.projectDir}/run/hs_err_%p.log"
+            vmArg "-XX:+CreateMinidumpOnCrash"
         }
     }
 }
@@ -85,7 +91,13 @@ processResources {
     }
 }
 
-def targetJavaVersion = project.minecraft_version.startsWith("26.") ? 25 : 21
+// Compiled bytecode is kept at Java 21 (class file v65) even though the game itself now
+// requires a Java 25 runtime: Sponge Mixin 0.8.7's bundled ASM only fully supports up to
+// class file version 65, and targeting 25 here made every one of this mod's mixins emit
+// "Class version 69 required is higher than the class version supported" warnings, which
+// caused native instability under Mixin's concurrent bytecode transformation. Java 21
+// class files run fine on the JDK 25 the game launches with.
+def targetJavaVersion = 21
 tasks.withType(JavaCompile).configureEach {
     // ensure that the encoding is set to UTF-8, no matter what the system default is
     // this fixes some edge cases with special characters not displaying correctly
@@ -142,6 +154,24 @@ publishing {
         // Notice: This block does NOT have the same function as the block in the top level.
         // The repositories here will be used for publishing your artifact, not for
         // retrieving dependencies.
+    }
+}
+
+// Gradle itself (its Groovy build-script evaluation) needs org.gradle.java.home to stay on a
+// JDK the bundled Groovy/Gradle version supports (JDK 25 here; JDK 26 class files aren't
+// supported yet and fail with "Unsupported class file major version 70").
+//
+// The actual game client is a separate forked JVM and has no such constraint. JDK 25.0.3.9's
+// JIT compiler was found to crash natively and non-deterministically (STATUS_ACCESS_VIOLATION /
+// STATUS_STACK_BUFFER_OVERRUN, no Java exception, no hs_err) partway through the client's
+// startup — reproducible several times, and confirmed JIT-related since running with -Xint
+// (interpreter only) was stable. JDK 26.0.2 does not exhibit the crash with normal JIT enabled,
+// so runClient launches on it instead. Override with MOD_RUN_JAVA_HOME if that install path
+// differs on your machine, or if a newer JDK 25 patch fixes the underlying bug.
+def runClientJavaHome = System.getenv("MOD_RUN_JAVA_HOME") ?: "C:/Program Files/Java/jdk-26.0.2"
+if (new File(runClientJavaHome, "bin/java.exe").exists()) {
+    tasks.named("runClient") {
+        executable(new File(runClientJavaHome, "bin/java.exe").absolutePath)
     }
 }
 

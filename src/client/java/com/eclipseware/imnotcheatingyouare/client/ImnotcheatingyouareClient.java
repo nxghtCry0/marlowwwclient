@@ -12,7 +12,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.multiplayer.ServerData;
-import org.lwjgl.glfw.GLFW;
 
 public class ImnotcheatingyouareClient implements ClientModInitializer {
     public static ImnotcheatingyouareClient INSTANCE;

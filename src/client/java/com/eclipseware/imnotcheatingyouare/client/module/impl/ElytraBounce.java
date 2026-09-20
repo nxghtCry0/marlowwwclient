@@ -84,7 +84,7 @@ public class ElytraBounce extends Module {
             int originalSlot = ModuleUtils.getSelectedSlot();
             ModuleUtils.switchToSlot(hotbarSlot);
             ((MinecraftAccessor) mc).invokeStartUseItem();
-            mc.player.swing(InteractionHand.MAIN_HAND);
+            mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
             ModuleUtils.switchToSlot(originalSlot);
             return true;
         }

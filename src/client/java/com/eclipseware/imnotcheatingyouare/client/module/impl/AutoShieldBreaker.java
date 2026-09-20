@@ -10,7 +10,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
@@ -157,7 +156,7 @@ public class AutoShieldBreaker extends Module {
         if (pendingStunAttack && mc.player != null && mc.gameMode != null && stunTarget != null) {
             if (System.currentTimeMillis() >= stunAttackTime) {
                 ((com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor) mc).invokeStartAttack();
-                mc.player.swing(InteractionHand.MAIN_HAND);
+                mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
                 pendingStunAttack = false;
                 stunTarget = null;
             }
@@ -179,7 +178,7 @@ public class AutoShieldBreaker extends Module {
     private int findAxeInHotbar(Player player) {
         for (int i = 0; i < 9; i++) {
             ItemStack stack = player.getInventory().getItem(i);
-            if (stack.getItem() instanceof AxeItem) {
+            if (stack.is(ItemTags.AXES)) {
                 return i;
             }
         }

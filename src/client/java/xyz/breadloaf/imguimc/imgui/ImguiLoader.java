@@ -5,19 +5,15 @@ import com.mojang.logging.LogUtils;
 import imgui.*;
 import imgui.flag.*;
 import imgui.gl3.ImGuiImplGl3;
-import imgui.glfw.ImGuiImplGlfw;
-import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL33;
-import org.lwjgl.system.MemoryStack;
 import org.slf4j.Logger;
 import xyz.breadloaf.imguimc.font.FontExtractor;
 import xyz.breadloaf.imguimc.interfaces.Renderable;
 import xyz.breadloaf.imguimc.interfaces.Theme;
 import java.io.File;
 import java.io.IOException;
-import java.nio.FloatBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,14 +21,11 @@ import imgui.type.ImInt;
 import org.lwjgl.opengl.GL12;
 import java.nio.ByteBuffer;
 
-import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
-import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
-
 public class ImguiLoader {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final long CONTENT_SCALE_REFRESH_INTERVAL_NANOS = 250_000_000L;
 
-    private static ImGuiImplGlfw imGuiGlfw = null;
+    private static SdlImGuiPlatform imGuiPlatform = null;
     private static ImGuiImplGl3 imGuiGl3 = null;
 
     private static long windowHandle;
@@ -70,8 +63,8 @@ public class ImguiLoader {
         windowHandle = handle;
         try {
             initializeImGui();
-            imGuiGlfw = new ImGuiImplGlfw();
-            imGuiGlfw.init(handle, true);
+            imGuiPlatform = new SdlImGuiPlatform();
+            imGuiPlatform.init(handle);
             imGuiGl3 = new ImGuiImplGl3();
             imGuiGl3.init();
             rebuildCustomFont(getWindowContentScale());
@@ -209,6 +202,14 @@ public class ImguiLoader {
     }
 
     public static void onFrameRender() {
+        if (!initialized) {
+            try {
+                net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                if (mc != null && mc.getWindow() != null) {
+                    initialize(mc.getWindow().handle());
+                }
+            } catch (Throwable ignored) {}
+        }
         if (!shouldRenderFrame())
             return;
         renderFrame();
@@ -230,7 +231,7 @@ public class ImguiLoader {
         boolean frameStarted = false;
         try {
             applyDisplayScale();
-            imGuiGlfw.newFrame();
+            imGuiPlatform.newFrame();
             ImGui.newFrame();
             frameStarted = true;
 
@@ -324,7 +325,10 @@ public class ImguiLoader {
     private static void applyDisplayScale() {
         float scale = getWindowContentScale();
         ImGuiIO io = ImGui.getIO();
-        io.setFontGlobalScale(1.0f);
+        // The font atlas is baked at `scale`x pixel density for crispness (see rebuildCustomFont),
+        // but ImGui draws text at the font's baked pixel size in *display* (logical) units, not
+        // framebuffer pixels. Without the inverse scale here, text renders `scale`x too large.
+        io.setFontGlobalScale(scale > 0f ? 1.0f / scale : 1.0f);
 
         if (!fontLoaded || (customFontAvailable && Math.abs(scale - loadedFontScale) > 0.15f)) {
             rebuildCustomFont(scale);
@@ -344,11 +348,12 @@ public class ImguiLoader {
 
         float scale = 1.0f;
 
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            FloatBuffer xScale = stack.mallocFloat(1);
-            FloatBuffer yScale = stack.mallocFloat(1);
-            GLFW.glfwGetWindowContentScale(windowHandle, xScale, yScale);
-            scale = Math.max(xScale.get(0), yScale.get(0));
+        try {
+            com.mojang.blaze3d.platform.Window window = net.minecraft.client.Minecraft.getInstance().getWindow();
+            int guiScaledWidth = window.getGuiScaledWidth();
+            if (guiScaledWidth > 0) {
+                scale = window.queryFramebufferSize().width() / (float) guiScaledWidth;
+            }
         } catch (Throwable ignored) {
             scale = 1.0f;
         }
@@ -394,17 +399,8 @@ public class ImguiLoader {
         try {
             prepareImGuiGlState();
             imGuiGl3.renderDrawData(ImGui.getDrawData());
-
-            if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable)) {
-                final long backupWindowPtr = glfwGetCurrentContext();
-                try {
-                    ImGui.updatePlatformWindows();
-                    prepareImGuiGlState();
-                    ImGui.renderPlatformWindowsDefault();
-                } finally {
-                    glfwMakeContextCurrent(backupWindowPtr);
-                }
-            }
+            // Multi-viewport rendering (ImGuiConfigFlags.ViewportsEnable) is never enabled, so no
+            // platform-window pass is needed here.
         } finally {
             org.lwjgl.opengl.GL20.glUseProgram(program);
             org.lwjgl.opengl.GL30.glBindVertexArray(vao);
@@ -498,13 +494,13 @@ public class ImguiLoader {
             }
         }
 
-        if (imGuiGlfw != null) {
+        if (imGuiPlatform != null) {
             try {
-                imGuiGlfw.dispose();
+                imGuiPlatform.dispose();
             } catch (Throwable exception) {
-                LOGGER.warn("Failed to dispose the ImGui GLFW backend", exception);
+                LOGGER.warn("Failed to dispose the ImGui SDL platform backend", exception);
             } finally {
-                imGuiGlfw = null;
+                imGuiPlatform = null;
             }
         }
 

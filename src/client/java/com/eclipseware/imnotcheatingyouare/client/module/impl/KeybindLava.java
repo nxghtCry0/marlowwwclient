@@ -51,7 +51,7 @@ public class KeybindLava extends Module {
             step = 1;
         } else if (step == 1) {
             ((MinecraftAccessor) mc).invokeStartUseItem();
-            mc.player.swing(InteractionHand.MAIN_HAND);
+            mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
             step = 2;
         } else if (step == 2) {
             if (originalSlot >= 0 && originalSlot < 9 && originalSlot != ModuleUtils.getSelectedSlot()) {

@@ -25,7 +25,7 @@ public class MinecraftMixin {
             method = "renderFrame",
             at = @At(
                     value = "INVOKE",
-                    target = "Lcom/mojang/blaze3d/systems/GpuSurface;present()V"
+                    target = "Lcom/mojang/renderpearl/api/device/GpuSurface;present()V"
             )
     )
     private void onRenderFrame(boolean renderLevel, CallbackInfo ci) {

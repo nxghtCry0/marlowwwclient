@@ -144,21 +144,20 @@ public class ConnectionMixin {
 
         if (packet instanceof ServerboundSignUpdatePacket signPacket) {
             boolean hasText = false;
-            for (String line : signPacket.getLines()) {
+            for (String line : signPacket.lines()) {
                 if (line != null && !line.isEmpty()) {
                     hasText = true;
                     break;
                 }
             }
             if (hasText) {
-                com.eclipseware.imnotcheatingyouare.client.module.impl.AutoSign.savedLines = signPacket.getLines();
-                com.eclipseware.imnotcheatingyouare.client.module.impl.AutoSign.isFront = signPacket.isFrontText();
+                com.eclipseware.imnotcheatingyouare.client.module.impl.AutoSign.savedLines = signPacket.lines().toArray(new String[0]);
+                com.eclipseware.imnotcheatingyouare.client.module.impl.AutoSign.isFront = signPacket.slot() == net.minecraft.world.level.block.entity.SignTextSlot.FRONT;
             }
         }
 
         if (packet instanceof ServerboundMovePlayerPacket ||
-            packet instanceof net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket ||
-            packet instanceof net.minecraft.network.protocol.game.ServerboundSwingPacket) {
+            packet instanceof net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket) {
             if (ImnotcheatingyouareClient.INSTANCE != null && ImnotcheatingyouareClient.INSTANCE.moduleManager != null) {
                 Module freecam = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Freecam");
                 if (freecam != null && freecam.isToggled()) {

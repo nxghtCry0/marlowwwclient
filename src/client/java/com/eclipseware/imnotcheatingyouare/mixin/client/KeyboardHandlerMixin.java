@@ -11,11 +11,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(KeyboardHandler.class)
 public class KeyboardHandlerMixin {
 
-    @Inject(method = "setup", at = @At("TAIL"))
-    private void onSetup(com.mojang.blaze3d.platform.Window window, CallbackInfo ci) {
-        xyz.breadloaf.imguimc.imgui.ImguiLoader.onGlfwInit(window.handle());
-    }
-
     @Inject(method = "keyPress", at = @At("HEAD"))
     private void onKeyPress(long window, int action, net.minecraft.client.input.KeyEvent event, CallbackInfo ci) {
         if (Minecraft.getInstance().gui.screen() != null) return;

@@ -5,12 +5,12 @@ import com.eclipseware.imnotcheatingyouare.client.clickgui.Clickgui;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 public class Menu extends Module {
     public Menu() {
         super("Menu", Category.Client, "Opens the ClickGUI.");
-        this.setKeyBind(GLFW.GLFW_KEY_RIGHT_SHIFT); 
+        this.setKeyBind(InputConstants.KEY_RSHIFT);
     }
 
     private int pressCount = 0;
@@ -27,28 +27,10 @@ public class Menu extends Module {
             return;
         }
 
-        if (this.getKeyBind() == -1 || mc == null || mc.getWindow() == null || mc.player == null) return;
+        if (this.getKeyBind() == 0 || mc == null || mc.getWindow() == null || mc.player == null) return;
         if (mc.gui.screen() != null) return;
 
-        long windowHandle = 0;
-        try {
-            for (java.lang.reflect.Field f : mc.getWindow().getClass().getDeclaredFields()) {
-                if (f.getType() == long.class) {
-                    f.setAccessible(true);
-                    windowHandle = f.getLong(mc.getWindow());
-                    break;
-                }
-            }
-        } catch (Exception e) {}
-
-        if (windowHandle == 0) return;
-
-        boolean isPressed;
-        if (this.getKeyBind() >= 0 && this.getKeyBind() <= 7) {
-            isPressed = org.lwjgl.glfw.GLFW.glfwGetMouseButton(windowHandle, this.getKeyBind()) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
-        } else {
-            isPressed = org.lwjgl.glfw.GLFW.glfwGetKey(windowHandle, this.getKeyBind()) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
-        }
+        boolean isPressed = com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.isDown(this.getKeyBind());
 
         if (isPressed && !wasPressed) {
             if (System.currentTimeMillis() - lastPressTime > 3000) {

@@ -20,7 +20,7 @@ public class NoHitDelay extends Module {
         }
 
         for (Entity entity : mc.level.entitiesForRendering()) {
-            entity.invulnerableTime = 0;
+            entity.setInvulnerableTime(0);
         }
     }
 }

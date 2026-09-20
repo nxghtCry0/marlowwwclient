@@ -77,7 +77,7 @@ public class ModuleUtils {
             handler.startPredicting();
         }
 
-        mc.player.swing(InteractionHand.MAIN_HAND);
+        mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
         mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
     }
 
@@ -91,7 +91,7 @@ public class ModuleUtils {
             InteractionHand.MAIN_HAND, 0, yaw, pitch
         );
         mc.getConnection().send(packet);
-        mc.player.swing(InteractionHand.MAIN_HAND);
+        mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
     }
 
     public static void spoofSlot(int fakeSlot) {
@@ -110,7 +110,7 @@ public class ModuleUtils {
         BlockHitResult hitResult = new BlockHitResult(
             Vec3.atCenterOf(pos), face, pos, false
         );
-        mc.player.swing(InteractionHand.MAIN_HAND);
+        mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
         mc.getConnection().send(new ServerboundUseItemOnPacket(
             InteractionHand.MAIN_HAND, hitResult, 0
         ));
@@ -225,7 +225,7 @@ public class ModuleUtils {
             setClientSlot(placement.targetSlot);
         }
 
-        mc.player.swing(InteractionHand.MAIN_HAND);
+        mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
         mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, placement.hitResult);
 
         if (revertSlot != -1 && revertSlot != placement.targetSlot) {

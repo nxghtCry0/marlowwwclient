@@ -93,7 +93,7 @@ public class AutoMaceCounter extends Module {
                     }
                     
                     mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
-                    mc.player.swing(InteractionHand.MAIN_HAND);
+                    mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
                     
                     Setting cdSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Cooldown (Ticks)");
                     cooldownTicks = cdSetting != null ? (int) cdSetting.getValDouble() : 20;

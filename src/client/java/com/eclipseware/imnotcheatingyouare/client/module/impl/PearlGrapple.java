@@ -78,7 +78,7 @@ public class PearlGrapple extends Module {
 
         if (ticksElapsed == 5) {
             mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
-            mc.player.swing(InteractionHand.MAIN_HAND);
+            mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
         }
         
         if (ticksElapsed >= 8) {

@@ -19,7 +19,7 @@ public class Module {
         this.category = category;
         this.subCategory = "";
         this.description = description;
-        this.keyBind = -1;
+        this.keyBind = 0;
         this.toggled = false;
         this.hidden = false;
     }
@@ -29,7 +29,7 @@ public class Module {
         this.category = category;
         this.subCategory = "";
         this.description = "";
-        this.keyBind = -1;
+        this.keyBind = 0;
         this.toggled = false;
         this.hidden = false;
     }
@@ -39,7 +39,7 @@ public class Module {
         this.category = category;
         this.subCategory = "";
         this.description = description;
-        this.keyBind = -1;
+        this.keyBind = 0;
         this.toggled = false;
         this.hidden = hidden;
     }
@@ -65,32 +65,14 @@ public class Module {
     }
 
     public void tickKeybind() {
-        if (this.keyBind == -1 || mc == null || mc.getWindow() == null) return;
+        if (this.keyBind == 0 || mc == null || mc.getWindow() == null) return;
 
         if (mc.gui.screen() != null) {
             wasKeyPressed = false;
             return;
         }
 
-        long windowHandle = 0;
-        try {
-            for (java.lang.reflect.Field f : mc.getWindow().getClass().getDeclaredFields()) {
-                if (f.getType() == long.class) {
-                    f.setAccessible(true);
-                    windowHandle = f.getLong(mc.getWindow());
-                    break;
-                }
-            }
-        } catch (Exception e) {}
-
-        if (windowHandle == 0) return;
-
-        boolean isPressed;
-        if (this.keyBind >= 0 && this.keyBind <= 7) {
-            isPressed = org.lwjgl.glfw.GLFW.glfwGetMouseButton(windowHandle, this.keyBind) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
-        } else {
-            isPressed = org.lwjgl.glfw.GLFW.glfwGetKey(windowHandle, this.keyBind) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
-        }
+        boolean isPressed = com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.isDown(this.keyBind);
 
         if (isPressed && !wasKeyPressed) {
             onKeybind();

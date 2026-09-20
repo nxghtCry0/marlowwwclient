@@ -41,7 +41,7 @@ public final class RoundedDropdown<T> extends CompatAbstractWidget {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (event != null && this.active && this.visible && event.button() == 0) {
+        if (event != null && this.active && this.visible && event.button() == 1) {
             double mx = event.x(), my = event.y();
 
             if (this.menuOpen) {
