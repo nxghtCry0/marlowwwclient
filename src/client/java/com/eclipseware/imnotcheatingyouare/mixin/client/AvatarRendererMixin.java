@@ -1,5 +1,7 @@
 package com.eclipseware.imnotcheatingyouare.mixin.client;
 
+import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
+import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.utils.RotationManager;
 import net.minecraft.world.entity.Avatar;
 import net.minecraft.client.player.LocalPlayer;
@@ -21,6 +23,14 @@ public class AvatarRendererMixin {
                 state.xRot *= -1.0f;
             }
         }
+        if (ImnotcheatingyouareClient.INSTANCE != null && ImnotcheatingyouareClient.INSTANCE.moduleManager != null) {
+            Module nametags = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Nametags");
+            if (nametags != null && nametags.isToggled()) {
+                state.nameTag = null;
+            }
+        }
     }
 }
+
+
 

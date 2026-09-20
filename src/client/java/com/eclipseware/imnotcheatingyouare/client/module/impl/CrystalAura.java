@@ -131,9 +131,10 @@ public class CrystalAura extends Module {
                             continue;
                     }
 
-                    mc.gameMode.attack(mc.player, crystal);
-                    mc.player.swing(InteractionHand.MAIN_HAND);
-                    breakTicks = (int) breakDelay.getValDouble();
+                    mc.hitResult = new net.minecraft.world.phys.EntityHitResult(crystal);
+                    mc.crosshairPickEntity = crystal;
+                    ((com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor) mc).invokeStartAttack();
+                    breakTicks = Math.max(1, (int) breakDelay.getValDouble());
                     return;
                 }
             }
@@ -159,9 +160,14 @@ public class CrystalAura extends Module {
                 if (silentAim.getValBoolean())
                     aimAt(placeTarget);
                 int origSlot = ModuleUtils.getSelectedSlot();
-                ModuleUtils.switchToSlot(crystalSlot);
+                if (origSlot != crystalSlot) {
+                    ModuleUtils.switchToSlot(crystalSlot);
+                    if (silentSwap) {
+                        deferredRevertSlot = origSlot;
+                    }
+                }
+                mc.hitResult = new net.minecraft.world.phys.BlockHitResult(placeTarget, Direction.UP, targetPos, false);
                 ((com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor) mc).invokeStartUseItem();
-                ModuleUtils.switchToSlot(origSlot);
                 placeTicks = Math.max(1, (int) placeDelay.getValDouble());
             } else {
                 int obbySlot = ModuleUtils.getObsidianSlot();
@@ -178,9 +184,14 @@ public class CrystalAura extends Module {
                             aimAt(obbyTarget);
 
                         int origSlot = ModuleUtils.getSelectedSlot();
-                        ModuleUtils.switchToSlot(obbySlot);
+                        if (origSlot != obbySlot) {
+                            ModuleUtils.switchToSlot(obbySlot);
+                            if (silentSwap) {
+                                deferredRevertSlot = origSlot;
+                            }
+                        }
+                        mc.hitResult = new net.minecraft.world.phys.BlockHitResult(obbyTarget, Direction.UP, obbyPos.below(), false);
                         ((com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor) mc).invokeStartUseItem();
-                        ModuleUtils.switchToSlot(origSlot);
                         recentObby.put(obbyPos.below(), now + 1500);
                         placeTicks = Math.max(1, (int) placeDelay.getValDouble());
                     }

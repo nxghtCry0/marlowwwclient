@@ -5,9 +5,8 @@ import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils;
+import com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -15,28 +14,29 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 
 public class AutoPlaceCrystal extends Module {
-    private Setting delay;
-    private Setting onlyOnRightClick;
-    private Setting range;
-    private Setting excludeBedrock;
-    private Setting requireHoldingCrystal;
-    private Setting requireHoldingWeapon;
-
-    private long lastActionTime = 0;
+    private final Setting onlyOnRightClick;
+    private final Setting range;
+    private final Setting preferOffhand;
+    private final Setting autoSwap;
+    private final Setting excludeBedrock;
+    private final Setting requireHoldingCrystal;
+    private final Setting requireHoldingWeapon;
 
     public AutoPlaceCrystal() {
-        super("AutoPlaceCrystal", Category.Crystal, "Automatically places crystals on obsidian or bedrock.");
-        
-        delay = new Setting("Delay (ms)", this, 100.0, 0.0, 500.0, true);
+        super("AutoPlaceCrystal", Category.Crystal, "Places end crystals with tick-locked precision and zero multi-action flags.");
+
         onlyOnRightClick = new Setting("Only On Right Click", this, true);
         range = new Setting("Range", this, 4.5, 1.0, 6.0, false);
+        preferOffhand = new Setting("Prefer Offhand", this, true);
+        autoSwap = new Setting("Auto Swap", this, true);
         excludeBedrock = new Setting("Exclude Bedrock", this, false);
         requireHoldingCrystal = new Setting("Require Holding Crystal", this, false);
         requireHoldingWeapon = new Setting("Require Holding Weapon", this, false);
 
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(delay);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(onlyOnRightClick);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(range);
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(preferOffhand);
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(autoSwap);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(excludeBedrock);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(requireHoldingCrystal);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(requireHoldingWeapon);
@@ -59,30 +59,43 @@ public class AutoPlaceCrystal extends Module {
         if (requireHoldingWeapon.getValBoolean() && !ModuleUtils.isHoldingWeapon(mc.player.getMainHandItem()))
             return;
 
-        if (System.currentTimeMillis() - lastActionTime < delay.getValDouble())
+        // If AutoHitCrystal has a crystal to hit this tick, yield to maintain 2-tick cycle
+        if (AutoHitCrystal.hasCrystalTarget() || AutoHitCrystal.lastHitTick == mc.player.tickCount) {
             return;
+        }
 
-        int crystalSlot = ModuleUtils.getCrystalSlot();
-        if (crystalSlot == -1)
-            return;
+        boolean offhandHasCrystal = preferOffhand.getValBoolean() && mc.player.getOffhandItem().is(Items.END_CRYSTAL);
+        int crystalSlot = -1;
+        if (!offhandHasCrystal) {
+            crystalSlot = ModuleUtils.getCrystalSlot();
+            if (crystalSlot == -1 && !mc.player.getMainHandItem().is(Items.END_CRYSTAL)) {
+                return;
+            }
+        }
 
         HitResult target = mc.hitResult;
         if (target instanceof BlockHitResult bhr) {
             BlockPos pos = bhr.getBlockPos();
             BlockState state = mc.level.getBlockState(pos);
             boolean allowBedrock = !excludeBedrock.getValBoolean();
+
             if ((state.is(Blocks.OBSIDIAN) || (allowBedrock && state.is(Blocks.BEDROCK))) && mc.level.isEmptyBlock(pos.above())) {
-                double dist = mc.player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
+                double distSq = mc.player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
                 double r = range.getValDouble();
-                if (dist <= r * r) {
-                    int originalSlot = ModuleUtils.getSelectedSlot();
-                    ModuleUtils.switchToSlot(crystalSlot);
-                    mc.player.swing(InteractionHand.MAIN_HAND);
-                    mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, bhr);
-                    if (originalSlot != crystalSlot) {
-                        ModuleUtils.switchToSlot(originalSlot);
+                if (distSq <= r * r) {
+                    if (!offhandHasCrystal && autoSwap.getValBoolean() && crystalSlot != -1) {
+                        if (ModuleUtils.getSelectedSlot() != crystalSlot) {
+                            ModuleUtils.switchToSlot(crystalSlot);
+                        }
                     }
-                    lastActionTime = System.currentTimeMillis();
+
+                    // Zero right click delay so vanilla placement fires cleanly
+                    ((MinecraftAccessor) mc).setRightClickDelay(0);
+
+                    // If not holding keyUse (macro mode), invoke placement once
+                    if (!mc.options.keyUse.isDown()) {
+                        ((MinecraftAccessor) mc).invokeStartUseItem();
+                    }
                 }
             }
         }

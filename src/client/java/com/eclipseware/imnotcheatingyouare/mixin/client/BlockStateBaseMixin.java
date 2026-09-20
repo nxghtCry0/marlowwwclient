@@ -13,6 +13,8 @@ public class BlockStateBaseMixin {
 
     @Inject(method = "canOcclude", at = @At("HEAD"), cancellable = true)
     private void onCanOcclude(CallbackInfoReturnable<Boolean> cir) {
+        if (Boolean.TRUE.equals(Xray.IS_CHECKING_EXPOSED.get())) return;
+
         if (Xray.INSTANCE != null && Xray.INSTANCE.isToggled()) {
             BlockState state = (BlockState) (Object) this;
             String name = BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();

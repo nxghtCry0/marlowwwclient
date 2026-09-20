@@ -24,7 +24,9 @@ public class BlockBehaviourMixin {
     @Inject(method = "getShadeBrightness", at = @At("HEAD"), cancellable = true)
     private void onGetShadeBrightness(BlockState state, net.minecraft.world.level.BlockGetter level, net.minecraft.core.BlockPos pos, CallbackInfoReturnable<Float> cir) {
         if (Xray.INSTANCE != null && Xray.INSTANCE.isToggled()) {
-            cir.setReturnValue(1.0f);
+            if (isImportant(state, level, pos)) {
+                cir.setReturnValue(1.0f);
+            }
         }
     }
     
@@ -49,6 +51,13 @@ public class BlockBehaviourMixin {
         String name = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();
         if (Xray.INSTANCE != null) {
             return Xray.INSTANCE.isImportantBlock(name);
+        }
+        return false;
+    }
+
+    private boolean isImportant(BlockState state, net.minecraft.world.level.BlockGetter level, net.minecraft.core.BlockPos pos) {
+        if (Xray.INSTANCE != null) {
+            return Xray.INSTANCE.isImportantBlock(state, level, pos);
         }
         return false;
     }

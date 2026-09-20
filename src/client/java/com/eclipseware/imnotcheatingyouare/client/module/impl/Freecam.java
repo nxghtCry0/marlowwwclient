@@ -130,9 +130,11 @@ public class Freecam extends Module {
     public void onDisable() {
         if (mc.player == null || mc.level == null) return;
        
-        mc.player.setPos(savedPos);
-        mc.player.setYRot(savedYaw);
-        mc.player.setXRot(savedPitch);
+        if (savedPos != null) {
+            mc.player.setPos(savedPos);
+            mc.player.setYRot(savedYaw);
+            mc.player.setXRot(savedPitch);
+        }
         mc.player.getAbilities().flying = false;
         mc.player.noPhysics = false;
         mc.player.setDeltaMovement(0, 0, 0);

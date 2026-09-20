@@ -49,6 +49,39 @@ public class RenderUtils {
         return true;
     }
 
+    public static boolean project2DImGui(double x, double y, double z, float partialTicks, Vector3d out) {
+        if (mc.gameRenderer == null) return false;
+        Camera camera = mc.gameRenderer.mainCamera();
+        if (camera == null) return false;
+        Vec3 camPos = camera.position();
+
+        Matrix4f combinedMatrix = camera.getViewRotationProjectionMatrix(combinedMatrixBuffer.get());
+
+        transformVec.set((float)(x - camPos.x), (float)(y - camPos.y), (float)(z - camPos.z), 1.0f);
+        combinedMatrix.transform(transformVec);
+
+        if (transformVec.w <= 0.001f) return false;
+        transformVec.div(transformVec.w);
+
+        float displayWidth = imgui.ImGui.getIO().getDisplaySizeX();
+        float displayHeight = imgui.ImGui.getIO().getDisplaySizeY();
+
+        double screenX = (displayWidth / 2.0f) * (transformVec.x + 1.0f);
+        double screenY = (displayHeight / 2.0f) * (1.0f - transformVec.y);
+
+        out.set(screenX, screenY, transformVec.z);
+        return true;
+    }
+
+    public static int toImGuiColor(int r, int g, int b, int a) {
+        return ((a & 0xFF) << 24) | ((b & 0xFF) << 16) | ((g & 0xFF) << 8) | (r & 0xFF);
+    }
+
+    public static int toImGuiColor(Color color, float alphaFactor) {
+        int a = Math.max(0, Math.min(255, (int) (color.getAlpha() * alphaFactor)));
+        return ((a & 0xFF) << 24) | ((color.getBlue() & 0xFF) << 16) | ((color.getGreen() & 0xFF) << 8) | (color.getRed() & 0xFF);
+    }
+
     private static Vec3 getCameraPos(Camera camera) {
         return camera.position();
     }

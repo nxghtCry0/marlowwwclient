@@ -25,74 +25,19 @@ public class ModuleUtils {
         return -1;
     }
 
-    private static java.lang.reflect.Field selectedField = null;
-
-    private static void setupReflection() {
-        if (selectedField != null) return;
-        try {
-            selectedField = net.minecraft.world.entity.player.Inventory.class.getDeclaredField("selected");
-            selectedField.setAccessible(true);
-        } catch (Exception ignored) {}
-    }
-
     public static int getSelectedSlot() {
         if (mc.player == null) return 0;
-        setupReflection();
-        if (selectedField != null) {
-            try { return selectedField.getInt(mc.player.getInventory()); } catch (Exception ignored) {}
-        }
-        return mc.player.getInventory().getSelectedSlot();
+        return ((com.eclipseware.imnotcheatingyouare.mixin.client.InventoryAccessor) mc.player.getInventory()).getSelected();
     }
 
     public static void setClientSlot(int slot) {
         if (mc.player == null) return;
-        setupReflection();
-        if (selectedField != null) {
-            try { selectedField.setInt(mc.player.getInventory(), slot); } catch (Exception ignored) {}
-        }
-    }
-
-    private static java.lang.reflect.Field carriedIndexField = null;
-
-    private static void updateCarriedIndex(int slot) {
-        if (mc.gameMode == null) return;
-        try {
-            if (carriedIndexField == null) {
-                for (java.lang.reflect.Field f : net.minecraft.client.multiplayer.MultiPlayerGameMode.class.getDeclaredFields()) {
-                    if (f.getType() == int.class) {
-                        f.setAccessible(true);
-                        if (f.getName().equals("carriedIndex") || f.getName().equals("field_3716") || f.getName().equals("c")) {
-                            carriedIndexField = f;
-                            break;
-                        }
-                    }
-                }
-                if (carriedIndexField == null) {
-                    int oldSlot = getSelectedSlot();
-                    for (java.lang.reflect.Field f : net.minecraft.client.multiplayer.MultiPlayerGameMode.class.getDeclaredFields()) {
-                        if (f.getType() == int.class) {
-                            f.setAccessible(true);
-                            if (f.getInt(mc.gameMode) == oldSlot) {
-                                carriedIndexField = f;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            if (carriedIndexField != null) {
-                carriedIndexField.setInt(mc.gameMode, slot);
-            }
-        } catch (Exception ignored) {}
+        ((com.eclipseware.imnotcheatingyouare.mixin.client.InventoryAccessor) mc.player.getInventory()).setSelected(slot);
     }
 
     public static void switchToSlot(int slot) {
         if (mc.player == null) return;
-        setupReflection();
-        if (selectedField != null) {
-            try { selectedField.setInt(mc.player.getInventory(), slot); } catch (Exception ignored) {}
-        }
-        updateCarriedIndex(slot);
+        ((com.eclipseware.imnotcheatingyouare.mixin.client.InventoryAccessor) mc.player.getInventory()).setSelected(slot);
         setServerSlot(slot);
     }
     
@@ -278,7 +223,6 @@ public class ModuleUtils {
         if (slotChanged) {
             setServerSlot(placement.targetSlot);
             setClientSlot(placement.targetSlot);
-            updateCarriedIndex(placement.targetSlot);
         }
 
         mc.player.swing(InteractionHand.MAIN_HAND);
@@ -286,7 +230,6 @@ public class ModuleUtils {
 
         if (revertSlot != -1 && revertSlot != placement.targetSlot) {
             setClientSlot(revertSlot);
-            updateCarriedIndex(revertSlot);
             revertSlot = -1;
         }
         spoofState = 0;
@@ -308,7 +251,6 @@ public class ModuleUtils {
                 if (current != revertSlot) {
                     mc.getConnection().send(new ServerboundSetCarriedItemPacket(revertSlot));
                     setClientSlot(revertSlot);
-                    updateCarriedIndex(revertSlot);
                 }
                 revertSlot = -1;
             }

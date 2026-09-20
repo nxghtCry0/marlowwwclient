@@ -1,0 +1,118 @@
+{
+  "atlas": {
+    "type": "msdf",
+    "distanceRange": 8,
+    "distanceRangeMiddle": 0,
+    "size": 128,
+    "width": 260,
+    "height": 260,
+    "yOrigin": "bottom"
+  },
+  "metrics": {
+    "emSize": 1,
+    "lineHeight": 1.08984375,
+    "ascender": 0.875,
+    "descender": -0.125,
+    "underlineY": 0.009765625,
+    "underlineThickness": 0
+  },
+  "glyphs": [
+    {
+      "unicode": 66,
+      "advance": 1,
+      "planeBounds": {
+        "left": 0.1328125,
+        "bottom": 0.00390625,
+        "right": 0.8671875,
+        "top": 0.74609375
+      },
+      "atlasBounds": {
+        "left": 0.5,
+        "bottom": 0.5,
+        "right": 94.5,
+        "top": 95.5
+      }
+    },
+    {
+      "unicode": 69,
+      "advance": 1,
+      "planeBounds": {
+        "left": 0.05078125,
+        "bottom": 0.08984375,
+        "right": 0.94921875,
+        "top": 0.66015625
+      },
+      "atlasBounds": {
+        "left": 0.5,
+        "bottom": 96.5,
+        "right": 115.5,
+        "top": 169.5
+      }
+    },
+    {
+      "unicode": 70,
+      "advance": 1,
+      "planeBounds": {
+        "left": 0.1328125,
+        "bottom": 0.25390625,
+        "right": 0.8671875,
+        "top": 0.49609375
+      },
+      "atlasBounds": {
+        "left": 127.5,
+        "bottom": 126.5,
+        "right": 221.5,
+        "top": 157.5
+      }
+    },
+    {
+      "unicode": 65,
+      "advance": 1,
+      "planeBounds": {
+        "left": 0.09375,
+        "bottom": -0.00390625,
+        "right": 0.875,
+        "top": 0.78515625
+      },
+      "atlasBounds": {
+        "left": 127.5,
+        "bottom": 158.5,
+        "right": 227.5,
+        "top": 259.5
+      }
+    },
+    {
+      "unicode": 68,
+      "advance": 1,
+      "planeBounds": {
+        "left": 0.0078125,
+        "bottom": 0.02734375,
+        "right": 0.9921875,
+        "top": 0.72265625
+      },
+      "atlasBounds": {
+        "left": 0.5,
+        "bottom": 170.5,
+        "right": 126.5,
+        "top": 259.5
+      }
+    },
+    {
+      "unicode": 67,
+      "advance": 1,
+      "planeBounds": {
+        "left": 0.0888671875,
+        "bottom": -0.12109375,
+        "right": 0.8232421875,
+        "top": 0.84765625
+      },
+      "atlasBounds": {
+        "left": 127.5,
+        "bottom": 1.5,
+        "right": 221.5,
+        "top": 125.5
+      }
+    }
+  ],
+  "kerning": []
+}

@@ -4,41 +4,103 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
+import com.eclipseware.imnotcheatingyouare.client.utils.cheat.AntiCheatProfile;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
+
 public class STap extends Module {
-    private int phase = 0;
+    private int phase = 0; // 0: Idle, 1: Waiting before tap, 2: Tapping (holding S / silent stop)
     private long lastPhaseTimeMs = 0L;
     private long targetDelayMs = 0L;
 
     public STap() {
         super("STap", Category.Combat, "Briefly taps backward key on hit to reset sprint knockback.");
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Chance (%)", this, 100.0, 0.0, 100.0, false));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Wait Delay (ms)", this, 0.0, 0.0, 500.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Action Delay (ms)", this, 150.0, 10.0, 500.0, true));
-        java.util.ArrayList<String> modes = new java.util.ArrayList<>();
+
+        ArrayList<String> modes = new ArrayList<>();
         modes.add("Normal");
         modes.add("Silent");
+        modes.add("Dynamic");
+        modes.add("Auto");
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("STap Mode", this, "Normal", modes));
+
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Chance (%)", this, 100.0, 0.0, 100.0, false));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Wait Delay (ms)", this, 0.0, 0.0, 300.0, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Action Delay (ms)", this, 90.0, 20.0, 400.0, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Jitter (ms)", this, 20.0, 0.0, 80.0, true));
+
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Only Players", this, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Only On Ground", this, false));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Only Forward", this, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Sprint Only", this, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Distance Max (m)", this, 4.5, 1.0, 6.0, false));
     }
 
     private boolean isSilent() {
         Setting modeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "STap Mode");
         String mode = modeSetting != null ? modeSetting.getValString() : "Normal";
-        return mode.equalsIgnoreCase("Silent");
+        if (mode.equalsIgnoreCase("Silent") || mode.equalsIgnoreCase("Dynamic")) return true;
+        if (mode.equalsIgnoreCase("Normal")) return false;
+        return AntiCheatProfile.wtapSilentMode();
     }
 
     public void onAttackLanded(net.minecraft.world.entity.Entity target) {
         if (!isToggled() || mc.player == null || mc.options == null) return;
         if (phase != 0) return;
-        if (!mc.options.keyUp.isDown()) return;
+
+        Setting onlyForwardSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Only Forward");
+        if ((onlyForwardSetting == null || onlyForwardSetting.getValBoolean()) && !mc.options.keyUp.isDown()) {
+            return;
+        }
+
+        Setting sprintOnlySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Sprint Only");
+        if ((sprintOnlySetting != null && sprintOnlySetting.getValBoolean()) && !mc.player.isSprinting()) {
+            return;
+        }
+
+        Setting onGroundSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Only On Ground");
+        if (onGroundSetting != null && onGroundSetting.getValBoolean() && !mc.player.onGround()) {
+            return;
+        }
+
+        Setting onlyPlayersSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Only Players");
+        if (onlyPlayersSetting != null && onlyPlayersSetting.getValBoolean() && !(target instanceof net.minecraft.world.entity.player.Player)) {
+            return;
+        }
+
+        if (target != null) {
+            Setting distSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Distance Max (m)");
+            double maxDist = distSetting != null ? distSetting.getValDouble() : 4.5;
+            if (mc.player.distanceTo(target) > maxDist) return;
+        }
 
         Setting chanceSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Chance (%)");
         double chance = chanceSetting != null ? chanceSetting.getValDouble() : 100.0;
         if (Math.random() * 100.0 > chance) return;
 
         Setting waitSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Wait Delay (ms)");
-        long waitMs = waitSetting != null ? (long) waitSetting.getValDouble() : 0L;
+        long baseWait = waitSetting != null ? (long) waitSetting.getValDouble() : 0L;
+
+        Setting jitterSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Jitter (ms)");
+        long jitter = jitterSetting != null ? (long) jitterSetting.getValDouble() : 20L;
+
+        long waitMs = baseWait + (jitter > 0 ? (long) (Math.random() * (jitter + 1)) : 0L);
+
+        Setting actionSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Action Delay (ms)");
+        long baseAction = actionSetting != null ? (long) actionSetting.getValDouble() : 90L;
+
+        Setting modeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "STap Mode");
+        String mode = modeSetting != null ? modeSetting.getValString() : "Normal";
+        if (mode.equalsIgnoreCase("Dynamic") && target != null) {
+            double dist = mc.player.distanceTo(target);
+            if (dist < 2.5) {
+                baseAction = Math.min(220L, (long)(baseAction * 1.35));
+            } else if (dist > 3.6) {
+                baseAction = Math.max(35L, (long)(baseAction * 0.75));
+            }
+        }
+
+        long actionMs = baseAction + (jitter > 0 ? (long) (Math.random() * (jitter + 1)) : 0L);
 
         lastPhaseTimeMs = System.currentTimeMillis();
         if (waitMs <= 0) {
@@ -48,8 +110,7 @@ public class STap extends Module {
             } else {
                 mc.options.keyDown.setDown(true);
             }
-            Setting actionSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Action Delay (ms)");
-            targetDelayMs = actionSetting != null ? (long) actionSetting.getValDouble() : 150L;
+            targetDelayMs = actionMs;
         } else {
             phase = 1;
             targetDelayMs = waitMs;
@@ -72,7 +133,10 @@ public class STap extends Module {
                     phase = 2;
                     lastPhaseTimeMs = now;
                     Setting actionSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Action Delay (ms)");
-                    targetDelayMs = actionSetting != null ? (long) actionSetting.getValDouble() : 150L;
+                    long baseAction = actionSetting != null ? (long) actionSetting.getValDouble() : 90L;
+                    Setting jitterSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Jitter (ms)");
+                    long jitter = jitterSetting != null ? (long) jitterSetting.getValDouble() : 20L;
+                    targetDelayMs = baseAction + (jitter > 0 ? (long) (Math.random() * (jitter + 1)) : 0L);
                 }
             }
             case 2 -> {
@@ -86,6 +150,14 @@ public class STap extends Module {
                 }
             }
         }
+    }
+
+    public static boolean shouldSilentStopSprint() {
+        if (ImnotcheatingyouareClient.INSTANCE == null || ImnotcheatingyouareClient.INSTANCE.moduleManager == null) return false;
+        STap sTap = (STap) ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("STap");
+        if (sTap == null || !sTap.isToggled()) return false;
+        if (sTap.phase != 2) return false;
+        return sTap.isSilent();
     }
 
     private boolean isPhysicallyHoldingS() {

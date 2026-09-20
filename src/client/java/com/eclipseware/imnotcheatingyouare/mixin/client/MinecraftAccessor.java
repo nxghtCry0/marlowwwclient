@@ -14,4 +14,7 @@ public interface MinecraftAccessor {
 
     @org.spongepowered.asm.mixin.gen.Accessor("missTime")
     void setMissTime(int missTime);
+
+    @org.spongepowered.asm.mixin.gen.Accessor("rightClickDelay")
+    void setRightClickDelay(int delay);
 }

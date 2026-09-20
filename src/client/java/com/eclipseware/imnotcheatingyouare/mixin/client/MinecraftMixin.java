@@ -21,6 +21,17 @@ public class MinecraftMixin {
 
     @Shadow public HitResult hitResult;
 
+    @Inject(
+            method = "renderFrame",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lcom/mojang/blaze3d/systems/GpuSurface;present()V"
+            )
+    )
+    private void onRenderFrame(boolean renderLevel, CallbackInfo ci) {
+        xyz.breadloaf.imguimc.imgui.ImguiLoader.onFrameRender();
+    }
+
     @Inject(method = "startAttack", at = @At("HEAD"), cancellable = true)
     private void onStartAttack(CallbackInfoReturnable<Boolean> cir) {
         Minecraft mc = (Minecraft) (Object) this;

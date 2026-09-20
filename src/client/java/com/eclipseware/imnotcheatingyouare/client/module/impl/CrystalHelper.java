@@ -117,9 +117,8 @@ public class CrystalHelper extends Module {
 
     private void silentUseItem(int targetSlot, BlockHitResult hitResult) {
         ModuleUtils.runSilentSwap(targetSlot, () -> {
-            mc.player.swing(InteractionHand.MAIN_HAND);
             mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
-            ((MinecraftAccessor) mc).invokeStartUseItem();
+            mc.player.swing(InteractionHand.MAIN_HAND);
         });
     }
 

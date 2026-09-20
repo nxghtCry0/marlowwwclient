@@ -71,6 +71,13 @@ public class Menu extends Module {
             return;
         }
 
+        Module weakDevice = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("WeakDevice");
+        if (weakDevice != null && weakDevice.isToggled() && weakDevice instanceof com.eclipseware.imnotcheatingyouare.client.module.impl.WeakDevice wd) {
+            wd.toggleGui();
+            setToggled(false);
+            return;
+        }
+
         Module legacyUI = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("LegacyUI");
         if (legacyUI != null && legacyUI.isToggled()) {
             if (ImnotcheatingyouareClient.INSTANCE.clickGui == null) {

@@ -11,7 +11,7 @@ base {
 }
 
 tasks.matching { it.name == "jar" || it.name == "remapJar" || it.name == "remapClientJar" }.configureEach {
-    archiveFileName = "${project.archives_base_name}-${project.mod_version}.jar"
+    archiveFileName = "marlowwwclient-v4.5.jar"
 }
 
 loom {
@@ -68,6 +68,8 @@ dependencies {
         exclude group: "org.lwjgl"
     }
     runtimeOnly "io.github.spair:imgui-java-natives-windows:1.86.10"
+    runtimeOnly "io.github.spair:imgui-java-natives-linux:1.86.10"
+    runtimeOnly "io.github.spair:imgui-java-natives-macos:1.86.10"
 }
 
 processResources {
@@ -114,6 +116,14 @@ java {
 jar {
     from("LICENSE") {
         rename { "${it}_${project.archives_base_name}" }
+    }
+    from({
+        configurations.clientRuntimeClasspath.filter { file ->
+            file.name.contains("imgui") || file.name.contains("nanovg")
+        }.collect { zipTree(it) }
+    }) {
+        exclude "META-INF/MANIFEST.MF", "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
 }
 

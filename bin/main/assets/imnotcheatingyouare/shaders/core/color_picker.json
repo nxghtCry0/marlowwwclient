@@ -1,0 +1,19 @@
+{
+    "blend": {
+        "func": "add",
+        "srcrgb": "srcalpha",
+        "dstrgb": "1-srcalpha"
+    },
+    "vertex": "minecraft:core/position_color",
+    "fragment": "imnotcheatingyouare:core/color_picker",
+    "attributes": [ "Position", "Color" ],
+    "samplers": [],
+    "uniforms": [
+        { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "Resolution", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+        { "name": "Position", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] },
+        { "name": "Hue", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "Alpha", "type": "float", "count": 1, "values": [ 1.0 ] }
+    ]
+} 

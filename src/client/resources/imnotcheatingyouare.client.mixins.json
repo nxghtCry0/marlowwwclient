@@ -40,7 +40,9 @@
 "ServerboundMovePlayerPacketAccessor",
 "BlockStateBaseMixin",
 "ClientBrandRetrieverMixin",
-"CameraMixin"
+"EntityRendererMixin",
+"CameraMixin",
+"InventoryAccessor"
 ],
 "injectors": {
 "defaultRequire": 1

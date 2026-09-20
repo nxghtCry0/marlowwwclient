@@ -6,11 +6,12 @@ import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.AnimationUtil;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
-import com.eclipseware.imnotcheatingyouare.client.utils.FontUtils;
-import com.eclipseware.imnotcheatingyouare.client.utils.NanoVGManager;
+import imgui.ImDrawList;
+import imgui.ImGui;
+import imgui.ImVec2;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.LivingEntity;
-import com.mojang.blaze3d.platform.Window;
+
 import java.awt.Color;
 import java.util.ArrayList;
 
@@ -29,14 +30,18 @@ public class TargetHUD extends Module {
     private long lastAttackTime = 0;
     private int lastPlayerHurtTime = 0;
 
+    private static final ImVec2 nameSizeBuf = new ImVec2();
+    private static final ImVec2 hpSizeBuf = new ImVec2();
+    private static final ImVec2 comboSizeBuf = new ImVec2();
+
     public TargetHUD() {
-        super("TargetHUD", Category.HUD, "Displays your combat target's info in a sleek card.");
+        super("TargetHUD", Category.HUD, "Displays combat target info in an ultra-sleek ImGui card.");
         INSTANCE = this;
-        
+
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("X", this, 200.0, 0.0, 2000.0, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Y", this, 200.0, 0.0, 2000.0, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Sync Theme", this, true));
-        
+
         ArrayList<String> colorModes = new ArrayList<>();
         colorModes.add("Theme Sync");
         colorModes.add("Dynamic Health");
@@ -92,9 +97,13 @@ public class TargetHUD extends Module {
 
     @Override
     public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDelta) {
+        // High-performance ImGui overlay handles rendering on frame render
+    }
+
+    public void renderImGuiOverlay() {
         boolean inEditor = mc.gui.screen() instanceof com.eclipseware.imnotcheatingyouare.client.clickgui.HudEditorScreen;
         boolean active = isToggled() || inEditor;
-        
+
         LivingEntity activeTarget = target;
         if (activeTarget == null || activeTarget.isDeadOrDying()) {
             if (inEditor) {
@@ -122,22 +131,16 @@ public class TargetHUD extends Module {
         boolean syncTheme = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Sync Theme").getValBoolean();
         String colorMode = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Health Color Mode").getValString();
 
-        float x = (float) xVal;
-        float y = (float) yVal;
-        
-        float width = 175.0f;
-        float height = 42.0f;
-        float radius = 10.0f;
+        float guiScale = (float) mc.getWindow().getGuiScale();
+        if (guiScale <= 0) guiScale = 1.0f;
 
-        float centerX = x + width / 2.0f;
-        float centerY = y + height / 2.0f;
-        float scale = (active && activeTarget != null) ? AnimationUtil.easeOutBack(animationProgress) : animationProgress;
+        float x = (float) xVal * guiScale;
+        float y = (float) yVal * guiScale;
+        float width = 175.0f * guiScale;
+        float height = 42.0f * guiScale;
+
         float alpha = animationProgress;
-
         Color themeColor = syncTheme ? RenderUtils.getThemeAccentColor() : new Color(239, 142, 172);
-        Color themeSecondary = syncTheme ? RenderUtils.getThemeSecondaryColor() : new Color(24, 24, 37);
-        
-        int fullAlpha = (int)(255 * alpha) & 0xFF;
 
         float hp = lastTarget.getHealth();
         float maxHp = lastTarget.getMaxHealth();
@@ -150,103 +153,72 @@ public class TargetHUD extends Module {
             damageHealthFraction = animatedHealthFraction;
         }
 
-        float finalWidth = width;
-        float finalHeight = height;
-        float finalScale = scale;
-        float finalCenterX = centerX;
-        float finalCenterY = centerY;
-        float finalAlpha = alpha;
-        
-        int rStart = (int) (themeColor.getRed() * 0.15f);
-        int gStart = (int) (themeColor.getGreen() * 0.15f);
-        int bStart = (int) (themeColor.getBlue() * 0.15f);
-
-        int rEnd = (int) (themeSecondary.getRed() * 0.15f);
-        int gEnd = (int) (themeSecondary.getGreen() * 0.15f);
-        int bEnd = (int) (themeSecondary.getBlue() * 0.15f);
-
-        int borderStartColor = themeColor.getRGB() & 0xFFFFFF;
-        int borderEndColor = themeSecondary.getRGB() & 0xFFFFFF;
-
-        float finalBarW = width - 28.0f - (comboCount > 0 ? 26.0f : 0.0f);
-        float finalDamageW = finalBarW * damageHealthFraction;
-        float finalProgressW = finalBarW * animatedHealthFraction;
-
-        Color startColor;
-        Color endColor;
+        Color hpColor;
         if ("Dynamic Health".equalsIgnoreCase(colorMode)) {
-            Color healthColor = RenderUtils.getHealthColor(animatedHealthFraction);
-            startColor = healthColor;
-            endColor = healthColor.darker();
+            hpColor = RenderUtils.getHealthColor(animatedHealthFraction);
         } else {
-            startColor = themeColor;
-            endColor = themeSecondary;
-        }
-        int healthStartColor = startColor.getRGB() & 0xFFFFFF;
-        int healthEndColor = endColor.getRGB() & 0xFFFFFF;
-
-        int badgeColor = themeColor.getRGB() & 0xFFFFFF;
-
-        Window window = mc.getWindow();
-        int scaledWidth = window.getGuiScaledWidth();
-        int scaledHeight = window.getGuiScaledHeight();
-        float ratio = (float) window.getGuiScale();
-
-        int cardBgAlpha = (int) (200 * finalAlpha) & 0xFF;
-        int cardBorderAlpha = (int) (180 * finalAlpha) & 0xFF;
-        int barBgAlpha = (int) (60 * finalAlpha) & 0xFF;
-        int dmgAlpha = (int) (160 * finalAlpha) & 0xFF;
-        int progressAlpha = (int) (255 * finalAlpha) & 0xFF;
-
-        guiGraphics.pose().pushMatrix();
-        guiGraphics.pose().translate(centerX, centerY);
-        guiGraphics.pose().scale(scale, scale);
-        guiGraphics.pose().translate(-width / 2.0f, -height / 2.0f);
-
-        int bgStart = (cardBgAlpha << 24) | (rStart << 16) | (gStart << 8) | bStart;
-        int bgEnd = (cardBgAlpha << 24) | (rEnd << 16) | (gEnd << 8) | bEnd;
-        int borderStart = (cardBorderAlpha << 24) | borderStartColor;
-        int borderEnd = (cardBorderAlpha << 24) | borderEndColor;
-
-        AnimationUtil.drawSquircleVerticalGradient(guiGraphics, 0.0f, 0.0f, width, height, radius, bgStart, bgEnd);
-        AnimationUtil.drawSquircleOutlineGradient(guiGraphics, 0.0f, 0.0f, width, height, radius, 1.0f, borderStart, borderEnd);
-
-        AnimationUtil.drawRoundedRect(guiGraphics, 14, 26, (int) finalBarW, 5, 2, (barBgAlpha << 24) | 0x16161C);
-
-        if (finalDamageW > 0) {
-            AnimationUtil.drawRoundedRect(guiGraphics, 14, 26, (int) finalDamageW, 5, 2, (dmgAlpha << 24) | 0xE24C4C);
+            hpColor = themeColor;
         }
 
-        if (finalProgressW > 0) {
-            AnimationUtil.drawRoundedHorizontalGradient(guiGraphics, 14, 26, (int) finalProgressW, 5, 2, (progressAlpha << 24) | healthStartColor, (progressAlpha << 24) | healthEndColor);
+        ImDrawList drawList = ImGui.getForegroundDrawList();
+
+        int cardBgColor = RenderUtils.toImGuiColor(18, 18, 24, (int)(alpha * 255.0f * 0.88f));
+        int cardBorderColor = RenderUtils.toImGuiColor(themeColor, alpha * 0.7f);
+        int trackBgColor = RenderUtils.toImGuiColor(10, 10, 14, (int)(alpha * 255.0f * 0.9f));
+        int dmgBarColor = RenderUtils.toImGuiColor(226, 76, 76, (int)(alpha * 255.0f * 0.7f));
+        int hpBarColor = RenderUtils.toImGuiColor(hpColor, alpha);
+
+        // 1. Card Container & Glow Border
+        drawList.addRectFilled(x, y, x + width, y + height, cardBgColor, 6.0f * guiScale);
+        drawList.addRect(x, y, x + width, y + height, cardBorderColor, 6.0f * guiScale, 0, 1.2f * guiScale);
+
+        // 2. Target Name
+        String name = inEditor ? "Target Preview" : lastTarget.getName().getString();
+        if (name.length() > 16) {
+            name = name.substring(0, 14) + "..";
+        }
+        int nameTextColor = RenderUtils.toImGuiColor(255, 255, 255, (int)(alpha * 255.0f));
+        drawList.addText(x + 10f * guiScale, y + 8f * guiScale, nameTextColor, name);
+
+        // 3. Health Numbers
+        String hpStr = String.format("%.1f / %.1f", hp, maxHp);
+        ImGui.calcTextSize(hpSizeBuf, hpStr);
+        int hpTextColor = RenderUtils.toImGuiColor(170, 170, 185, (int)(alpha * 255.0f));
+        drawList.addText(x + width - 10f * guiScale - hpSizeBuf.x, y + 8f * guiScale, hpTextColor, hpStr);
+
+        // 4. Smooth Health Track & Damage Catch-up Bar
+        float barX = x + 10f * guiScale;
+        float barY = y + 26f * guiScale;
+        float barW = width - 20f * guiScale - (comboCount > 0 ? 30f * guiScale : 0f);
+        float barH = 6f * guiScale;
+
+        drawList.addRectFilled(barX, barY, barX + barW, barY + barH, trackBgColor, 3.0f * guiScale);
+
+        float dmgW = barW * damageHealthFraction;
+        if (dmgW > 0) {
+            drawList.addRectFilled(barX, barY, barX + dmgW, barY + barH, dmgBarColor, 3.0f * guiScale);
         }
 
-        if (comboCount > 0) {
-            AnimationUtil.drawRoundedRect(guiGraphics, (int) (width - 36.0f), 22, 22, 13, 3, (progressAlpha << 24) | badgeColor);
+        float animatedW = barW * animatedHealthFraction;
+        if (animatedW > 0) {
+            drawList.addRectFilled(barX, barY, barX + animatedW, barY + barH, hpBarColor, 3.0f * guiScale);
         }
 
-        String name = inEditor ? "Preview" : lastTarget.getName().getString();
-        if (name.length() > 14) {
-            name = name.substring(0, 12) + "..";
-        }
-        int textColor = (fullAlpha << 24) | 0xF5F5FA;
-        FontUtils.drawString(guiGraphics, name, 14, 10, textColor, false);
-
-        String hpStr = String.format("%.1f", lastTarget.getHealth());
-        int subTextColor = (fullAlpha << 24) | 0xA0A0AB;
-        int hpTextW = FontUtils.width(hpStr);
-        FontUtils.drawString(guiGraphics, hpStr, (int) (width - 14.0f - hpTextW), 10, subTextColor, false);
-
+        // 5. Combo Hits Badge
         if (comboCount > 0) {
             String comboStr = "+" + comboCount;
-            float badgeCX = width - 36.0f + 11.0f;
-            float badgeCY = 22.0f + 6.5f;
-            int textW = FontUtils.width(comboStr);
-            int badgeTextColor = (fullAlpha << 24) | 0xFFFFFF;
+            ImGui.calcTextSize(comboSizeBuf, comboStr);
 
-            FontUtils.drawString(guiGraphics, comboStr, (int) (badgeCX - textW / 2.0f), (int) (badgeCY - 4.5f), badgeTextColor, false);
+            float badgeW = comboSizeBuf.x + 8f * guiScale;
+            float badgeH = 12f * guiScale;
+            float badgeX = x + width - 10f * guiScale - badgeW;
+            float badgeY = barY - 3f * guiScale;
+
+            int badgeBgColor = RenderUtils.toImGuiColor(themeColor, alpha * 0.9f);
+            int badgeTextColor = RenderUtils.toImGuiColor(255, 255, 255, (int)(alpha * 255.0f));
+
+            drawList.addRectFilled(badgeX, badgeY, badgeX + badgeW, badgeY + badgeH, badgeBgColor, 3.0f * guiScale);
+            drawList.addText(badgeX + 4f * guiScale, badgeY + (badgeH - comboSizeBuf.y) / 2f, badgeTextColor, comboStr);
         }
-
-        guiGraphics.pose().popMatrix();
     }
 }

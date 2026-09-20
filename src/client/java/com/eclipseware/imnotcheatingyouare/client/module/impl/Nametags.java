@@ -4,10 +4,10 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
-import com.eclipseware.imnotcheatingyouare.client.utils.AnimationUtil;
-import com.eclipseware.imnotcheatingyouare.client.utils.FontUtils;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import imgui.ImDrawList;
+import imgui.ImGui;
+import imgui.ImVec2;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,16 +21,24 @@ import java.awt.Color;
 public class Nametags extends Module {
 
     public Nametags() {
-        super("Nametags", Category.Render);
+        super("Nametags", Category.Render, "Renders high-fidelity ImGui nametags for entities.");
     }
 
     private static final Vector3d projVec = new Vector3d();
+    private static final ImVec2 nameSizeBuf = new ImVec2();
+    private static final ImVec2 hpSizeBuf = new ImVec2();
+    private static final ImVec2 distSizeBuf = new ImVec2();
+    private static final ImVec2 itemSizeBuf = new ImVec2();
 
     @Override
     public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
+        // High-performance ImGui overlay handles rendering on frame render
+    }
+
+    public void renderImGuiOverlay() {
         if (!isToggled() || mc.player == null || mc.level == null) return;
 
-        float partialTick = getTickDelta(tickDeltaObj);
+        float partialTick = mc.getDeltaTracker() != null ? mc.getDeltaTracker().getGameTimeDeltaPartialTick(true) : 1.0f;
 
         Setting playersSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Players");
         boolean showPlayers = playersSetting == null || playersSetting.getValBoolean();
@@ -39,6 +47,11 @@ public class Nametags extends Module {
         boolean showMobs = mobsSetting != null && mobsSetting.getValBoolean();
 
         Color themeColor = RenderUtils.getThemeAccentColor();
+        ImDrawList drawList = ImGui.getForegroundDrawList();
+
+        double maxDist = mc.options != null ? Math.max(256.0, mc.options.getEffectiveRenderDistance() * 16.0) : 256.0;
+        float displayWidth = ImGui.getIO().getDisplaySizeX();
+        float displayHeight = ImGui.getIO().getDisplaySizeY();
 
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity == mc.player || !entity.isAlive()) continue;
@@ -48,19 +61,22 @@ public class Nametags extends Module {
             if (!(isPlayer && showPlayers) && !(isMob && showMobs)) continue;
 
             double dist = mc.player.distanceTo(entity);
-            if (dist > 64.0) continue;
+            if (dist > maxDist) continue;
 
             double ex = net.minecraft.util.Mth.lerp(partialTick, entity.xo, entity.getX());
             double ey = net.minecraft.util.Mth.lerp(partialTick, entity.yo, entity.getY()) + entity.getBbHeight() + 0.4;
             double ez = net.minecraft.util.Mth.lerp(partialTick, entity.zo, entity.getZ());
 
-            if (!RenderUtils.project2D(ex, ey, ez, partialTick, projVec)) continue;
+            if (!RenderUtils.project2DImGui(ex, ey, ez, partialTick, projVec)) continue;
             if (projVec.z <= 0 || projVec.z >= 1.0) continue;
-            Vector3d proj = projVec;
+            if (!Double.isFinite(projVec.x) || !Double.isFinite(projVec.y)) continue;
 
-            float alpha = Math.max(0.3f, 1.0f - (float)(dist / 64.0));
-            int bgAlpha = (int)(alpha * 180);
-            int textAlpha = (int)(alpha * 255);
+            float px = (float) projVec.x;
+            float py = (float) projVec.y;
+            if (px < -500f || px > displayWidth + 500f || py < -500f || py > displayHeight + 500f) continue;
+
+            float alpha = Math.max(0.4f, 1.0f - (float)(dist / maxDist));
+            int oa = (int)(alpha * 255);
 
             String name = entity.getName().getString();
             String hpStr = "";
@@ -69,64 +85,80 @@ public class Nametags extends Module {
             }
             String distStr = " " + (Math.round(dist * 10.0) / 10.0) + "m";
 
-            int nameWidth = FontUtils.width(name);
-            int hpWidth = FontUtils.width(hpStr);
-            int distWidth = FontUtils.width(distStr);
-            int totalWidth = nameWidth + hpWidth + distWidth;
+            ImGui.calcTextSize(nameSizeBuf, name);
+            ImGui.calcTextSize(hpSizeBuf, hpStr);
+            ImGui.calcTextSize(distSizeBuf, distStr);
 
-            int drawX = (int) proj.x - totalWidth / 2;
-            int drawY = (int) proj.y - 10;
+            float totalWidth = nameSizeBuf.x + hpSizeBuf.x + distSizeBuf.x;
+            float cardHeight = Math.max(nameSizeBuf.y, Math.max(hpSizeBuf.y, distSizeBuf.y)) + 6f;
+            float paddingX = 6f;
+            float cardWidth = totalWidth + (paddingX * 2);
 
-            AnimationUtil.drawRoundedRect(guiGraphics, drawX - 3, drawY - 2, totalWidth + 6, 14, 3,
-                new Color(10, 10, 10, bgAlpha).getRGB());
+            float drawX = px - cardWidth / 2f;
+            float drawY = py - cardHeight;
 
-            FontUtils.drawString(guiGraphics, name, drawX, drawY,
-                new Color(themeColor.getRed(), themeColor.getGreen(), themeColor.getBlue(), textAlpha).getRGB(), false);
-            if (!hpStr.isEmpty()) {
-                Color hpColor = entity instanceof LivingEntity l ? RenderUtils.getHealthColor(l.getHealth() / l.getMaxHealth()) : Color.WHITE;
-                FontUtils.drawString(guiGraphics, hpStr, drawX + nameWidth, drawY,
-                    new Color(hpColor.getRed(), hpColor.getGreen(), hpColor.getBlue(), textAlpha).getRGB(), false);
+            int cardBgColor = RenderUtils.toImGuiColor(14, 14, 18, (int)(alpha * 255.0f * 0.85f));
+            int cardBorderColor = RenderUtils.toImGuiColor(isPlayer ? themeColor : new Color(255, 95, 95), alpha * 0.6f);
+            int nameTextColor = RenderUtils.toImGuiColor(255, 255, 255, oa);
+            int distTextColor = RenderUtils.toImGuiColor(170, 210, 255, oa);
+
+            // Card Backdrop & Outline
+            drawList.addRectFilled(drawX, drawY, drawX + cardWidth, drawY + cardHeight, cardBgColor, 4.0f);
+            drawList.addRect(drawX, drawY, drawX + cardWidth, drawY + cardHeight, cardBorderColor, 4.0f, 0, 1.2f);
+
+            float curX = drawX + paddingX;
+            float textY = drawY + (cardHeight - nameSizeBuf.y) / 2f;
+
+            // Name
+            drawList.addText(curX, textY, nameTextColor, name);
+            curX += nameSizeBuf.x;
+
+            // HP
+            if (!hpStr.isEmpty() && entity instanceof LivingEntity living) {
+                Color hpColor = RenderUtils.getHealthColor(living.getHealth() / Math.max(1f, living.getMaxHealth()));
+                int hpTextColor = RenderUtils.toImGuiColor(hpColor, alpha);
+                drawList.addText(curX, textY, hpTextColor, hpStr);
+                curX += hpSizeBuf.x;
             }
-            FontUtils.drawString(guiGraphics, distStr, drawX + nameWidth + hpWidth, drawY,
-                new Color(180, 180, 180, textAlpha).getRGB(), false);
 
+            // Distance
+            drawList.addText(curX, textY, distTextColor, distStr);
+
+            // Equipment Badges
             if (entity instanceof LivingEntity living) {
                 ItemStack mainHand = living.getMainHandItem();
                 ItemStack offHand = living.getOffhandItem();
-                int itemY = drawY - (mainHand.isEmpty() && offHand.isEmpty() ? 0 : 18);
 
-                if (!mainHand.isEmpty()) {
-                    int mainX = (int)proj.x - (offHand.isEmpty() ? 8 : 16);
-                    guiGraphics.item(mainHand, mainX, itemY - 2);
-                    if (mainHand.getCount() > 1) {
-                        FontUtils.drawString(guiGraphics, String.valueOf(mainHand.getCount()), mainX + 8, itemY + 6, -1, true);
+                if ((mainHand != null && !mainHand.isEmpty()) || (offHand != null && !offHand.isEmpty())) {
+                    StringBuilder itemSb = new StringBuilder();
+                    if (mainHand != null && !mainHand.isEmpty()) {
+                        itemSb.append(mainHand.getHoverName().getString());
+                        if (mainHand.getCount() > 1) itemSb.append(" x").append(mainHand.getCount());
                     }
-                }
-                if (!offHand.isEmpty()) {
-                    int offX = (int)proj.x + (mainHand.isEmpty() ? -8 : 2);
-                    guiGraphics.item(offHand, offX, itemY - 2);
-                    if (offHand.getCount() > 1) {
-                        FontUtils.drawString(guiGraphics, String.valueOf(offHand.getCount()), offX + 8, itemY + 6, -1, true);
+                    if (offHand != null && !offHand.isEmpty()) {
+                        if (itemSb.length() > 0) itemSb.append(" | ");
+                        itemSb.append(offHand.getHoverName().getString());
+                        if (offHand.getCount() > 1) itemSb.append(" x").append(offHand.getCount());
                     }
+
+                    String itemText = itemSb.toString();
+                    ImGui.calcTextSize(itemSizeBuf, itemText);
+
+                    float itemPaddingX = 5f;
+                    float itemCardW = itemSizeBuf.x + (itemPaddingX * 2);
+                    float itemCardH = itemSizeBuf.y + 4f;
+                    float itemCardX = px - itemCardW / 2f;
+                    float itemCardY = drawY - itemCardH - 3f;
+
+                    int itemBgColor = RenderUtils.toImGuiColor(10, 10, 14, (int)(alpha * 255.0f * 0.8f));
+                    int itemBorderColor = RenderUtils.toImGuiColor(120, 120, 140, (int)(alpha * 255.0f * 0.4f));
+                    int itemTextColor = RenderUtils.toImGuiColor(220, 220, 230, oa);
+
+                    drawList.addRectFilled(itemCardX, itemCardY, itemCardX + itemCardW, itemCardY + itemCardH, itemBgColor, 3.0f);
+                    drawList.addRect(itemCardX, itemCardY, itemCardX + itemCardW, itemCardY + itemCardH, itemBorderColor, 3.0f, 0, 1.0f);
+                    drawList.addText(itemCardX + itemPaddingX, itemCardY + (itemCardH - itemSizeBuf.y) / 2f, itemTextColor, itemText);
                 }
             }
         }
-    }
-
-    private float getTickDelta(Object tickDeltaObj) {
-        if (tickDeltaObj instanceof Float) return (Float) tickDeltaObj;
-        for (java.lang.reflect.Method m : tickDeltaObj.getClass().getMethods()) {
-            if (m.getReturnType() == float.class) {
-                if (m.getParameterCount() == 1 && m.getParameterTypes()[0] == boolean.class) {
-                    try { return (float) m.invoke(tickDeltaObj, true); } catch (Exception e) {}
-                } else if (m.getParameterCount() == 0) {
-                    String name = m.getName().toLowerCase();
-                    if (name.contains("tick") || name.contains("delta") || name.contains("frame")) {
-                        try { return (float) m.invoke(tickDeltaObj); } catch (Exception e) {}
-                    }
-                }
-            }
-        }
-        return 1.0f;
     }
 }

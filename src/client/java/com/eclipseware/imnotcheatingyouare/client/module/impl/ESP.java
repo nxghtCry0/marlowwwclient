@@ -4,21 +4,28 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
-import com.eclipseware.imnotcheatingyouare.client.utils.FontUtils;
 import com.eclipseware.imnotcheatingyouare.client.utils.RenderUtils;
+import imgui.ImDrawList;
+import imgui.ImGui;
+import imgui.ImVec2;
+import net.minecraft.client.Camera;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4f;
 import org.joml.Vector3d;
+import org.joml.Vector4f;
 
 import java.awt.Color;
 
 public class ESP extends Module {
 
     public ESP() {
-        super("ESP", Category.Render);
+        super("ESP", Category.Render, "Renders high-performance ImGui overlay for entities.");
     }
 
     private static final Vector3d[] projBuffer = new Vector3d[8];
@@ -28,8 +35,14 @@ public class ESP extends Module {
         }
     }
 
-    private static final Color MOB_COLOR = new Color(255, 85, 85);
-    private static final int FILL_COLOR = 0x23000000;
+    private static final Vector4f transformVec = new Vector4f();
+    private static final ThreadLocal<Matrix4f> combinedMatrixBuffer = ThreadLocal.withInitial(Matrix4f::new);
+    private static final Color MOB_COLOR = new Color(255, 95, 95);
+
+    private static final ImVec2 nameSizeBuf = new ImVec2();
+    private static final ImVec2 distSizeBuf = new ImVec2();
+    private static final ImVec2 hpSizeBuf = new ImVec2();
+    private static final ImVec2 itemSizeBuf = new ImVec2();
 
     private Setting modeSetting;
     private Setting mobsSetting;
@@ -55,13 +68,16 @@ public class ESP extends Module {
 
     @Override
     public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickDeltaObj) {
+        // Uncapped ImGui overlay handles rendering on frame render
+    }
+
+    public void renderImGuiOverlay() {
         if (!isToggled() || mc.player == null || mc.level == null) return;
 
         Module bypassMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Bypass");
         if (bypassMod != null && bypassMod.isToggled()) return;
 
-        float partialTick = getTickDelta(tickDeltaObj);
-
+        float partialTick = mc.getDeltaTracker() != null ? mc.getDeltaTracker().getGameTimeDeltaPartialTick(true) : 1.0f;
         cacheSettings();
 
         String mode = modeSetting != null ? modeSetting.getValString() : "Outline";
@@ -78,11 +94,16 @@ public class ESP extends Module {
         float cornerGap = cornerGapSetting != null ? (float) cornerGapSetting.getValDouble() : 50f;
 
         Color themeColor = RenderUtils.getThemeAccentColor();
+        ImDrawList drawList = ImGui.getForegroundDrawList();
+
+        double maxDist = mc.options != null ? Math.max(256.0, mc.options.getEffectiveRenderDistance() * 16.0) : 256.0;
+        float displayWidth = ImGui.getIO().getDisplaySizeX();
+        float displayHeight = ImGui.getIO().getDisplaySizeY();
 
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity == mc.player || !(entity instanceof LivingEntity le) || !le.isAlive()) continue;
             double dist = mc.player.distanceTo(entity);
-            if (dist > 64.0) continue;
+            if (dist > maxDist) continue;
             boolean isPlayer = entity instanceof Player;
             boolean isMob = entity instanceof Mob;
             if (!isPlayer && !(isMob && showMobs)) continue;
@@ -97,15 +118,15 @@ public class ESP extends Module {
 
             double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
             double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
-            boolean valid = false;
 
+            int validCount = 0;
             for (int i = 0; i < 8; i++) {
                 double cx = x + ((i & 1) == 0 ? -hw : hw);
                 double cy = y + ((i & 2) == 0 ? 0 : h);
                 double cz = z + ((i & 4) == 0 ? -hw : hw);
 
-                if (RenderUtils.project2D(cx, cy, cz, partialTick, projBuffer[i])) {
-                    valid = true;
+                if (project2DImGui(cx, cy, cz, partialTick, projBuffer[i])) {
+                    validCount++;
                     double px = projBuffer[i].x;
                     double py = projBuffer[i].y;
                     if (px < minX) minX = px;
@@ -114,96 +135,195 @@ public class ESP extends Module {
                     if (py > maxY) maxY = py;
                 }
             }
-            if (!valid) continue;
+            if (validCount == 0) continue;
+            if (!Double.isFinite(minX) || !Double.isFinite(minY) || !Double.isFinite(maxX) || !Double.isFinite(maxY)) continue;
+
+            float ix = (float) Math.floor(minX);
+            float iy = (float) Math.floor(minY);
+            float ix2 = (float) Math.ceil(maxX);
+            float iy2 = (float) Math.ceil(maxY);
+
+            if (ix2 < -500f || ix > displayWidth + 500f || iy2 < -500f || iy > displayHeight + 500f) continue;
+            if (ix2 <= ix || iy2 <= iy) continue;
 
             float rectW = (float)(maxX - minX);
             float rectH = (float)(maxY - minY);
-            float alpha = Math.max(0.3f, 1.0f - (float)(dist / 64.0));
+            float alpha = Math.max(0.4f, 1.0f - (float)(dist / maxDist));
             int oa = (int)(alpha * 255);
-            int oc = (oa << 24) | (color.getRed() << 16) | (color.getGreen() << 8) | color.getBlue();
-            int black = (oa << 24);
-            int ix = (int) Math.floor(minX);
-            int iy = (int) Math.floor(minY);
-            int ix2 = (int) Math.ceil(maxX);
-            int iy2 = (int) Math.ceil(maxY);
-            int t = outlineThickness;
 
-            if (doFill) {
-                guiGraphics.fill(ix + t, iy + t, ix2 - t, iy2 - t, FILL_COLOR);
+            int oc = toImGuiColor(color, alpha);
+            int black = toImGuiColor(0, 0, 0, oa);
+            int fillColor = toImGuiColor(15, 15, 20, (int)(alpha * 255.0f * 0.25f));
+            float t = (float) outlineThickness;
+
+            // 1. Box Fill
+            if (doFill && (ix2 - t > ix + t) && (iy2 - t > iy + t)) {
+                drawList.addRectFilled(ix + t, iy + t, ix2 - t, iy2 - t, fillColor, 2.0f);
             }
 
+            // 2. Bounding Box Outline / Corner
             if (useCorner) {
                 float gapPct = Math.min(1f, Math.max(0f, cornerGap / 100f));
-                int cw = (int)(rectW * (1f - gapPct) / 2f);
-                int ch = (int)(rectH * (1f - gapPct) / 2f);
-                cw = Math.max(cw, 3);
-                ch = Math.max(ch, 3);
+                float cw = Math.max(4f, rectW * (1f - gapPct) / 2f);
+                float ch = Math.max(4f, rectH * (1f - gapPct) / 2f);
 
                 if (doBorder) {
-                    drawCornerBox(guiGraphics, ix - 1, iy - 1, ix2 + 1, iy2 + 1, cw + 1, ch + 1, 1, black);
-                    drawCornerBox(guiGraphics, ix + t, iy + t, ix2 - t, iy2 - t, cw - t, ch - t, 1, black);
+                    drawImGuiCornerBox(drawList, ix - 1f, iy - 1f, ix2 + 1f, iy2 + 1f, cw + 1f, ch + 1f, 1.5f, black);
+                    if (ix2 - t > ix + t && iy2 - t > iy + t) {
+                        drawImGuiCornerBox(drawList, ix + t, iy + t, ix2 - t, iy2 - t, cw - t, ch - t, 1.5f, black);
+                    }
                 }
-                drawCornerBox(guiGraphics, ix, iy, ix2, iy2, cw, ch, t, oc);
+                drawImGuiCornerBox(drawList, ix, iy, ix2, iy2, cw, ch, t, oc);
             } else {
                 if (doBorder) {
-                    drawBox(guiGraphics, ix - 1, iy - 1, ix2 + 1, iy2 + 1, 1, black);
-                    drawBox(guiGraphics, ix + t, iy + t, ix2 - t, iy2 - t, 1, black);
+                    drawList.addRect(ix - 1f, iy - 1f, ix2 + 1f, iy2 + 1f, black, 2.0f, 0, 1.5f);
+                    if (ix2 - t > ix + t && iy2 - t > iy + t) {
+                        drawList.addRect(ix + t, iy + t, ix2 - t, iy2 - t, black, 2.0f, 0, 1.5f);
+                    }
                 }
-                drawBox(guiGraphics, ix, iy, ix2, iy2, t, oc);
+                drawList.addRect(ix, iy, ix2, iy2, oc, 2.0f, 0, t);
             }
 
+            // 3. Health Bar
             if (showHealth) {
                 float maxHp = le.getMaxHealth();
-                float pct = Math.min(1f, Math.max(0f, le.getHealth() / Math.max(1f, maxHp)));
+                float currentHp = le.getHealth();
+                float pct = Math.min(1f, Math.max(0f, currentHp / Math.max(1f, maxHp)));
                 Color hpColor = RenderUtils.getHealthColor(pct);
-                int barH = (int)(rectH * pct);
-                int barX = ix - 6;
+                float barH = rectH * pct;
+                float barX = ix - 7f;
 
-                int hpRGB = (oa << 24) | (hpColor.getRed() << 16) | (hpColor.getGreen() << 8) | hpColor.getBlue();
-                int bgRGB = ((int)(alpha * 160) << 24);
+                int hpImColor = toImGuiColor(hpColor, alpha);
+                int bgImColor = toImGuiColor(15, 15, 20, (int)(alpha * 255.0f * 0.8f));
+                int borderImColor = toImGuiColor(0, 0, 0, (int)(alpha * 255.0f * 0.9f));
 
-                guiGraphics.fill(barX - 1, iy - 1, barX + 2, iy2 + 1, bgRGB);
-                guiGraphics.fill(barX, iy2 - barH, barX + 1, iy2, hpRGB);
+                // Background track
+                drawList.addRectFilled(barX - 1f, iy - 1f, barX + 3f, iy2 + 1f, bgImColor, 2.0f);
+                drawList.addRect(barX - 1f, iy - 1f, barX + 3f, iy2 + 1f, borderImColor, 2.0f, 0, 1.0f);
+
+                // Filled Health Bar
+                if (barH > 0) {
+                    drawList.addRectFilled(barX, iy2 - barH, barX + 2f, iy2, hpImColor, 1.5f);
+                }
             }
 
+            // 4. Beautiful Modern Nametag Card & Equipment
             if (showNames) {
                 String name = entity.getName().getString();
                 double d = Math.round(dist * 10.0) / 10.0;
-                String distStr = " [" + d + "m]";
-                String fullText = name + distStr;
-                int textWidth = FontUtils.width(fullText);
-                int textX = (int)(minX + rectW / 2 - textWidth / 2);
-                int textY = iy - 12;
+                String distStr = " " + d + "m";
+                float hpVal = Math.round(le.getHealth() * 10.0f) / 10.0f;
+                String hpStr = " " + hpVal + "HP";
 
-                int nameBgColor = ((int)(alpha * 120) << 24);
-                int nameDistColor = (oa << 24) | (200 << 16) | (200 << 8) | 200;
+                ImGui.calcTextSize(nameSizeBuf, name);
+                ImGui.calcTextSize(distSizeBuf, distStr);
+                ImGui.calcTextSize(hpSizeBuf, hpStr);
 
-                guiGraphics.fill(textX - 3, textY - 2, textX + textWidth + 3, textY + 9, nameBgColor);
-                FontUtils.drawString(guiGraphics, name, textX, textY, Color.WHITE.getRGB(), true);
-                FontUtils.drawString(guiGraphics, distStr, textX + FontUtils.width(name), textY, nameDistColor, true);
+                float cardContentWidth = nameSizeBuf.x + distSizeBuf.x + hpSizeBuf.x;
+                float cardHeight = Math.max(nameSizeBuf.y, Math.max(distSizeBuf.y, hpSizeBuf.y)) + 6f;
+                float paddingX = 6f;
+                float cardWidth = cardContentWidth + (paddingX * 2);
+
+                float cardX = ix + rectW / 2f - cardWidth / 2f;
+                float cardY = iy - cardHeight - 5f;
+
+                int cardBgColor = toImGuiColor(18, 18, 24, (int)(alpha * 255.0f * 0.85f));
+                int cardBorderColor = toImGuiColor(color, alpha * 0.6f);
+                int nameTextColor = toImGuiColor(255, 255, 255, oa);
+                int distTextColor = toImGuiColor(170, 210, 255, oa);
+
+                float pct = Math.min(1f, Math.max(0f, le.getHealth() / Math.max(1f, le.getMaxHealth())));
+                Color hpColor = RenderUtils.getHealthColor(pct);
+                int hpTextColor = toImGuiColor(hpColor, alpha);
+
+                // Main Nametag Card Backdrop & Accent Border
+                drawList.addRectFilled(cardX, cardY, cardX + cardWidth, cardY + cardHeight, cardBgColor, 4.0f);
+                drawList.addRect(cardX, cardY, cardX + cardWidth, cardY + cardHeight, cardBorderColor, 4.0f, 0, 1.2f);
+
+                // Text Layout Inside Card
+                float curX = cardX + paddingX;
+                float textY = cardY + (cardHeight - nameSizeBuf.y) / 2f;
+
+                // Name
+                drawList.addText(curX, textY, nameTextColor, name);
+                curX += nameSizeBuf.x;
+
+                // Distance
+                drawList.addText(curX, textY, distTextColor, distStr);
+                curX += distSizeBuf.x;
+
+                // HP
+                drawList.addText(curX, textY, hpTextColor, hpStr);
+
+                // Held Item Badge
+                ItemStack mainHand = le.getMainHandItem();
+                if (mainHand != null && !mainHand.isEmpty()) {
+                    String itemText = mainHand.getHoverName().getString();
+                    ImGui.calcTextSize(itemSizeBuf, itemText);
+
+                    float itemPaddingX = 5f;
+                    float itemCardW = itemSizeBuf.x + (itemPaddingX * 2);
+                    float itemCardH = itemSizeBuf.y + 4f;
+                    float itemCardX = ix + rectW / 2f - itemCardW / 2f;
+                    float itemCardY = cardY - itemCardH - 3f;
+
+                    int itemBgColor = toImGuiColor(12, 12, 16, (int)(alpha * 255.0f * 0.8f));
+                    int itemBorderColor = toImGuiColor(120, 120, 140, (int)(alpha * 255.0f * 0.4f));
+                    int itemTextColor = toImGuiColor(220, 220, 230, oa);
+
+                    drawList.addRectFilled(itemCardX, itemCardY, itemCardX + itemCardW, itemCardY + itemCardH, itemBgColor, 3.0f);
+                    drawList.addRect(itemCardX, itemCardY, itemCardX + itemCardW, itemCardY + itemCardH, itemBorderColor, 3.0f, 0, 1.0f);
+                    drawList.addText(itemCardX + itemPaddingX, itemCardY + (itemCardH - itemSizeBuf.y) / 2f, itemTextColor, itemText);
+                }
             }
         }
     }
 
-    private void drawBox(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int thickness, int color) {
-        g.fill(x1, y1, x2, y1 + thickness, color);
-        g.fill(x1, y2 - thickness, x2, y2, color);
-        g.fill(x1, y1 + thickness, x1 + thickness, y2 - thickness, color);
-        g.fill(x2 - thickness, y1 + thickness, x2, y2 - thickness, color);
+    private void drawImGuiCornerBox(ImDrawList drawList, float x1, float y1, float x2, float y2, float cw, float ch, float thickness, int color) {
+        drawList.addLine(x1, y1, x1 + cw, y1, color, thickness);
+        drawList.addLine(x1, y1, x1, y1 + ch, color, thickness);
+
+        drawList.addLine(x2, y1, x2 - cw, y1, color, thickness);
+        drawList.addLine(x2, y1, x2, y1 + ch, color, thickness);
+
+        drawList.addLine(x1, y2, x1 + cw, y2, color, thickness);
+        drawList.addLine(x1, y2, x1, y2 - ch, color, thickness);
+
+        drawList.addLine(x2, y2, x2 - cw, y2, color, thickness);
+        drawList.addLine(x2, y2, x2, y2 - ch, color, thickness);
     }
 
-    private void drawCornerBox(GuiGraphicsExtractor g, int x1, int y1, int x2, int y2, int cw, int ch, int thickness, int color) {
-        g.fill(x1, y1, x1 + cw, y1 + thickness, color);
-        g.fill(x1, y1 + thickness, x1 + thickness, y1 + ch, color);
+    public boolean project2DImGui(double x, double y, double z, float partialTicks, Vector3d out) {
+        if (mc.gameRenderer == null) return false;
+        Camera camera = mc.gameRenderer.mainCamera();
+        if (camera == null) return false;
+        Vec3 camPos = camera.position();
 
-        g.fill(x2 - cw, y1, x2, y1 + thickness, color);
-        g.fill(x2 - thickness, y1 + thickness, x2, y1 + ch, color);
+        Matrix4f combinedMatrix = camera.getViewRotationProjectionMatrix(combinedMatrixBuffer.get());
 
-        g.fill(x1, y2 - thickness, x1 + cw, y2, color);
-        g.fill(x1, y2 - ch, x1 + thickness, y2 - thickness, color);
+        transformVec.set((float)(x - camPos.x), (float)(y - camPos.y), (float)(z - camPos.z), 1.0f);
+        combinedMatrix.transform(transformVec);
 
-        g.fill(x2 - cw, y2 - thickness, x2, y2, color);
-        g.fill(x2 - thickness, y2 - ch, x2, y2 - thickness, color);
+        if (transformVec.w <= 0.001f) return false;
+        transformVec.div(transformVec.w);
+
+        float displayWidth = ImGui.getIO().getDisplaySizeX();
+        float displayHeight = ImGui.getIO().getDisplaySizeY();
+
+        double screenX = (displayWidth / 2.0f) * (transformVec.x + 1.0f);
+        double screenY = (displayHeight / 2.0f) * (1.0f - transformVec.y);
+
+        out.set(screenX, screenY, transformVec.z);
+        return true;
+    }
+
+    private static int toImGuiColor(int r, int g, int b, int a) {
+        return ((a & 0xFF) << 24) | ((b & 0xFF) << 16) | ((g & 0xFF) << 8) | (r & 0xFF);
+    }
+
+    private static int toImGuiColor(Color color, float alphaFactor) {
+        int a = Math.max(0, Math.min(255, (int) (color.getAlpha() * alphaFactor)));
+        return ((a & 0xFF) << 24) | ((color.getBlue() & 0xFF) << 16) | ((color.getGreen() & 0xFF) << 8) | (color.getRed() & 0xFF);
     }
 
     public boolean shouldGlow() {
