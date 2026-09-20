@@ -8,6 +8,7 @@ out/
 
 # IDE files
 .idea/
+.claude/
 *.iml
 *.ipr
 *.iws
@@ -38,3 +39,6 @@ node_modules/
 SESSION_HANDOFF.md
 create_release.py
 AA_ROUNDED_CORNERS.md
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
