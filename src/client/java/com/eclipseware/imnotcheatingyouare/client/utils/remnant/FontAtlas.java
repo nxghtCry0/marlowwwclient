@@ -27,7 +27,6 @@ public class FontAtlas {
         this.name = name;
         try {
             Identifier jsonId = Identifier.parse("imnotcheatingyouare:fonts/" + name + ".json");
-            System.out.println("[Marlow] Loading font atlas JSON: " + jsonId);
             var resourceJson = manager.getResource(jsonId);
             if (resourceJson.isPresent()) {
                 try (Reader reader = new InputStreamReader(resourceJson.get().open())) {
@@ -53,18 +52,12 @@ public class FontAtlas {
                     var textureManager = Minecraft.getInstance().getTextureManager();
                     if (textureManager != null) {
                         textureManager.register(this.textureId, this.tex);
-                        System.out.println("[Marlow] Successfully loaded and registered dynamic font atlas: " + name + " (" + width + "x" + height + ")");
                         this.registered = true;
-                    } else {
-                        System.out.println("[Marlow] TextureManager not available yet for " + name + ", registration deferred.");
                     }
                 } catch (Throwable ignore) {
-                    System.out.println("[Marlow] TextureManager access failed for " + name + ", registration deferred.");
                 }
             }
-        } catch (Throwable t) {
-            System.out.println("[Marlow] ERROR loading font atlas " + name + ":");
-            t.printStackTrace();
+        } catch (Throwable ignore) {
         }
     }
 

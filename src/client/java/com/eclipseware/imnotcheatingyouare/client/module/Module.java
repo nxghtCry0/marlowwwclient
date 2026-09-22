@@ -67,12 +67,12 @@ public class Module {
     public void tickKeybind() {
         if (this.keyBind == 0 || mc == null || mc.getWindow() == null) return;
 
+        boolean isPressed = com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.isDown(this.keyBind);
+
         if (mc.gui.screen() != null) {
-            wasKeyPressed = false;
+            wasKeyPressed = isPressed;
             return;
         }
-
-        boolean isPressed = com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.isDown(this.keyBind);
 
         if (isPressed && !wasKeyPressed) {
             onKeybind();

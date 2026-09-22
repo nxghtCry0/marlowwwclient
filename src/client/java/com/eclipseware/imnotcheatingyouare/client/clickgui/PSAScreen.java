@@ -37,6 +37,7 @@ public class PSAScreen extends Screen {
                 }
                 File psaFile = new File(dir, "psa_accepted");
                 psaFile.createNewFile();
+                com.eclipseware.imnotcheatingyouare.client.utils.PsaState.markAccepted();
             } catch (Exception e) {
                 e.printStackTrace();
             }

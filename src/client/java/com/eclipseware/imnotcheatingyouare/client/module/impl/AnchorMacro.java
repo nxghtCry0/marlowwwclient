@@ -30,8 +30,8 @@ public class AnchorMacro extends Module {
     private int step = 0; 
 
     public AnchorMacro() {
-        super("AnchorMacro", Category.Crystal, "Automatically places, charges, and detonates respawn anchors.");
-        setSubCategory("Semi-Blatant");
+        super("AnchorMacro", Category.Farming, "Automatically places, charges, and detonates respawn anchors.");
+        setSubCategory("Macro");
 
         delaySetting = new Setting("Delay Ticks", this, 1.0, 0.0, 5.0, true);
         safeAnchor = new Setting("Safe Anchor", this, true);

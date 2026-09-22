@@ -142,7 +142,7 @@ public class RenderUtils {
                 return new Color((int) rS.getValDouble(), (int) gS.getValDouble(), (int) bS.getValDouble());
             }
         }
-        return new Color(239, 142, 172);
+        return new Color(178, 128, 255);
     }
     
     public static Color getThemeSecondaryColor() {

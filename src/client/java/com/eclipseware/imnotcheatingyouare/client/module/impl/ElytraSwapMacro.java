@@ -29,8 +29,9 @@ public class ElytraSwapMacro extends Module {
     private long lastExecuteMs = 0L;
 
     public ElytraSwapMacro() {
-        super("ElytraSwapMacro", Category.Mace, "Silently right-click swaps Elytra with Chestplate across multi-tick sequence like water bucket macros.");
-        
+        super("ElytraSwapMacro", Category.Farming, "Silently right-click swaps Elytra with Chestplate across multi-tick sequence like water bucket macros.");
+        setSubCategory("Macro");
+
         ArrayList<String> modes = new ArrayList<>();
         modes.add("RightClick");
         modes.add("Silent");

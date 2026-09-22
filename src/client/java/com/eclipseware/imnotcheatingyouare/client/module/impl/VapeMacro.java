@@ -10,7 +10,8 @@ import net.minecraft.world.item.ItemStack;
 
 public class VapeMacro extends Module {
     public VapeMacro() {
-        super("VapeMacro", Category.Exploit, "Configure a macro to swap to an item name and right click.");
+        super("VapeMacro", Category.Farming, "Configure a macro to swap to an item name and right click.");
+        setSubCategory("Macro");
     }
 
     @Override

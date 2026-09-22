@@ -29,6 +29,7 @@ public class MinecraftMixin {
             )
     )
     private void onRenderFrame(boolean renderLevel, CallbackInfo ci) {
+        if (!renderLevel) return;
         xyz.breadloaf.imguimc.imgui.ImguiLoader.onFrameRender();
     }
 
@@ -111,11 +112,12 @@ public class MinecraftMixin {
 
     @Inject(method = "setScreenAndShow", at = @At("HEAD"), cancellable = true)
     private void onSetScreen(net.minecraft.client.gui.screens.Screen screen, CallbackInfo ci) {
-        if (screen != null && !(screen instanceof com.eclipseware.imnotcheatingyouare.client.clickgui.PSAScreen)) {
+        if (screen != null
+                && !(screen instanceof com.eclipseware.imnotcheatingyouare.client.clickgui.PSAScreen)
+                && !(screen instanceof xyz.breadloaf.imguimc.screen.EmptyScreen)) {
             Minecraft mc = Minecraft.getInstance();
             if (mc.font != null) {
-                java.io.File psaFile = new java.io.File(mc.gameDirectory, "config/imnotcheatingyouare/psa_accepted");
-                if (!psaFile.exists()) {
+                if (!com.eclipseware.imnotcheatingyouare.client.utils.PsaState.isAccepted(mc)) {
                     ci.cancel();
                     mc.setScreenAndShow(new com.eclipseware.imnotcheatingyouare.client.clickgui.PSAScreen(screen));
                 }

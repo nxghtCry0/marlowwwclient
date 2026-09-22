@@ -28,9 +28,13 @@ public class Menu extends Module {
         }
 
         if (this.getKeyBind() == 0 || mc == null || mc.getWindow() == null || mc.player == null) return;
-        if (mc.gui.screen() != null) return;
 
         boolean isPressed = com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.isDown(this.getKeyBind());
+
+        if (mc.gui.screen() != null) {
+            wasPressed = isPressed;
+            return;
+        }
 
         if (isPressed && !wasPressed) {
             if (System.currentTimeMillis() - lastPressTime > 3000) {
@@ -69,7 +73,7 @@ public class Menu extends Module {
                 mc.setScreenAndShow(ImnotcheatingyouareClient.INSTANCE.clickGui);
             }
         } else {
-            mc.setScreenAndShow(new com.eclipseware.imnotcheatingyouare.client.clickgui.MarlowGUI());
+            com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui.setOpen(true);
         }
         setToggled(false);
     }

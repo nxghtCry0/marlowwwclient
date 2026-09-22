@@ -20,7 +20,8 @@ import java.util.Arrays;
 
 public class GhostBlockMacro extends Module {
     public GhostBlockMacro() {
-        super("GhostBlockMacro", Category.Exploit, "Triggers a client-side placement desync window.");
+        super("GhostBlockMacro", Category.Farming, "Triggers a client-side placement desync window.");
+        setSubCategory("Macro");
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Mode", this, "Keybind Hold", new ArrayList<>(Arrays.asList("Keybind Hold", "Single Press"))));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Auto Find Block", this, true));
     }

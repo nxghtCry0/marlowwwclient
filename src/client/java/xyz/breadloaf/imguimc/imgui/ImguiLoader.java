@@ -264,6 +264,8 @@ public class ImguiLoader {
                 finishDocking();
             }
 
+            syncTextInputState();
+
             ImGui.render();
             frameStarted = false;
             endFrame(windowHandle);
@@ -278,6 +280,26 @@ public class ImguiLoader {
                 }
             }
             logFrameFailure(exception);
+        }
+    }
+
+    private static final Object TEXT_INPUT_OWNER = new Object();
+    private static boolean sdlTextInputActive = false;
+
+    private static void syncTextInputState() {
+        boolean wantsText = ImGui.getIO().getWantTextInput();
+        if (wantsText == sdlTextInputActive)
+            return;
+
+        sdlTextInputActive = wantsText;
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc == null)
+            return;
+
+        if (wantsText) {
+            mc.textInputManager().startTextInput(TEXT_INPUT_OWNER);
+        } else {
+            mc.textInputManager().stopTextInput(TEXT_INPUT_OWNER);
         }
     }
 
@@ -357,12 +379,15 @@ public class ImguiLoader {
         if (!Float.isFinite(scale) || scale <= 0.0f)
             scale = 1.0f;
 
+        scale = Math.round(scale / 0.05f) * 0.05f;
+
         cachedWindowContentScale = Math.max(1.0f, scale);
         lastContentScaleRefreshNanos = now;
         return cachedWindowContentScale;
     }
 
     private static void endFrame(long windowPtr) {
+        int framebufferBinding = GL11.glGetInteger(org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_BINDING);
         int activeTexture = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         int texture0Binding = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
@@ -395,6 +420,7 @@ public class ImguiLoader {
             prepareImGuiGlState();
             imGuiGl3.renderDrawData(ImGui.getDrawData());
         } finally {
+            org.lwjgl.opengl.GL30.glBindFramebuffer(org.lwjgl.opengl.GL30.GL_FRAMEBUFFER, framebufferBinding);
             org.lwjgl.opengl.GL20.glUseProgram(program);
             org.lwjgl.opengl.GL30.glBindVertexArray(vao);
             org.lwjgl.opengl.GL15.glBindBuffer(org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER, arrayBuffer);
@@ -458,6 +484,13 @@ public class ImguiLoader {
     }
 
     private static void shutdownInternal() {
+        if (sdlTextInputActive) {
+            sdlTextInputActive = false;
+            try {
+                net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                if (mc != null) mc.textInputManager().stopTextInput(TEXT_INPUT_OWNER);
+            } catch (Throwable ignored) {}
+        }
         initialized = false;
         fontLoaded = false;
         customFontAvailable = false;

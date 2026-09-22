@@ -102,10 +102,7 @@ public class Render2DEngine {
             net.minecraft.client.renderer.texture.DynamicTexture dynamicTexture = new net.minecraft.client.renderer.texture.DynamicTexture(() -> "marlow_rounded_corners", image);
             mc.getTextureManager().register(DYNAMIC_TEXTURE_ID, dynamicTexture);
             textureRegistered = true;
-            System.out.println("[Marlow] AA ROUNDED CORNERS ATLAS REGISTERED SUCCESSFULLY!");
-        } catch (Exception e) {
-            System.out.println("[Marlow] Failed to register dynamic AA corner texture: " + e.getMessage());
-            e.printStackTrace();
+        } catch (Exception ignored) {
         }
     }
 

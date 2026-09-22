@@ -173,12 +173,14 @@ moduleManager.modules.add(anchorMacro);
         moduleManager.modules.add(renderOptimizer);
         Module automine = new com.eclipseware.imnotcheatingyouare.client.module.impl.Automine();
         Module autowalk = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoWalk();
+        Module antiAfk = new com.eclipseware.imnotcheatingyouare.client.module.impl.AntiAFK();
         Module guimove = new com.eclipseware.imnotcheatingyouare.client.module.impl.GUIMove();
         Module autosign = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoSign();
         Module freecam = new com.eclipseware.imnotcheatingyouare.client.module.impl.Freecam();
         Module friendProtector = new com.eclipseware.imnotcheatingyouare.client.module.impl.FriendProtector();
         moduleManager.modules.add(automine);
         moduleManager.modules.add(autowalk);
+        moduleManager.modules.add(antiAfk);
         moduleManager.modules.add(guimove);
         moduleManager.modules.add(autosign);
         moduleManager.modules.add(freecam);
@@ -242,6 +244,9 @@ moduleManager.modules.add(targetHUD);
 moduleManager.modules.add(armorHUD);
 moduleManager.modules.add(hudEditor);
 moduleManager.modules.add(ghostBlockMacro);
+        moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoFish());
+        moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.InventoryClean());
+        moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.InventoryFill());
 
 
         Module clientSpoof = new com.eclipseware.imnotcheatingyouare.client.module.impl.ClientSpoof();
@@ -368,6 +373,14 @@ bsModes.add("Swap"); bsModes.add("Silent");
         settingsManager.rSetting(new Setting("Delay (Ticks)", jumpReset, 0.0, 0.0, 5.0, true));
         settingsManager.rSetting(new Setting("Chance (%)", jumpReset, 100.0, 0.0, 100.0, true));
         settingsManager.rSetting(new Setting("Velocity Threshold", jumpReset, 0.1, 0.0, 1.0, false));
+
+        java.util.ArrayList<String> afkActions = new java.util.ArrayList<>();
+        afkActions.add("Cycle");
+        afkActions.add("Jump");
+        afkActions.add("Swing");
+        afkActions.add("Sneak");
+        settingsManager.rSetting(new Setting("Action", antiAfk, "Cycle", afkActions));
+        settingsManager.rSetting(new Setting("Interval (s)", antiAfk, 5.0, 1.0, 300.0, true));
 settingsManager.rSetting(new Setting("Delay (Ticks)", pearlCatch, 4.0, 0.0, 20.0, true));
 
         settingsManager.rSetting(new Setting("Distance", reach, 0.5, 0.0, 1.0, false));
@@ -517,6 +530,7 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
             com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.onClientTickStart();
             com.eclipseware.imnotcheatingyouare.client.utils.SpoofManager.onTick();
             com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.tickSilentRevert();
+            com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui.tick();
 
             for (Module m : moduleManager.modules) {
                 m.tickKeybind();

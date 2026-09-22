@@ -17,5 +17,6 @@ public enum Category {
     Filters,
     CartPvP,
     Mace,
-    UHC
+    UHC,
+    Farming
 }

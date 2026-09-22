@@ -19,6 +19,11 @@ public final class SdlImGuiPlatform {
     private long lastFrameNanos = 0L;
     private static volatile float pendingScrollY = 0f;
 
+    private final boolean[] confirmedMouseDown = new boolean[5];
+    private final boolean[] holdReleaseOneFrame = new boolean[5];
+
+    private static final java.util.concurrent.ConcurrentLinkedQueue<Integer> pendingChars = new java.util.concurrent.ConcurrentLinkedQueue<>();
+
     public void init(long windowHandle) {
         ImGuiIO io = ImGui.getIO();
 
@@ -68,11 +73,24 @@ public final class SdlImGuiPlatform {
         io.setMousePos((float) mc.mouseHandler.getScaledXPos(window), (float) mc.mouseHandler.getScaledYPos(window));
 
         int mask = SDLMouse.SDL_GetMouseState(null, null);
-        io.setMouseDown(0, (mask & (1 << (SDLMouse.SDL_BUTTON_LEFT - 1))) != 0);
-        io.setMouseDown(1, (mask & (1 << (SDLMouse.SDL_BUTTON_RIGHT - 1))) != 0);
-        io.setMouseDown(2, (mask & (1 << (SDLMouse.SDL_BUTTON_MIDDLE - 1))) != 0);
-        io.setMouseDown(3, (mask & (1 << (SDLMouse.SDL_BUTTON_X1 - 1))) != 0);
-        io.setMouseDown(4, (mask & (1 << (SDLMouse.SDL_BUTTON_X2 - 1))) != 0);
+        boolean[] rawMouseDown = {
+                (mask & (1 << (SDLMouse.SDL_BUTTON_LEFT - 1))) != 0,
+                (mask & (1 << (SDLMouse.SDL_BUTTON_RIGHT - 1))) != 0,
+                (mask & (1 << (SDLMouse.SDL_BUTTON_MIDDLE - 1))) != 0,
+                (mask & (1 << (SDLMouse.SDL_BUTTON_X1 - 1))) != 0,
+                (mask & (1 << (SDLMouse.SDL_BUTTON_X2 - 1))) != 0,
+        };
+        for (int i = 0; i < rawMouseDown.length; i++) {
+            if (rawMouseDown[i]) {
+                confirmedMouseDown[i] = true;
+                holdReleaseOneFrame[i] = true;
+            } else if (holdReleaseOneFrame[i]) {
+                holdReleaseOneFrame[i] = false;
+            } else {
+                confirmedMouseDown[i] = false;
+            }
+            io.setMouseDown(i, confirmedMouseDown[i]);
+        }
 
         io.setKeyCtrl(InputConstants.isKeyDown(InputConstants.KEY_LCONTROL) || InputConstants.isKeyDown(InputConstants.KEY_RCONTROL));
         io.setKeyShift(InputConstants.isKeyDown(InputConstants.KEY_LSHIFT) || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT));
@@ -84,6 +102,11 @@ public final class SdlImGuiPlatform {
         }
 
         io.setMouseWheel(pollAndResetScroll());
+
+        Integer codepoint;
+        while ((codepoint = pendingChars.poll()) != null) {
+            io.addInputCharacter(codepoint);
+        }
     }
 
     private static final int[] TRACKED_KEYS = {
@@ -98,6 +121,11 @@ public final class SdlImGuiPlatform {
     /** Called from a mixin on {@code MouseHandler.onScroll} since SDL's wheel state is delta-only, not polled. */
     public static void feedScroll(double verticalAmount) {
         pendingScrollY += (float) verticalAmount;
+    }
+
+    /** Called from a mixin on {@code KeyboardHandler.charTyped} since typed characters are event-based, not polled. */
+    public static void feedChar(int codepoint) {
+        pendingChars.add(codepoint);
     }
 
     private static float pollAndResetScroll() {

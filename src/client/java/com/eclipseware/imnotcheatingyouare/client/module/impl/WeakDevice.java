@@ -56,6 +56,10 @@ public class WeakDevice extends Module {
         setGuiOpen(!guiOpen);
     }
 
+    public void markClosed() {
+        guiOpen = false;
+    }
+
     @Override
     public void onDisable() {
         if (guiOpen) {

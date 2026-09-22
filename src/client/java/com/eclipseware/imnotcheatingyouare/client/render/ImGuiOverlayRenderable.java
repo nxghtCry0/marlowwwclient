@@ -23,6 +23,8 @@ public class ImGuiOverlayRenderable implements Renderable {
     public void render() {
         if (ImnotcheatingyouareClient.INSTANCE == null || ImnotcheatingyouareClient.INSTANCE.moduleManager == null) return;
 
+        com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui.render();
+
         ESP esp = (ESP) ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("ESP");
         if (esp != null && esp.isToggled()) {
             esp.renderImGuiOverlay();

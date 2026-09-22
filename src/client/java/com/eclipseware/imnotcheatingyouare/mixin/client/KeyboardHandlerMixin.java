@@ -22,4 +22,11 @@ public class KeyboardHandlerMixin {
             }
         }
     }
+
+    @Inject(method = "charTyped", at = @At("HEAD"))
+    private void onCharTyped(long window, net.minecraft.client.input.CharacterEvent event, CallbackInfo ci) {
+        if (xyz.breadloaf.imguimc.imgui.ImguiLoader.wantsTextInput()) {
+            xyz.breadloaf.imguimc.imgui.SdlImGuiPlatform.feedChar(event.codepoint());
+        }
+    }
 }

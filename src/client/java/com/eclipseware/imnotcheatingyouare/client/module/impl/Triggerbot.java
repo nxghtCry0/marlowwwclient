@@ -32,6 +32,7 @@ public class Triggerbot extends Module {
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("AirCrit", this, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Require Mouse Down", this, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Ignore Activation Click", this, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Miss Hit Chance", this, 0.0, 0.0, 100.0, false));
     }
 
     public static void onUpdateTimePacket() {
@@ -77,9 +78,15 @@ public class Triggerbot extends Module {
         boolean isActivationClick = isMouseDown && !wasMouseDown;
         wasMouseDown = isMouseDown;
 
-        if (mc.hitResult == null || mc.hitResult.getType() != HitResult.Type.ENTITY) return;
+        if (mc.hitResult == null || mc.hitResult.getType() != HitResult.Type.ENTITY) {
+            attemptMissHit();
+            return;
+        }
         Entity target = ((EntityHitResult) mc.hitResult).getEntity();
-        if (!isValidTarget(target)) return;
+        if (!isValidTarget(target)) {
+            attemptMissHit();
+            return;
+        }
         Setting rangeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Range");
         double range = rangeSetting != null ? rangeSetting.getValDouble() : 4.25;
         if (mc.player.distanceToSqr(target) > (range * range)) return;
@@ -136,6 +143,43 @@ public class Triggerbot extends Module {
             if (min > max) { int t = min; min = max; max = t; }
             targetDelayMs = min + (long) (Math.random() * ((max - min) + 1));
         }
+    }
+
+    private void attemptMissHit() {
+        Setting missChanceSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Miss Hit Chance");
+        double missChance = missChanceSetting != null ? missChanceSetting.getValDouble() : 0.0;
+        if (missChance <= 0.0) return;
+
+        float attackCooldown = mc.player.getAttackStrengthScale(0.5f);
+
+        Setting tpsSyncSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "TPS Sync");
+        if (tpsSyncSetting != null && tpsSyncSetting.getValBoolean() && serverTps < 19.5f) {
+            float scale = 20.0f / serverTps;
+            attackCooldown *= scale;
+        }
+        if (attackCooldown < 1.0f) return;
+
+        if (System.currentTimeMillis() - lastAttackMs < targetDelayMs) return;
+        if (Math.random() * 100.0 >= missChance) return;
+
+        long profileMin = AntiCheatProfile.safeTriggerMinDelayMs();
+        if (!ClickConsistency.shouldClick(profileMin, 14)) return;
+
+        isTriggerbotAttacking = true;
+        try {
+            ((com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor) mc).invokeStartAttack();
+        } finally {
+            isTriggerbotAttacking = false;
+        }
+        mc.player.resetAttackStrengthTicker();
+
+        lastAttackMs = System.currentTimeMillis();
+        Setting minSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Min Delay (ms)");
+        Setting maxSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Max Delay (ms)");
+        int min = minSetting != null ? (int) minSetting.getValDouble() : 50;
+        int max = maxSetting != null ? (int) maxSetting.getValDouble() : 150;
+        if (min > max) { int t = min; min = max; max = t; }
+        targetDelayMs = min + (long) (Math.random() * ((max - min) + 1));
     }
 
     public static boolean isTriggerbotAttacking = false;
