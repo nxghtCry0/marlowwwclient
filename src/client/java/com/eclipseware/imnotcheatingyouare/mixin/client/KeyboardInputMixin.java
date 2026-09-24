@@ -32,6 +32,11 @@ public class KeyboardInputMixin {
     @Inject(method = "tick", at = @At("RETURN"))
     private void onTickReturn(CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
+        if (com.eclipseware.imnotcheatingyouare.client.module.impl.Freecam.isActive()) {
+            ((KeyboardInput) (Object) this).keyPresses = new net.minecraft.world.entity.player.Input(false, false, false, false, false, false, false);
+            ((ClientInputAccessor) this).setMoveVector(net.minecraft.world.phys.Vec2.ZERO);
+            return;
+        }
         if (mc.player != null && com.eclipseware.imnotcheatingyouare.client.module.impl.AutoTotem.shouldPauseInputs()) {
             ((KeyboardInput) (Object) this).keyPresses = new net.minecraft.world.entity.player.Input(false, false, false, false, false, false, false);
             mc.player.setSprinting(false);

@@ -156,15 +156,6 @@ public class ConnectionMixin {
             }
         }
 
-        if (packet instanceof ServerboundMovePlayerPacket ||
-            packet instanceof net.minecraft.network.protocol.game.ServerboundPlayerCommandPacket) {
-            if (ImnotcheatingyouareClient.INSTANCE != null && ImnotcheatingyouareClient.INSTANCE.moduleManager != null) {
-                Module freecam = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Freecam");
-                if (freecam != null && freecam.isToggled()) {
-                    ci.cancel();
-                }
-            }
-        }
 
         }
     @Inject(method = "channelRead0(Lio/netty/channel/ChannelHandlerContext;Lnet/minecraft/network/protocol/Packet;)V", at = @At("HEAD"), cancellable = true)

@@ -32,16 +32,6 @@ public class EntityMixin {
         }
     }
 
-    @Inject(method = "isInWall", at = @At("HEAD"), cancellable = true)
-    private void onIsInWall(CallbackInfoReturnable<Boolean> cir) {
-        if ((Object) this instanceof net.minecraft.client.player.LocalPlayer) {
-            Module freecam = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Freecam");
-            if (freecam != null && freecam.isToggled()) {
-                cir.setReturnValue(false);
-            }
-        }
-    }
-
     @ModifyVariable(method = "move", at = @At("HEAD"), argsOnly = true)
     private net.minecraft.world.phys.Vec3 modifyMove(net.minecraft.world.phys.Vec3 vec) {
         if ((Object) this instanceof net.minecraft.client.player.LocalPlayer player) {

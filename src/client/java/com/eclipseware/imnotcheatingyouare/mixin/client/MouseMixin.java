@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MouseHandler.class)
@@ -38,6 +39,15 @@ public abstract class MouseMixin {
             } else if (action == 0) {
                 com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.recordMouse(buttonInfo.button(), false, windowHandle);
             }
+        }
+    }
+
+    @Redirect(method = "turnPlayer", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;turn(DD)V"))
+    private void onTurnPlayer(net.minecraft.client.player.LocalPlayer player, double yaw, double pitch) {
+        if (com.eclipseware.imnotcheatingyouare.client.module.impl.Freecam.isActive()) {
+            com.eclipseware.imnotcheatingyouare.client.module.impl.Freecam.INSTANCE.turn(yaw, pitch);
+        } else {
+            player.turn(yaw, pitch);
         }
     }
 }

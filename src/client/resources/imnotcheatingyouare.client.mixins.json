@@ -39,6 +39,7 @@
 "MouseHandlerAccessor",
 "KeyboardHandlerAccessor",
 "KeyboardInputMixin",
+"ClientInputAccessor",
 "ServerboundMovePlayerPacketAccessor",
 "BlockStateBaseMixin",
 "ClientBrandRetrieverMixin",
