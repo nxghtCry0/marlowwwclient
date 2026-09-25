@@ -42,6 +42,7 @@
 "LevelRendererMixin",
 "TitleScreenReplaceMixin",
 "PanoramaShaderMixin",
+"NameProtectMixin",
 "HandShaderMixin",
 "MultiPlayerGameModeAccessor",
 "ClientInputAccessor",
