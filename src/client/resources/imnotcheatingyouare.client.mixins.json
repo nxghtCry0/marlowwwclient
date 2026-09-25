@@ -43,6 +43,7 @@
 "TitleScreenReplaceMixin",
 "PanoramaShaderMixin",
 "NameProtectMixin",
+"LiteralContentsMixin",
 "HandShaderMixin",
 "MultiPlayerGameModeAccessor",
 "ClientInputAccessor",

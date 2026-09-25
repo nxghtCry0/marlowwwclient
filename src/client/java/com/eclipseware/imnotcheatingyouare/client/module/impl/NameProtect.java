@@ -18,16 +18,38 @@ public class NameProtect extends Module {
         INSTANCE = this;
     }
 
+    private static boolean logged;
+
+    private static String mode() {
+        Setting s = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(INSTANCE, "Mode");
+        return s != null ? s.getValString() : "Self";
+    }
+
     public static String apply(String text) {
-        if (text == null || text.isEmpty() || INSTANCE == null || !INSTANCE.isToggled() || mc == null || mc.getUser() == null) return text;
-        String name = mc.getUser().getName();
-        if (name == null || name.length() < 2) return text;
-        if (!containsIgnoreCase(text, name)) return text;
-        if (!name.equals(cachedName)) {
-            cachedName = name;
-            cachedPattern = Pattern.compile(Pattern.quote(name), Pattern.CASE_INSENSITIVE);
+        if (text == null || text.length() < 2 || INSTANCE == null || !INSTANCE.isToggled() || mc == null || mc.getUser() == null) return text;
+        String alias = alias();
+        String out = replace(text, mc.getUser().getName(), alias);
+        if (mode().equals("Everyone") && mc.level != null) {
+            for (var p : mc.level.players()) {
+                String n = p.getGameProfile().name();
+                if (n != null && !n.equals(alias)) out = replace(out, n, alias);
+            }
         }
-        return cachedPattern.matcher(text).replaceAll(Matcher.quoteReplacement(alias()));
+        if (!logged && out != text && !out.equals(text)) {
+            logged = true;
+            System.out.println("[Marlow] NameProtect is replacing names");
+        }
+        return out;
+    }
+
+    private static String replace(String text, String name, String alias) {
+        if (name == null || name.length() < 2 || !containsIgnoreCase(text, name)) return text;
+        Pattern p = name.equals(cachedName) ? cachedPattern : Pattern.compile("(?<![A-Za-z0-9_])" + Pattern.quote(name) + "(?![A-Za-z0-9_])", Pattern.CASE_INSENSITIVE);
+        if (!name.equals(cachedName) && name.equals(mc.getUser().getName())) {
+            cachedName = name;
+            cachedPattern = p;
+        }
+        return p.matcher(text).replaceAll(Matcher.quoteReplacement(alias));
     }
 
     private static boolean containsIgnoreCase(String text, String name) {

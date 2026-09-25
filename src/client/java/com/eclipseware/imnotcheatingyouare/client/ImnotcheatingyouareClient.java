@@ -353,6 +353,9 @@ moduleManager.modules.add(ghostBlockMacro);
         java.util.ArrayList<String> npNames = new java.util.ArrayList<>();
         npNames.add("Marlowww"); npNames.add("Hidden"); npNames.add("You");
         settingsManager.rSetting(new Setting("Name", nameProtect, "Marlowww", npNames));
+        java.util.ArrayList<String> npModes = new java.util.ArrayList<>();
+        npModes.add("Self"); npModes.add("Everyone");
+        settingsManager.rSetting(new Setting("Mode", nameProtect, "Self", npModes));
         settingsManager.rSetting(new Setting("TIP: Hide chat in Accessibility Settings", nameProtect, false));
 
         java.util.ArrayList<String> bsModes = new java.util.ArrayList<>();
