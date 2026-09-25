@@ -30,6 +30,10 @@ public class Triggerbot extends Module {
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("TPS Sync", this, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("CritOnly", this, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("AirCrit", this, false));
+        java.util.ArrayList<String> critModes = new java.util.ArrayList<>();
+        critModes.add("Off"); critModes.add("Smart"); critModes.add("Strict");
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Crit Timing", this, "Off", critModes));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Crit Max Wait", this, 8.0, 1.0, 20.0, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Require Mouse Down", this, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Ignore Activation Click", this, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Miss Hit Chance", this, 0.0, 0.0, 100.0, false));
@@ -57,6 +61,37 @@ public class Triggerbot extends Module {
     }
 
     @Override
+    private int critWaitTicks = 0;
+
+    private boolean canCritNow() {
+        return !mc.player.onGround() && mc.player.fallDistance > 0.0f && mc.player.getDeltaMovement().y < 0
+                && !mc.player.onClimbable() && !mc.player.isInWater() && !mc.player.isPassenger()
+                && !mc.player.hasEffect(net.minecraft.world.effect.MobEffects.BLINDNESS) && !mc.player.isSprinting();
+    }
+
+    private boolean critTimingAllows() {
+        Setting mode = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Crit Timing");
+        String m = mode != null ? mode.getValString() : "Off";
+        if (m.equals("Off")) return true;
+        if (canCritNow()) {
+            critWaitTicks = 0;
+            return true;
+        }
+        boolean airborne = !mc.player.onGround() && !mc.player.isInWater() && !mc.player.onClimbable();
+        boolean strict = m.equals("Strict");
+        if (!airborne && !strict) {
+            critWaitTicks = 0;
+            return true;
+        }
+        Setting waitS = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Crit Max Wait");
+        int maxWait = waitS != null ? (int) waitS.getValDouble() : 8;
+        if (++critWaitTicks > maxWait) {
+            critWaitTicks = 0;
+            return true;
+        }
+        return false;
+    }
+
     public void onTick() {
         if (mc.player == null || mc.level == null) return;
         GCDFix.update(mc.options.sensitivity().get());
@@ -119,6 +154,8 @@ public class Triggerbot extends Module {
                 return;
             }
         }
+
+        if (!critTimingAllows()) return;
 
         if (System.currentTimeMillis() - lastAttackMs >= targetDelayMs) {
             long profileMin = AntiCheatProfile.safeTriggerMinDelayMs();
