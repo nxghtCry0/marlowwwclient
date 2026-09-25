@@ -60,7 +60,6 @@ public class Triggerbot extends Module {
         wasMouseDown = false;
     }
 
-    @Override
     private int critWaitTicks = 0;
 
     private boolean canCritNow() {
@@ -92,6 +91,7 @@ public class Triggerbot extends Module {
         return false;
     }
 
+    @Override
     public void onTick() {
         if (mc.player == null || mc.level == null) return;
         GCDFix.update(mc.options.sensitivity().get());
