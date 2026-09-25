@@ -50,6 +50,8 @@ public class ImGuiOverlayRenderable implements Renderable {
             trajectories.renderImGuiOverlay();
         }
 
+        com.eclipseware.imnotcheatingyouare.client.ui.ArrayListHud.INSTANCE.renderImGui();
+
         TargetHUD targetHUD = (TargetHUD) ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("TargetHUD");
         if (targetHUD != null) {
             targetHUD.renderImGuiOverlay();

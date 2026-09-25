@@ -101,7 +101,7 @@ public class StorageESP extends Module {
         float displayHeight = ImGui.getIO().getDisplaySizeY();
         float centerX = displayWidth / 2.0f;
         float centerY = displayHeight / 2.0f;
-        ImDrawList drawList = ImGui.getForegroundDrawList();
+        ImDrawList drawList = ImGui.getBackgroundDrawList();
 
         for (CachedBlock cb : cache) {
             if (RenderUtils.project2DImGui(cb.pos.getX() + 0.5, cb.pos.getY() + 0.5, cb.pos.getZ() + 0.5, partialTick, projVec)) {

@@ -79,7 +79,7 @@ public class HudEditorScreen extends Screen {
     }
 
     private int getModuleWidth(Module m) {
-        if (m.getName().equals("TargetHUD")) return 175;
+        if (m.getName().equals("TargetHUD")) return (int) com.eclipseware.imnotcheatingyouare.client.module.impl.TargetHUD.WIDTH;
         if (m.getName().equals("ArmorHUD")) {
             Setting layoutSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(m, "Layout");
             String layout = layoutSet != null ? layoutSet.getValString() : "Horizontal";
@@ -89,7 +89,7 @@ public class HudEditorScreen extends Screen {
     }
 
     private int getModuleHeight(Module m) {
-        if (m.getName().equals("TargetHUD")) return 42;
+        if (m.getName().equals("TargetHUD")) return (int) com.eclipseware.imnotcheatingyouare.client.module.impl.TargetHUD.HEIGHT;
         if (m.getName().equals("ArmorHUD")) {
             Setting layoutSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(m, "Layout");
             String layout = layoutSet != null ? layoutSet.getValString() : "Horizontal";

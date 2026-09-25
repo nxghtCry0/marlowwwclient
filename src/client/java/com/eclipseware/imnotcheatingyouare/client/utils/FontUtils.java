@@ -32,6 +32,15 @@ public class FontUtils {
         return false;
     }
 
+    public static Component verdana(String text) {
+        if (text == null) return Component.empty();
+        return Component.literal(text).withStyle(Style.EMPTY.withFont(new FontDescription.Resource(VERDANA)));
+    }
+
+    public static int verdanaWidth(String text) {
+        return Minecraft.getInstance().font.width(verdana(text));
+    }
+
     public static Component get(String text) {
         if (text == null) return Component.empty();
         if (!useVerdana()) {

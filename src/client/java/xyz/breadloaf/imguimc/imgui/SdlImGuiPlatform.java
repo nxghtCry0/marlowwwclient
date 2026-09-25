@@ -56,21 +56,18 @@ public final class SdlImGuiPlatform {
         Minecraft mc = Minecraft.getInstance();
         Window window = mc.getWindow();
 
-        int guiScaledWidth = window.getGuiScaledWidth();
-        int guiScaledHeight = window.getGuiScaledHeight();
-        io.setDisplaySize(guiScaledWidth, guiScaledHeight);
-
         Window.FramebufferSize framebufferSize = window.queryFramebufferSize();
-        float scaleX = guiScaledWidth > 0 ? framebufferSize.width() / (float) guiScaledWidth : 1f;
-        float scaleY = guiScaledHeight > 0 ? framebufferSize.height() / (float) guiScaledHeight : 1f;
-        io.setDisplayFramebufferScale(scaleX, scaleY);
+        float uiScale = ImguiLoader.getUiScale();
+        io.setDisplaySize(framebufferSize.width() / uiScale, framebufferSize.height() / uiScale);
+        io.setDisplayFramebufferScale(uiScale, uiScale);
 
         long now = System.nanoTime();
         float delta = (lastFrameNanos == 0L) ? (1f / 60f) : (now - lastFrameNanos) / 1_000_000_000f;
         io.setDeltaTime(Math.max(delta, 1f / 1000f));
         lastFrameNanos = now;
 
-        io.setMousePos((float) mc.mouseHandler.getScaledXPos(window), (float) mc.mouseHandler.getScaledYPos(window));
+        double guiScale = window.getGuiScale();
+        io.setMousePos((float) (mc.mouseHandler.getScaledXPos(window) * guiScale / uiScale), (float) (mc.mouseHandler.getScaledYPos(window) * guiScale / uiScale));
 
         int mask = SDLMouse.SDL_GetMouseState(null, null);
         boolean[] rawMouseDown = {

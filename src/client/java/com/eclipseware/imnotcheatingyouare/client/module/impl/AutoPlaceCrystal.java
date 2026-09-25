@@ -21,6 +21,8 @@ public class AutoPlaceCrystal extends Module {
     private final Setting excludeBedrock;
     private final Setting requireHoldingCrystal;
     private final Setting requireHoldingWeapon;
+    private final Setting minSideHeight;
+    private final Setting pauseOnBlocks;
 
     public AutoPlaceCrystal() {
         super("AutoPlaceCrystal", Category.Crystal, "Places end crystals with tick-locked precision and zero multi-action flags.");
@@ -32,6 +34,8 @@ public class AutoPlaceCrystal extends Module {
         excludeBedrock = new Setting("Exclude Bedrock", this, false);
         requireHoldingCrystal = new Setting("Require Holding Crystal", this, false);
         requireHoldingWeapon = new Setting("Require Holding Weapon", this, false);
+        minSideHeight = new Setting("Min Side Height", this, 0.5, 0.0, 1.0, false);
+        pauseOnBlocks = new Setting("Pause When Holding Items", this, true);
 
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(onlyOnRightClick);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(range);
@@ -40,6 +44,8 @@ public class AutoPlaceCrystal extends Module {
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(excludeBedrock);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(requireHoldingCrystal);
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(requireHoldingWeapon);
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(minSideHeight);
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(pauseOnBlocks);
     }
 
     @Override
@@ -59,6 +65,8 @@ public class AutoPlaceCrystal extends Module {
         if (requireHoldingWeapon.getValBoolean() && !ModuleUtils.isHoldingWeapon(mc.player.getMainHandItem()))
             return;
 
+        if (pauseOnBlocks.getValBoolean() && holdsOtherUsable()) return;
+
         if (AutoHitCrystal.hasCrystalTarget() || AutoHitCrystal.lastHitTick == mc.player.tickCount) {
             return;
         }
@@ -75,10 +83,11 @@ public class AutoPlaceCrystal extends Module {
         HitResult target = mc.hitResult;
         if (target instanceof BlockHitResult bhr) {
             BlockPos pos = bhr.getBlockPos();
+            if (!isUpperFace(bhr)) return;
             BlockState state = mc.level.getBlockState(pos);
             boolean allowBedrock = !excludeBedrock.getValBoolean();
 
-            if ((state.is(Blocks.OBSIDIAN) || (allowBedrock && state.is(Blocks.BEDROCK))) && mc.level.isEmptyBlock(pos.above())) {
+            if ((state.is(Blocks.OBSIDIAN) || (allowBedrock && state.is(Blocks.BEDROCK))) && canHoldCrystal(pos)) {
                 double distSq = mc.player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5);
                 double r = range.getValDouble();
                 if (distSq <= r * r) {
@@ -96,5 +105,29 @@ public class AutoPlaceCrystal extends Module {
                 }
             }
         }
+    }
+
+    private boolean isUpperFace(BlockHitResult bhr) {
+        net.minecraft.core.Direction face = bhr.getDirection();
+        if (face == net.minecraft.core.Direction.UP) return true;
+        if (face == net.minecraft.core.Direction.DOWN) return false;
+        double height = bhr.getLocation().y - bhr.getBlockPos().getY();
+        return height >= minSideHeight.getValDouble();
+    }
+
+    private boolean canHoldCrystal(BlockPos base) {
+        BlockPos above = base.above();
+        if (!mc.level.isEmptyBlock(above)) return false;
+        net.minecraft.world.phys.AABB box = new net.minecraft.world.phys.AABB(above).expandTowards(0, 1, 0);
+        return mc.level.getEntities(null, box).isEmpty();
+    }
+
+    static boolean holdsOtherUsable() {
+        net.minecraft.world.item.ItemStack main = mc.player.getMainHandItem();
+        if (main.isEmpty() || main.is(Items.END_CRYSTAL)) return false;
+        if (ModuleUtils.isHoldingWeapon(main)) return false;
+        return main.getItem() instanceof net.minecraft.world.item.BlockItem
+                || main.getUseAnimation() != net.minecraft.world.item.ItemUseAnimation.NONE
+                || main.is(Items.ENDER_PEARL) || main.is(Items.WIND_CHARGE) || main.is(Items.FLINT_AND_STEEL);
     }
 }

@@ -103,7 +103,7 @@ public class Trajectories extends Module {
         int boxFillColor = RenderUtils.toImGuiColor(themeColor, 0.25f);
         int boxOutlineColor = RenderUtils.toImGuiColor(themeColor, 0.9f);
 
-        ImDrawList drawList = ImGui.getForegroundDrawList();
+        ImDrawList drawList = ImGui.getBackgroundDrawList();
 
         for (int p = 0; p < paths; p++) {
             double currentYaw = yaw;

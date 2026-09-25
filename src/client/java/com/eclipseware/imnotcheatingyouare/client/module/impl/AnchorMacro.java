@@ -5,43 +5,55 @@ import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils;
+import com.eclipseware.imnotcheatingyouare.client.utils.RotationManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 public class AnchorMacro extends Module {
-    private Setting delaySetting;
-    private Setting safeAnchor;
-    private Setting silentAim;
-    private Setting autoDetonate;
+    private enum Step { IDLE, CHARGE, SHIELD, DETONATE, DONE }
 
-    private BlockPos trackedAnchor = null;
+    private final Setting delaySetting;
+    private final Setting safeAnchor;
+    private final Setting silentAim;
+    private final Setting autoDetonate;
+    private final Setting chargeCount;
+    private final Setting preferTotem;
+
+    private Step step = Step.IDLE;
+    private BlockPos anchor;
     private int originalSlot = -1;
-    private int lookTicks = 0;
-    private long lastActionTime = 0L;
-    private int step = 0; 
+    private int waitTicks = 0;
+    private boolean rotated = false;
 
     public AnchorMacro() {
-        super("AnchorMacro", Category.Farming, "Automatically places, charges, and detonates respawn anchors.");
+        super("AnchorMacro", Category.Farming, "Charges and detonates the respawn anchor you look at, optionally shielding yourself with glowstone first.");
         setSubCategory("Macro");
 
         delaySetting = new Setting("Delay Ticks", this, 1.0, 0.0, 5.0, true);
         safeAnchor = new Setting("Safe Anchor", this, true);
         silentAim = new Setting("Silent Aim", this, true);
         autoDetonate = new Setting("Auto Detonate", this, true);
+        chargeCount = new Setting("Charges", this, 1.0, 1.0, 4.0, true);
+        preferTotem = new Setting("Detonate With Totem", this, true);
 
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(delaySetting);
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(safeAnchor);
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(silentAim);
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(autoDetonate);
+        var sm = ImnotcheatingyouareClient.INSTANCE.settingsManager;
+        sm.rSetting(delaySetting);
+        sm.rSetting(safeAnchor);
+        sm.rSetting(silentAim);
+        sm.rSetting(autoDetonate);
+        sm.rSetting(chargeCount);
+        sm.rSetting(preferTotem);
     }
 
     @Override
@@ -51,201 +63,212 @@ public class AnchorMacro extends Module {
 
     @Override
     public void onDisable() {
-        restoreSlot();
-        reset();
+        finish();
     }
 
     @Override
     public void onTick() {
         if (mc.player == null || mc.level == null || mc.gameMode == null) return;
-        if (mc.player.isDeadOrDying() || mc.gui.screen() instanceof net.minecraft.client.gui.screens.DeathScreen) {
-            reset();
+        if (mc.player.isDeadOrDying() || mc.gui.screen() != null) {
+            finish();
             return;
         }
         if (mc.player.isUsingItem()) return;
 
-        HitResult hit = mc.hitResult;
-        if (hit == null || hit.getType() != HitResult.Type.BLOCK) {
-            restoreSlot();
-            reset();
-            return;
-        }
-
-        BlockHitResult bhr = (BlockHitResult) hit;
-        BlockPos targetPos = bhr.getBlockPos();
-        BlockState state = mc.level.getBlockState(targetPos);
-
-        if (!state.is(Blocks.RESPAWN_ANCHOR)) {
-            restoreSlot();
-            reset();
-            return;
-        }
-
-        if (trackedAnchor == null || !trackedAnchor.equals(targetPos)) {
-            restoreSlot();
-            reset();
-            trackedAnchor = targetPos;
+        if (step == Step.IDLE) {
+            if (!(mc.hitResult instanceof BlockHitResult bhr) || mc.hitResult.getType() != HitResult.Type.BLOCK) return;
+            if (!mc.level.getBlockState(bhr.getBlockPos()).is(Blocks.RESPAWN_ANCHOR)) return;
+            anchor = bhr.getBlockPos();
             originalSlot = ModuleUtils.getSelectedSlot();
+            step = Step.CHARGE;
+            waitTicks = 0;
+            rotated = false;
         }
 
-        lookTicks++;
-        if (lookTicks < 2) return;
-
-        long delayMs = (long) (delaySetting.getValDouble() * 50.0);
-        if (System.currentTimeMillis() - lastActionTime < delayMs) return;
-
-        int charges = state.hasProperty(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
-                ? state.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES)
-                : 0;
-
-        if (charges == 0 && step == 0) {
-            int gsSlot = ModuleUtils.findItemInHotbar(Items.GLOWSTONE);
-            if (gsSlot == -1) return;
-
-            AutoTotem.triggerInputPause();
-            ModuleUtils.switchToSlot(gsSlot);
-            if (canPlace()) {
-                ((com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor) mc).invokeStartUseItem();
-                lastActionTime = System.currentTimeMillis();
-                step = safeAnchor.getValBoolean() ? 1 : 2;
-            }
+        BlockState state = mc.level.getBlockState(anchor);
+        if (!state.is(Blocks.RESPAWN_ANCHOR)) {
+            finish();
+            return;
+        }
+        if (mc.player.getEyePosition().distanceToSqr(Vec3.atCenterOf(anchor)) > 5.5 * 5.5) {
+            finish();
             return;
         }
 
-        if (charges > 0 && step == 0 && safeAnchor.getValBoolean()) {
-            step = 1;
+        if (waitTicks > 0) {
+            waitTicks--;
+            return;
         }
 
-        if (step == 1 && safeAnchor.getValBoolean()) {
-            Direction dir = getDirectionToPlayer(targetPos);
-            BlockPos shieldPos = targetPos.relative(dir);
-            BlockState shieldState = mc.level.getBlockState(shieldPos);
+        int charges = state.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES);
 
-            if (!shieldState.isAir() && !shieldState.canBeReplaced()) {
-                step = 2;
-            } else {
-                int shieldSlot = findShieldBlockSlot();
-                if (shieldSlot != -1) {
-                    BlockPos floorSupport = shieldPos.below();
-                    BlockState floorState = mc.level.getBlockState(floorSupport);
-                    
-                    BlockPos placeOnPos = (!floorState.isAir() && !floorState.canBeReplaced()) ? floorSupport : targetPos;
-                    Direction placeFace = (placeOnPos.equals(floorSupport)) ? Direction.UP : dir;
-
-                    double x = placeOnPos.getX() + 0.5 + placeFace.getStepX() * 0.5;
-                    double y = placeOnPos.getY() + 0.5 + placeFace.getStepY() * 0.5;
-                    double z = placeOnPos.getZ() + 0.5 + placeFace.getStepZ() * 0.5;
-
-                    net.minecraft.world.phys.Vec3 hitVec = new net.minecraft.world.phys.Vec3(x, y, z);
-                    BlockHitResult shieldHit = new BlockHitResult(hitVec, placeFace, placeOnPos, false);
-                    
-                    if (silentAim.getValBoolean()) {
-                        float[] rots = ModuleUtils.getRotations(mc.player.getEyePosition(), hitVec);
-                        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.keepRotated(rots[0], rots[1], 180f, false);
-                    }
-                    
-                    AutoTotem.triggerInputPause();
-                    int prevSlot = ModuleUtils.getSelectedSlot();
-                    ModuleUtils.switchToSlot(shieldSlot);
-                    mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
-                    mc.gameMode.useItemOn(mc.player, net.minecraft.world.InteractionHand.MAIN_HAND, shieldHit);
-                    ModuleUtils.switchToSlot(prevSlot);
-                    lastActionTime = System.currentTimeMillis();
+        switch (step) {
+            case CHARGE -> {
+                int wanted = (int) chargeCount.getValDouble();
+                if (charges >= wanted) {
+                    step = safeAnchor.getValBoolean() ? Step.SHIELD : Step.DETONATE;
+                    rotated = false;
+                    return;
                 }
-                step = 2;
+                int glowstone = ModuleUtils.findItemInHotbar(Items.GLOWSTONE);
+                if (glowstone == -1) {
+                    finish();
+                    return;
+                }
+                BlockHitResult hit = anchorHit();
+                if (!aim(hit)) return;
+                interact(glowstone, hit);
+                waitTicks = delay();
             }
-            return;
-        }
-
-        if (autoDetonate.getValBoolean() && (charges > 0 || step == 2)) {
-            int detonateSlot = findDetonateSlot();
-            int slotToUse = detonateSlot != -1 ? detonateSlot : originalSlot;
-
-            int anchorSlot = ModuleUtils.findItemInHotbar(Items.RESPAWN_ANCHOR);
-            if (anchorSlot != -1) {
-                slotToUse = anchorSlot;
+            case SHIELD -> {
+                BlockHitResult shieldHit = shieldPlacement();
+                if (shieldHit == null) {
+                    step = Step.DETONATE;
+                    rotated = false;
+                    return;
+                }
+                int glowstone = ModuleUtils.findItemInHotbar(Items.GLOWSTONE);
+                if (glowstone == -1) {
+                    step = Step.DETONATE;
+                    rotated = false;
+                    return;
+                }
+                if (!aim(shieldHit)) return;
+                interact(glowstone, shieldHit);
+                step = Step.DETONATE;
+                rotated = false;
+                waitTicks = delay();
             }
-
-            if (slotToUse != -1) {
-                ModuleUtils.switchToSlot(slotToUse);
+            case DETONATE -> {
+                if (!autoDetonate.getValBoolean()) {
+                    finish();
+                    return;
+                }
+                if (charges == 0) {
+                    finish();
+                    return;
+                }
+                int slot = detonateSlot();
+                if (slot == -1) {
+                    finish();
+                    return;
+                }
+                BlockHitResult hit = detonateHit();
+                if (!aim(hit)) return;
+                interact(slot, hit);
+                step = Step.DONE;
+                waitTicks = delay();
             }
-
-            if (canPlace()) {
-                AutoTotem.triggerInputPause();
-                ((com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor) mc).invokeStartUseItem();
-                lastActionTime = System.currentTimeMillis();
-                restoreSlot();
-                reset();
+            case DONE -> finish();
+            default -> {
             }
         }
     }
 
-    private boolean canPlace() {
-        if (mc.player == null || mc.level == null || mc.gameMode == null) return false;
-        if (mc.gui != null && mc.gui.screen() != null) return false;
-        if (mc.hitResult == null || mc.hitResult.getType() != HitResult.Type.BLOCK) return false;
-        if (mc.player.isUsingItem()) return false;
+    private int delay() {
+        return (int) delaySetting.getValDouble();
+    }
+
+    private boolean aim(BlockHitResult hit) {
+        if (!silentAim.getValBoolean()) {
+            return mc.hitResult instanceof BlockHitResult current && current.getBlockPos().equals(hit.getBlockPos());
+        }
+        float[] rots = ModuleUtils.getRotations(mc.player.getEyePosition(), hit.getLocation());
+        RotationManager.keepRotated(rots[0], rots[1], 180f, true);
+        if (!rotated) {
+            rotated = true;
+            return false;
+        }
         return true;
     }
 
-    private int findShieldBlockSlot() {
-        if (mc.player == null) return -1;
-        int obsidianSlot = ModuleUtils.findItemInHotbar(Items.OBSIDIAN);
-        if (obsidianSlot != -1) return obsidianSlot;
+    private void interact(int slot, BlockHitResult hit) {
+        AutoTotem.triggerInputPause();
+        ModuleUtils.switchToSlot(slot);
+        InteractionResult result = mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hit);
+        if (result.consumesAction()) {
+            mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+        }
+        rotated = false;
+    }
 
-        int cryingSlot = ModuleUtils.findItemInHotbar(Items.CRYING_OBSIDIAN);
-        if (cryingSlot != -1) return cryingSlot;
+    private BlockHitResult anchorHit() {
+        if (!silentAim.getValBoolean() && mc.hitResult instanceof BlockHitResult bhr && bhr.getBlockPos().equals(anchor)) {
+            return bhr;
+        }
+        return detonateHit();
+    }
 
+    private BlockHitResult detonateHit() {
+        Vec3 eye = mc.player.getEyePosition();
+        Direction best = Direction.UP;
+        double bestDist = Double.MAX_VALUE;
+        for (Direction dir : Direction.values()) {
+            BlockPos neighbor = anchor.relative(dir);
+            BlockState ns = mc.level.getBlockState(neighbor);
+            if (!ns.isAir() && !ns.canBeReplaced()) continue;
+            Vec3 face = Vec3.atCenterOf(anchor).add(dir.getStepX() * 0.5, dir.getStepY() * 0.5, dir.getStepZ() * 0.5);
+            double d = eye.distanceToSqr(face);
+            Vec3 toEye = eye.subtract(face);
+            if (toEye.dot(new Vec3(dir.getStepX(), dir.getStepY(), dir.getStepZ())) <= 0) continue;
+            if (d < bestDist) {
+                bestDist = d;
+                best = dir;
+            }
+        }
+        Vec3 face = Vec3.atCenterOf(anchor).add(best.getStepX() * 0.5, best.getStepY() * 0.5, best.getStepZ() * 0.5);
+        return new BlockHitResult(face, best, anchor, false);
+    }
+
+    private BlockHitResult shieldPlacement() {
+        Direction toPlayer = horizontalToPlayer();
+        BlockPos shield = anchor.relative(toPlayer);
+        BlockState shieldState = mc.level.getBlockState(shield);
+        if (!shieldState.isAir() && !shieldState.canBeReplaced()) return null;
+        if (mc.player.getBoundingBox().intersects(new AABB(shield))) return null;
+
+        BlockPos support = shield.below();
+        BlockState supportState = mc.level.getBlockState(support);
+        if (supportState.isAir() || supportState.canBeReplaced() || supportState.is(Blocks.RESPAWN_ANCHOR)) return null;
+
+        Vec3 top = new Vec3(support.getX() + 0.5, support.getY() + 1.0, support.getZ() + 0.5);
+        return new BlockHitResult(top, Direction.UP, support, false);
+    }
+
+    private Direction horizontalToPlayer() {
+        double dx = mc.player.getX() - (anchor.getX() + 0.5);
+        double dz = mc.player.getZ() - (anchor.getZ() + 0.5);
+        if (Math.abs(dx) > Math.abs(dz)) return dx > 0 ? Direction.EAST : Direction.WEST;
+        return dz > 0 ? Direction.SOUTH : Direction.NORTH;
+    }
+
+    private int detonateSlot() {
+        if (preferTotem.getValBoolean()) {
+            int totem = ModuleUtils.findItemInHotbar(Items.TOTEM_OF_UNDYING);
+            if (totem != -1) return totem;
+        }
+        if (originalSlot >= 0 && originalSlot < 9 && !mc.player.getInventory().getItem(originalSlot).is(Items.GLOWSTONE)) {
+            return originalSlot;
+        }
         for (int i = 0; i < 9; i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
-            if (stack.isEmpty()) continue;
-            if (stack.getItem() instanceof BlockItem blockItem) {
-                if (blockItem.getBlock() instanceof FallingBlock) continue;
-                if (blockItem.getBlock() == Blocks.RESPAWN_ANCHOR) continue;
-                if (stack.is(Items.GLOWSTONE)) continue;
-                return i;
-            }
+            if (!stack.is(Items.GLOWSTONE)) return i;
         }
         return -1;
     }
 
-    private int findDetonateSlot() {
-        if (mc.player == null) return -1;
-        for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getItem(i);
-            if (stack.isEmpty()) continue;
-            if (!stack.is(Items.GLOWSTONE)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private void restoreSlot() {
-        int anchorSlot = ModuleUtils.findItemInHotbar(Items.RESPAWN_ANCHOR);
-        if (anchorSlot != -1) {
-            ModuleUtils.switchToSlot(anchorSlot);
-        } else if (originalSlot >= 0 && originalSlot < 9) {
+    private void finish() {
+        if (originalSlot >= 0 && originalSlot < 9 && mc.player != null) {
             ModuleUtils.switchToSlot(originalSlot);
         }
-        originalSlot = -1;
+        reset();
     }
 
     private void reset() {
-        trackedAnchor = null;
-        lookTicks = 0;
-        lastActionTime = 0L;
-        step = 0;
-    }
-
-    private Direction getDirectionToPlayer(BlockPos pos) {
-        if (mc.player == null) return Direction.NORTH;
-        double dx = mc.player.getX() - (pos.getX() + 0.5);
-        double dz = mc.player.getZ() - (pos.getZ() + 0.5);
-        if (Math.abs(dx) > Math.abs(dz)) {
-            return dx > 0 ? Direction.EAST : Direction.WEST;
-        } else {
-            return dz > 0 ? Direction.SOUTH : Direction.NORTH;
-        }
+        step = Step.IDLE;
+        anchor = null;
+        originalSlot = -1;
+        waitTicks = 0;
+        rotated = false;
     }
 }

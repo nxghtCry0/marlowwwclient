@@ -45,8 +45,19 @@ public class ModuleUtils {
 
     public static void setServerSlot(int slot) {
         if (mc.player == null || mc.getConnection() == null) return;
+        if (mc.gameMode != null) {
+            com.eclipseware.imnotcheatingyouare.mixin.client.MultiPlayerGameModeAccessor gm =
+                    (com.eclipseware.imnotcheatingyouare.mixin.client.MultiPlayerGameModeAccessor) mc.gameMode;
+            if (gm.getCarriedIndex() == slot) {
+                lastSentSlot = slot;
+                return;
+            }
+            mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
+            gm.setCarriedIndex(slot);
+            lastSentSlot = slot;
+            return;
+        }
         if (lastSentSlot == slot) return;
-        
         mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
         lastSentSlot = slot;
     }

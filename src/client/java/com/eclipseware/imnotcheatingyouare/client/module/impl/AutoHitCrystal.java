@@ -69,6 +69,8 @@ public class AutoHitCrystal extends Module {
         if (requireHoldingWeapon.getValBoolean() && !ModuleUtils.isHoldingWeapon(mc.player.getMainHandItem()))
             return;
 
+        if (AutoPlaceCrystal.holdsOtherUsable() && !(mc.hitResult instanceof EntityHitResult ehr && ehr.getEntity() instanceof EndCrystal)) return;
+
         EndCrystal crystal = findCrystalToBreak();
         if (crystal != null && crystal.isAlive()) {
             ((MinecraftAccessor) mc).setMissTime(0);
@@ -79,7 +81,7 @@ public class AutoHitCrystal extends Module {
             mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
             lastHitTick = mc.player.tickCount;
 
-            ((MinecraftAccessor) mc).setRightClickDelay(1);
+            if (mc.hitResult instanceof EntityHitResult) ((MinecraftAccessor) mc).setRightClickDelay(1);
         }
     }
 
@@ -105,6 +107,7 @@ public class AutoHitCrystal extends Module {
         double closestDistSq = r * r;
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (entity instanceof EndCrystal crystal && crystal.isAlive()) {
+                if (!mc.player.hasLineOfSight(crystal)) continue;
                 double distSq = mc.player.distanceToSqr(crystal);
                 if (distSq <= closestDistSq) {
                     closestDistSq = distSq;

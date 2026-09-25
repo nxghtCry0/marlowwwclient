@@ -25,12 +25,13 @@ public class MinecraftMixin {
             method = "renderFrame",
             at = @At(
                     value = "INVOKE",
-                    target = "Lcom/mojang/renderpearl/api/device/GpuSurface;present()V"
+                    target = "Lcom/mojang/renderpearl/api/device/GpuSurface;blitFromTexture(Lcom/mojang/renderpearl/api/commands/CommandEncoder;Lcom/mojang/renderpearl/api/textures/GpuTextureView;)V"
             )
     )
     private void onRenderFrame(boolean renderLevel, CallbackInfo ci) {
-        if (!renderLevel) return;
-        xyz.breadloaf.imguimc.imgui.ImguiLoader.onFrameRender();
+        Minecraft mc = (Minecraft) (Object) this;
+        if (mc.gameRenderer == null) return;
+        xyz.breadloaf.imguimc.imgui.ImguiLoader.onFrameRender(mc.gameRenderer.mainRenderTarget().getColorTexture());
     }
 
     @Inject(method = "startAttack", at = @At("HEAD"), cancellable = true)

@@ -80,7 +80,8 @@ public class ESP extends Module {
         cacheSettings();
 
         String mode = modeSetting != null ? modeSetting.getValString() : "Outline";
-        if (mode.equals("Glow")) return;
+        boolean overlayOnly = mode.equals("Glow") || mode.equals("Shader");
+        if (overlayOnly && !bool("Name Tags", true)) return;
 
         boolean showMobs = mobsSetting != null && mobsSetting.getValBoolean();
         boolean doFill = fillSetting == null || fillSetting.getValBoolean();
@@ -93,7 +94,7 @@ public class ESP extends Module {
         float cornerGap = cornerGapSetting != null ? (float) cornerGapSetting.getValDouble() : 50f;
 
         Color themeColor = RenderUtils.getThemeAccentColor();
-        ImDrawList drawList = ImGui.getForegroundDrawList();
+        ImDrawList drawList = ImGui.getBackgroundDrawList();
 
         double maxDist = mc.options != null ? Math.max(256.0, mc.options.getEffectiveRenderDistance() * 16.0) : 256.0;
         float displayWidth = ImGui.getIO().getDisplaySizeX();
@@ -107,7 +108,7 @@ public class ESP extends Module {
             boolean isMob = entity instanceof Mob;
             if (!isPlayer && !(isMob && showMobs)) continue;
 
-            Color color = isPlayer ? themeColor : MOB_COLOR;
+            Color color = getEntityColor(entity);
 
             double x = net.minecraft.util.Mth.lerp(partialTick, entity.xo, entity.getX());
             double y = net.minecraft.util.Mth.lerp(partialTick, entity.yo, entity.getY());
@@ -145,6 +146,12 @@ public class ESP extends Module {
             if (ix2 < -500f || ix > displayWidth + 500f || iy2 < -500f || iy > displayHeight + 500f) continue;
             if (ix2 <= ix || iy2 <= iy) continue;
 
+            if (overlayOnly) {
+                float tagAlpha = Math.max(0.4f, 1.0f - (float)(dist / maxDist));
+                drawNameTag(drawList, le, (ix + ix2) / 2f, iy, color, tagAlpha, dist);
+                continue;
+            }
+
             float rectW = (float)(maxX - minX);
             float rectH = (float)(maxY - minY);
             float alpha = Math.max(0.4f, 1.0f - (float)(dist / maxDist));
@@ -152,11 +159,12 @@ public class ESP extends Module {
 
             int oc = toImGuiColor(color, alpha);
             int black = toImGuiColor(0, 0, 0, oa);
-            int fillColor = toImGuiColor(15, 15, 20, (int)(alpha * 255.0f * 0.25f));
             float t = (float) outlineThickness;
 
             if (doFill && (ix2 - t > ix + t) && (iy2 - t > iy + t)) {
-                drawList.addRectFilled(ix + t, iy + t, ix2 - t, iy2 - t, fillColor, 2.0f);
+                int fillTop = toImGuiColor(color, alpha * 0.04f);
+                int fillBottom = toImGuiColor(color, alpha * 0.22f);
+                drawList.addRectFilledMultiColor(ix + t, iy + t, ix2 - t, iy2 - t, fillTop, fillTop, fillBottom, fillBottom);
             }
 
             if (useCorner) {
@@ -193,76 +201,85 @@ public class ESP extends Module {
                 int bgImColor = toImGuiColor(15, 15, 20, (int)(alpha * 255.0f * 0.8f));
                 int borderImColor = toImGuiColor(0, 0, 0, (int)(alpha * 255.0f * 0.9f));
 
-                drawList.addRectFilled(barX - 1f, iy - 1f, barX + 3f, iy2 + 1f, bgImColor, 2.0f);
-                drawList.addRect(barX - 1f, iy - 1f, barX + 3f, iy2 + 1f, borderImColor, 2.0f, 0, 1.0f);
+                drawList.addRectFilled(barX - 1.5f, iy - 1.5f, barX + 3.5f, iy2 + 1.5f, bgImColor, 2.5f);
+                drawList.addRect(barX - 1.5f, iy - 1.5f, barX + 3.5f, iy2 + 1.5f, borderImColor, 2.5f, 0, 1.0f);
 
                 if (barH > 0) {
-                    drawList.addRectFilled(barX, iy2 - barH, barX + 2f, iy2, hpImColor, 1.5f);
+                    int hpTop = toImGuiColor(hpColor.brighter(), alpha);
+                    drawList.addRectFilledMultiColor(barX, iy2 - barH, barX + 2f, iy2, hpTop, hpTop, hpImColor, hpImColor);
                 }
             }
 
             if (showNames) {
-                String name = entity.getName().getString();
-                double d = Math.round(dist * 10.0) / 10.0;
-                String distStr = " " + d + "m";
-                float hpVal = Math.round(le.getHealth() * 10.0f) / 10.0f;
-                String hpStr = " " + hpVal + "HP";
-
-                ImGui.calcTextSize(nameSizeBuf, name);
-                ImGui.calcTextSize(distSizeBuf, distStr);
-                ImGui.calcTextSize(hpSizeBuf, hpStr);
-
-                float cardContentWidth = nameSizeBuf.x + distSizeBuf.x + hpSizeBuf.x;
-                float cardHeight = Math.max(nameSizeBuf.y, Math.max(distSizeBuf.y, hpSizeBuf.y)) + 6f;
-                float paddingX = 6f;
-                float cardWidth = cardContentWidth + (paddingX * 2);
-
-                float cardX = ix + rectW / 2f - cardWidth / 2f;
-                float cardY = iy - cardHeight - 5f;
-
-                int cardBgColor = toImGuiColor(18, 18, 24, (int)(alpha * 255.0f * 0.85f));
-                int cardBorderColor = toImGuiColor(color, alpha * 0.6f);
-                int nameTextColor = toImGuiColor(255, 255, 255, oa);
-                int distTextColor = toImGuiColor(170, 210, 255, oa);
-
-                float pct = Math.min(1f, Math.max(0f, le.getHealth() / Math.max(1f, le.getMaxHealth())));
-                Color hpColor = RenderUtils.getHealthColor(pct);
-                int hpTextColor = toImGuiColor(hpColor, alpha);
-
-                drawList.addRectFilled(cardX, cardY, cardX + cardWidth, cardY + cardHeight, cardBgColor, 4.0f);
-                drawList.addRect(cardX, cardY, cardX + cardWidth, cardY + cardHeight, cardBorderColor, 4.0f, 0, 1.2f);
-
-                float curX = cardX + paddingX;
-                float textY = cardY + (cardHeight - nameSizeBuf.y) / 2f;
-
-                drawList.addText(curX, textY, nameTextColor, name);
-                curX += nameSizeBuf.x;
-
-                drawList.addText(curX, textY, distTextColor, distStr);
-                curX += distSizeBuf.x;
-
-                drawList.addText(curX, textY, hpTextColor, hpStr);
-
-                ItemStack mainHand = le.getMainHandItem();
-                if (mainHand != null && !mainHand.isEmpty()) {
-                    String itemText = mainHand.getHoverName().getString();
-                    ImGui.calcTextSize(itemSizeBuf, itemText);
-
-                    float itemPaddingX = 5f;
-                    float itemCardW = itemSizeBuf.x + (itemPaddingX * 2);
-                    float itemCardH = itemSizeBuf.y + 4f;
-                    float itemCardX = ix + rectW / 2f - itemCardW / 2f;
-                    float itemCardY = cardY - itemCardH - 3f;
-
-                    int itemBgColor = toImGuiColor(12, 12, 16, (int)(alpha * 255.0f * 0.8f));
-                    int itemBorderColor = toImGuiColor(120, 120, 140, (int)(alpha * 255.0f * 0.4f));
-                    int itemTextColor = toImGuiColor(220, 220, 230, oa);
-
-                    drawList.addRectFilled(itemCardX, itemCardY, itemCardX + itemCardW, itemCardY + itemCardH, itemBgColor, 3.0f);
-                    drawList.addRect(itemCardX, itemCardY, itemCardX + itemCardW, itemCardY + itemCardH, itemBorderColor, 3.0f, 0, 1.0f);
-                    drawList.addText(itemCardX + itemPaddingX, itemCardY + (itemCardH - itemSizeBuf.y) / 2f, itemTextColor, itemText);
-                }
+                drawNameTag(drawList, le, ix + rectW / 2f, iy, color, alpha, dist);
             }
+        }
+    }
+
+    private void drawNameTag(ImDrawList drawList, LivingEntity le, float centerX, float topY, Color color, float alpha, double dist) {
+        boolean showDistance = bool("Tag Distance", true);
+        boolean showHp = bool("Tag Health", true);
+        boolean showItem = bool("Tag Item", true);
+        int oa = (int)(alpha * 255);
+
+        String name = le.getName().getString();
+        String distStr = showDistance ? "  " + (Math.round(dist * 10.0) / 10.0) + "m" : "";
+        String hpStr = showHp ? "  " + (Math.round(le.getHealth() * 10.0f) / 10.0f) + " hp" : "";
+
+        ImGui.calcTextSize(nameSizeBuf, name);
+        float distW = 0f;
+        float hpW = 0f;
+        if (!distStr.isEmpty()) {
+            ImGui.calcTextSize(distSizeBuf, distStr);
+            distW = distSizeBuf.x;
+        }
+        if (!hpStr.isEmpty()) {
+            ImGui.calcTextSize(hpSizeBuf, hpStr);
+            hpW = hpSizeBuf.x;
+        }
+
+        float paddingX = 7f;
+        float cardWidth = nameSizeBuf.x + distW + hpW + paddingX * 2;
+        float cardHeight = nameSizeBuf.y + 8f;
+        float cardX = centerX - cardWidth / 2f;
+        float cardY = topY - cardHeight - 6f;
+
+        float pct = Math.min(1f, Math.max(0f, le.getHealth() / Math.max(1f, le.getMaxHealth())));
+        Color hpColor = RenderUtils.getHealthColor(pct);
+
+        drawList.addRectFilled(cardX + 1f, cardY + 2f, cardX + cardWidth + 1f, cardY + cardHeight + 2f, toImGuiColor(0, 0, 0, (int)(oa * 0.35f)), 5.0f);
+        drawList.addRectFilled(cardX, cardY, cardX + cardWidth, cardY + cardHeight, toImGuiColor(16, 13, 24, (int)(oa * 0.88f)), 5.0f);
+        drawList.addRect(cardX, cardY, cardX + cardWidth, cardY + cardHeight, toImGuiColor(color, alpha * 0.35f), 5.0f, 0, 1.0f);
+        if (showHp) {
+            float barW = (cardWidth - 8f) * pct;
+            drawList.addRectFilled(cardX + 4f, cardY + cardHeight - 2.5f, cardX + 4f + barW, cardY + cardHeight - 1f, toImGuiColor(hpColor, alpha), 1.0f);
+        } else {
+            float inset = Math.min(8f, cardWidth / 4f);
+            drawList.addLine(cardX + inset, cardY + 0.5f, cardX + cardWidth - inset, cardY + 0.5f, toImGuiColor(color, alpha), 1.5f);
+        }
+
+        float curX = cardX + paddingX;
+        float textY = cardY + 3.5f;
+        drawList.addText(curX, textY, toImGuiColor(255, 255, 255, oa), name);
+        curX += nameSizeBuf.x;
+        if (!distStr.isEmpty()) {
+            drawList.addText(curX, textY, toImGuiColor(150, 145, 170, oa), distStr);
+            curX += distW;
+        }
+        if (!hpStr.isEmpty()) {
+            drawList.addText(curX, textY, toImGuiColor(hpColor, alpha), hpStr);
+        }
+
+        ItemStack mainHand = le.getMainHandItem();
+        if (showItem && mainHand != null && !mainHand.isEmpty()) {
+            String itemText = mainHand.getHoverName().getString();
+            ImGui.calcTextSize(itemSizeBuf, itemText);
+            float itemCardW = itemSizeBuf.x + 10f;
+            float itemCardH = itemSizeBuf.y + 4f;
+            float itemCardX = centerX - itemCardW / 2f;
+            float itemCardY = cardY - itemCardH - 3f;
+            drawList.addRectFilled(itemCardX, itemCardY, itemCardX + itemCardW, itemCardY + itemCardH, toImGuiColor(12, 10, 18, (int)(oa * 0.8f)), 4.0f);
+            drawList.addText(itemCardX + 5f, itemCardY + 2f, toImGuiColor(220, 215, 235, oa), itemText);
         }
     }
 
@@ -311,6 +328,55 @@ public class ESP extends Module {
     private static int toImGuiColor(Color color, float alphaFactor) {
         int a = Math.max(0, Math.min(255, (int) (color.getAlpha() * alphaFactor)));
         return ((a & 0xFF) << 24) | ((color.getBlue() & 0xFF) << 16) | ((color.getGreen() & 0xFF) << 8) | (color.getRed() & 0xFF);
+    }
+
+    private Setting setting(String name) {
+        return ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, name);
+    }
+
+    private boolean bool(String name, boolean fallback) {
+        Setting s = setting(name);
+        return s != null ? s.getValBoolean() : fallback;
+    }
+
+    private Color colorSetting(String name, Color fallback) {
+        Setting s = setting(name);
+        return s != null ? new Color(s.getValColor(), true) : fallback;
+    }
+
+    public net.minecraft.resources.Identifier getShaderChainId() {
+        Setting featherSetting = setting("Feather");
+        Setting fillOpacitySetting = setting("Fill Opacity");
+        int feather = featherSetting != null ? (int) Math.max(1, Math.min(5, featherSetting.getValDouble())) : 3;
+        int fill = fillOpacitySetting != null ? (int) Math.max(0, Math.min(5, Math.round(fillOpacitySetting.getValDouble() / 10.0))) : 2;
+        return net.minecraft.resources.Identifier.parse("imnotcheatingyouare:shader_esp_f" + feather + "_a" + fill);
+    }
+
+    public boolean shouldHighlight(Entity entity) {
+        if (entity == mc.player || !(entity instanceof LivingEntity)) return false;
+        if (entity instanceof Player) return true;
+        cacheSettings();
+        return entity instanceof Mob && mobsSetting != null && mobsSetting.getValBoolean();
+    }
+
+    public Color getEntityColor(Entity entity) {
+        Setting colorMode = setting("Color Mode");
+        String mode = colorMode != null ? colorMode.getValString() : "Theme";
+        if (mode.equals("Custom")) return colorSetting("Custom Color", RenderUtils.getThemeAccentColor());
+        if (mode.equals("Per Type")) {
+            if (entity instanceof Player) return colorSetting("Player Color", RenderUtils.getThemeAccentColor());
+            if (entity instanceof net.minecraft.world.entity.monster.Enemy) return colorSetting("Hostile Color", MOB_COLOR);
+            if (entity instanceof net.minecraft.world.entity.NeutralMob) return colorSetting("Neutral Color", new Color(255, 205, 90));
+            if (entity instanceof net.minecraft.world.entity.animal.Animal) return colorSetting("Passive Color", new Color(120, 230, 150));
+            return colorSetting("Neutral Color", new Color(255, 205, 90));
+        }
+        return entity instanceof Player ? RenderUtils.getThemeAccentColor() : MOB_COLOR;
+    }
+
+    public boolean isShaderMode() {
+        if (!isToggled()) return false;
+        cacheSettings();
+        return modeSetting != null && modeSetting.getValString().equals("Shader");
     }
 
     public boolean shouldGlow() {

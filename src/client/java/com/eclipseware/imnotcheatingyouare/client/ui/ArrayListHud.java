@@ -79,6 +79,216 @@ public class ArrayListHud {
         return (a << 24) | (r << 16) | (g << 8) | b;
     }
 
+    private int lastRenderR = 230, lastRenderG = 10, lastRenderB = 230;
+    private String lastAlignment = "Left";
+    private float lastStartY = 43f;
+    private float lastScale = 1f;
+    private float lastAnimSpeed = 0.15f;
+    private boolean visibleThisFrame;
+    private final Map<Module, Float> slotY = new HashMap<>();
+    private final Map<Module, Float> imguiAnim = new HashMap<>();
+    private static final imgui.ImVec2 textSize = new imgui.ImVec2();
+
+    private static int col(int r, int g, int b, int a) {
+        return ((Math.max(0, Math.min(255, a)) & 0xFF) << 24) | ((b & 0xFF) << 16) | ((g & 0xFF) << 8) | (r & 0xFF);
+    }
+
+    private static final imgui.ImVec2 keySize = new imgui.ImVec2();
+
+    private void renderKeybinds(float k, float displayW, boolean arrayRight, int ar, int ag, int ab, float dim) {
+        Module kbMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("KeybindList");
+        if (kbMod == null || !kbMod.isToggled()) return;
+        Setting onlyEnabledSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(kbMod, "Only Enabled");
+        boolean onlyEnabled = onlyEnabledSetting != null && onlyEnabledSetting.getValBoolean();
+
+        List<Module> mods = new ArrayList<>();
+        for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.modules) {
+            if (m.isHidden()) continue;
+            if (onlyEnabled && !m.isToggled()) continue;
+            int key = m.getKeyBind();
+            if (key == -1 || key == 0 || getKeyName(key).equals("NONE")) continue;
+            mods.add(m);
+        }
+        if (mods.isEmpty()) return;
+
+        imgui.ImDrawList dl = imgui.ImGui.getBackgroundDrawList();
+        float fontSize = imgui.ImGui.getFontSize();
+        float rowH = fontSize + 7f;
+        float headerH = fontSize + 12f;
+        float maxName = 0f;
+        float maxKey = 0f;
+        for (Module m : mods) {
+            imgui.ImGui.calcTextSize(textSize, m.getName());
+            maxName = Math.max(maxName, textSize.x);
+            imgui.ImGui.calcTextSize(keySize, getKeyName(m.getKeyBind()));
+            maxKey = Math.max(maxKey, keySize.x);
+        }
+        float w = Math.max(130f, maxName + maxKey + 44f);
+        float h = headerH + mods.size() * rowH + 8f;
+        float margin = 8f * k;
+        float x = arrayRight ? margin : displayW - margin - w;
+        float y = margin;
+        float round = 9f;
+        int a255 = (int) (255 * dim);
+
+        dl.addRectFilled(x + 2f, y + 3f, x + w + 2f, y + h + 3f, col(0, 0, 0, (int) (60 * dim)), round);
+        dl.addRectFilled(x, y, x + w, y + h, col(16, 12, 26, (int) (200 * dim)), round);
+        int shader = com.eclipseware.imnotcheatingyouare.client.gui.PastelShaderBackground.glTextureId();
+        float dispH = Math.max(1f, imgui.ImGui.getIO().getDisplaySizeY());
+        if (shader != 0) {
+            dl.addImageRounded(shader, x, y, x + w, y + headerH, x / displayW, 1f - y / dispH, (x + w) / displayW, 1f - (y + headerH) / dispH,
+                    col(255, 255, 255, (int) (120 * dim)), round, imgui.flag.ImDrawFlags.RoundCornersTop);
+        }
+        dl.addRect(x, y, x + w, y + h, col(ar, ag, ab, (int) (70 * dim)), round, 0, 1f);
+        dl.addCircleFilled(x + 12f, y + headerH / 2f, 3f, col(ar, ag, ab, a255));
+        dl.addText(x + 21f, y + (headerH - fontSize) / 2f, col(255, 255, 255, a255), "Keybinds");
+        String count = String.valueOf(mods.size());
+        imgui.ImGui.calcTextSize(keySize, count);
+        dl.addText(x + w - 10f - keySize.x, y + (headerH - fontSize) / 2f, col(235, 225, 250, (int) (150 * dim)), count);
+
+        float ry = y + headerH + 4f;
+        for (Module m : mods) {
+            boolean on = m.isToggled();
+            dl.addText(x + 10f, ry + (rowH - fontSize) / 2f, on ? col(255, 255, 255, a255) : col(190, 182, 210, (int) (200 * dim)), m.getName());
+            String key = getKeyName(m.getKeyBind());
+            imgui.ImGui.calcTextSize(keySize, key);
+            float pw = keySize.x + 10f;
+            float px = x + w - 8f - pw;
+            float py = ry + 2f;
+            float ph = rowH - 4f;
+            dl.addRectFilled(px, py, px + pw, py + ph, on ? col(ar, ag, ab, (int) (170 * dim)) : col(255, 255, 255, (int) (22 * dim)), ph / 2f);
+            dl.addText(px + 5f, py + (ph - fontSize) / 2f, col(255, 255, 255, on ? a255 : (int) (170 * dim)), key);
+            ry += rowH;
+        }
+    }
+
+    public void renderImGui() {
+        if (!visibleThisFrame) return;
+        visibleThisFrame = false;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+        float dim = com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui.isOpen() || mc.gui.screen() != null ? 0.35f : 1f;
+
+        float guiScale = (float) mc.getWindow().getGuiScale();
+        float k = guiScale / xyz.breadloaf.imguimc.imgui.ImguiLoader.getUiScale() * lastScale;
+        float displayW = imgui.ImGui.getIO().getDisplaySizeX();
+        boolean right = lastAlignment.equals("Right");
+        float dt = Math.min(0.1f, imgui.ImGui.getIO().getDeltaTime());
+        float speed = Math.max(4f, lastAnimSpeed * 60f);
+
+        List<Object[]> rows = new ArrayList<>();
+        for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.modules) {
+            if (m.isHidden()) continue;
+            float a = imguiAnim.getOrDefault(m, 0f);
+            a += ((m.isToggled() ? 1f : 0f) - a) * Math.min(1f, dt * speed);
+            imguiAnim.put(m, a);
+            if (a < 0.01f) {
+                slotY.remove(m);
+                continue;
+            }
+            String suffix = "";
+            List<Setting> settings = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingsByMod(m);
+            if (settings != null) {
+                for (Setting st : settings) {
+                    if (st.isCombo()) {
+                        suffix = st.getValString();
+                        break;
+                    }
+                }
+            }
+            imgui.ImGui.calcTextSize(textSize, m.getName());
+            float nameW = textSize.x;
+            float suffixW = 0f;
+            if (!suffix.isEmpty()) {
+                imgui.ImGui.calcTextSize(textSize, suffix);
+                suffixW = textSize.x + 5f;
+            }
+            rows.add(new Object[]{m, suffix, nameW, suffixW, a});
+        }
+        rows.sort((o1, o2) -> Float.compare((float) o2[2] + (float) o2[3], (float) o1[2] + (float) o1[3]));
+
+        imgui.ImDrawList dl = imgui.ImGui.getBackgroundDrawList();
+        float fontSize = imgui.ImGui.getFontSize();
+        float rowH = fontSize + 8f;
+        float gap = 2f;
+        float margin = 5f * guiScale / xyz.breadloaf.imguimc.imgui.ImguiLoader.getUiScale();
+        float targetY = lastStartY * guiScale / xyz.breadloaf.imguimc.imgui.ImguiLoader.getUiScale();
+        float time = (float) (System.nanoTime() / 1_000_000_000.0);
+
+        float[] hsb = Color.RGBtoHSB(lastRenderR, lastRenderG, lastRenderB, null);
+        int shader = com.eclipseware.imnotcheatingyouare.client.gui.PastelShaderBackground.render()
+                ? com.eclipseware.imnotcheatingyouare.client.gui.PastelShaderBackground.glTextureId() : 0;
+        float dispH = Math.max(1f, imgui.ImGui.getIO().getDisplaySizeY());
+
+        {
+            int acc = Color.HSBtoRGB(hsb[0], hsb[1], hsb[2]);
+            renderKeybinds(guiScale / xyz.breadloaf.imguimc.imgui.ImguiLoader.getUiScale(), displayW, right, (acc >> 16) & 0xFF, (acc >> 8) & 0xFF, acc & 0xFF, dim);
+        }
+
+        for (int i = 0; i < rows.size(); i++) {
+            Object[] row = rows.get(i);
+            Module m = (Module) row[0];
+            String suffix = (String) row[1];
+            float nameW = (float) row[2];
+            float suffixW = (float) row[3];
+            float a = (float) row[4];
+            float e = AnimationUtil.easeOutCubic(a);
+            a *= dim;
+
+            float current = slotY.getOrDefault(m, targetY);
+            current += (targetY - current) * Math.min(1f, dt * 16f);
+            slotY.put(m, current);
+
+            float w = nameW + suffixW + 16f;
+            float h = rowH * e;
+            float slide = (1f - e) * (w + 12f);
+            float x = right ? displayW - margin - w + slide : margin - slide;
+            float y = current;
+
+            float hue = (hsb[0] + 0.06f * (float) Math.sin(time * 1.3f + i * 0.45f) + 1f) % 1f;
+            int accentRgb = Color.HSBtoRGB(hue, Math.min(1f, hsb[1] * 0.85f), Math.min(1f, hsb[2] * 1.05f + 0.05f));
+            int ar = (accentRgb >> 16) & 0xFF, ag = (accentRgb >> 8) & 0xFF, ab = accentRgb & 0xFF;
+            int alpha = (int) (255 * a);
+
+            boolean first = i == 0;
+            boolean last = i == rows.size() - 1;
+            int flags = right
+                    ? (first ? imgui.flag.ImDrawFlags.RoundCornersTopLeft | imgui.flag.ImDrawFlags.RoundCornersBottomLeft : imgui.flag.ImDrawFlags.RoundCornersLeft)
+                    : (first ? imgui.flag.ImDrawFlags.RoundCornersTopRight | imgui.flag.ImDrawFlags.RoundCornersBottomRight : imgui.flag.ImDrawFlags.RoundCornersRight);
+            float round = 6f;
+
+            dl.addRectFilled(x + (right ? -1f : 1f), y + 2f, x + w + (right ? -1f : 1f), y + h + 2f, col(0, 0, 0, (int) (55 * a)), round, flags);
+            dl.addRectFilled(x, y, x + w, y + h, col(16, 12, 26, (int) (185 * a)), round, flags);
+            if (shader != 0) {
+                float dw = Math.max(1f, displayW);
+                dl.addImageRounded(shader, x, y, x + w, y + h, x / dw, 1f - y / dispH, (x + w) / dw, 1f - (y + h) / dispH,
+                        col(255, 255, 255, (int) (48 * a)), round, flags);
+            }
+            int glowIn = col(ar, ag, ab, (int) (70 * a));
+            int glowOut = col(ar, ag, ab, 0);
+            float glowW = Math.min(w * 0.5f, 26f);
+            if (right) {
+                dl.addRectFilledMultiColor(x + w - glowW, y, x + w, y + h, glowOut, glowIn, glowIn, glowOut);
+                dl.addRectFilled(x + w - 2.5f, y, x + w, y + h, col(ar, ag, ab, alpha), 1f);
+            } else {
+                dl.addRectFilledMultiColor(x, y, x + glowW, y + h, glowIn, glowOut, glowOut, glowIn);
+                dl.addRectFilled(x, y, x + 2.5f, y + h, col(ar, ag, ab, alpha), 1f);
+            }
+
+            if (e > 0.35f) {
+                float ty = y + (h - fontSize) / 2f;
+                float tx = x + 9f;
+                dl.addText(tx + 0.8f, ty + 0.8f, col(0, 0, 0, (int) (120 * a)), m.getName());
+                dl.addText(tx, ty, col(255, 255, 255, alpha), m.getName());
+                if (!suffix.isEmpty()) {
+                    dl.addText(tx + nameW + 5f, ty, col(200, 190, 225, alpha), suffix);
+                }
+            }
+
+            targetY += (rowH + gap) * e;
+        }
+    }
+
     public void render(GuiGraphicsExtractor guiGraphics, float partialTick) {
         Module arrayListMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("ArrayList");
         if (arrayListMod == null || !arrayListMod.isToggled()) return;
@@ -163,242 +373,14 @@ public class ArrayListHud {
         guiGraphics.pose().pushMatrix();
         guiGraphics.pose().scale(scale, scale);
 
-        for (int i = 0; i < activeList.size(); i++) {
-            ModRenderInfo info = activeList.get(i);
-            float anim = info.anim;
-            
-            float slideAnim = AnimationUtil.easeOutBack(anim);
-            float heightAnim = AnimationUtil.easeOutCubic(anim);
-            
-            String displayName = info.displayName;
-            int textWidth = info.textWidth;
-            int rectWidth = textWidth + 14;
-            
-            boolean isRight = alignment.equals("Right");
-            double xOffset = isRight ? (1.0f - slideAnim) * 35f : (1.0f - slideAnim) * -35f;
-            
-            int drawX = isRight ? (int)(screenWidth - rectWidth * scale + xOffset * scale) : (int)(x + xOffset * scale);
-            int drawY = (int) currentY;
-            
-            float scaledX = (float)(drawX / scale);
-            float scaledY = (float)(drawY / scale);
-            float scaledW = (float)rectWidth;
-            float scaledH = 14.5f * heightAnim;
-            
-            int alpha = Math.max(0, Math.min(255, (int)(255 * anim)));
-            int bgAlpha = Math.max(0, Math.min(255, (int)(160 * anim))); 
-            
-            int currentBg = (bgAlpha << 24) | 0x0F0F16;
-            
-            float[] hsb = Color.RGBtoHSB(r, g, b, null);
-            float shiftedHue = (hsb[0] + 0.08f) % 1.0f;
-            int complementary = Color.HSBtoRGB(shiftedHue, hsb[1], hsb[2]);
-            double wave = Math.sin((System.currentTimeMillis() / 1200.0) + (currentY * 0.04)) * 0.5 + 0.5;
-            int elementAccent = interpolateColor(Color.HSBtoRGB(hsb[0], hsb[1], hsb[2]), complementary, (float) wave);
-            int currentAccent = (alpha << 24) | (elementAccent & 0x00FFFFFF);
-            int textColor = (alpha << 24) | 0xFFFFFF;
-
-            Render2DEngine.activeContext = guiGraphics;
-            
-            Render2DEngine.drawRoundedRect(
-                guiGraphics.pose(), 
-                scaledX, 
-                scaledY, 
-                scaledW, 
-                scaledH, 
-                4.0f, 
-                new java.awt.Color(currentBg, true)
-            );
-            
-            int outlineColor = (alpha << 24) | 0x22222E;
-            Render2DEngine.drawRoundedOutline(
-                guiGraphics.pose(),
-                scaledX,
-                scaledY,
-                scaledW,
-                scaledH,
-                4.0f,
-                0.8f,
-                new java.awt.Color(outlineColor, true)
-            );
-
-            float textY = scaledY + (scaledH - 8.0f) / 2.0f - 0.5f;
-
-            if (isRight) {
-                Render2DEngine.drawRoundedRect(
-                    guiGraphics.pose(), 
-                    scaledX + scaledW - 2.5f, 
-                    scaledY, 
-                    2.5f, 
-                    scaledH, 
-                    1.0f, 
-                    new java.awt.Color(currentAccent, true)
-                );
-                FontUtils.drawString(guiGraphics, displayName, (int)(scaledX + 5.0f), (int)textY, textColor, true);
-            } else {
-                Render2DEngine.drawRoundedRect(
-                    guiGraphics.pose(), 
-                    scaledX, 
-                    scaledY, 
-                    2.5f, 
-                    scaledH, 
-                    1.0f, 
-                    new java.awt.Color(currentAccent, true)
-                );
-                FontUtils.drawString(guiGraphics, displayName, (int)(scaledX + 7.5f), (int)textY, textColor, true);
-            }
-
-            currentY += 17.5f * anim * scale;
-        }
-
-        Module keybindListMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("KeybindList");
-        if (keybindListMod != null && keybindListMod.isToggled()) {
-            boolean isKBRight = !alignment.equals("Right");
-            
-            Setting kbScaleSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(keybindListMod, "Scale");
-            float customScale = kbScaleSetting != null ? (float) kbScaleSetting.getValDouble() : 0.75f;
-            
-            Setting onlyEnabledSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(keybindListMod, "Only Enabled");
-            boolean onlyEnabled = onlyEnabledSetting != null && onlyEnabledSetting.getValBoolean();
-            
-            List<Module> keyboundModules = new ArrayList<>();
-            List<String> mNames = new ArrayList<>();
-            List<String> mKeys = new ArrayList<>();
-            int maxItemWidth = FontUtils.width("Keybinds") + 20;
-            
-            for (Module m : ImnotcheatingyouareClient.INSTANCE.moduleManager.modules) {
-                if (m.isHidden()) continue;
-                if (onlyEnabled && !m.isToggled()) continue;
-                int key = m.getKeyBind();
-                if (key != -1 && !getKeyName(key).equals("NONE")) {
-                    keyboundModules.add(m);
-                    String nameStr = m.getName();
-                    String keyStr = getKeyName(key);
-                    mNames.add(nameStr);
-                    mKeys.add(keyStr);
-                    int itemWidth = FontUtils.width(nameStr) + FontUtils.width(keyStr) + 24;
-                    if (itemWidth > maxItemWidth) {
-                        maxItemWidth = itemWidth;
-                    }
-                }
-            }
-            
-            if (!mNames.isEmpty()) {
-                guiGraphics.pose().pushMatrix();
-
-                float kbScale = scale * customScale;
-                guiGraphics.pose().scale(customScale, customScale);
-                
-                float rowHeight = 14.0f;
-                float headerHeight = 20.0f;
-                
-                float screenH = (float) Minecraft.getInstance().getWindow().getGuiScaledHeight();
-                float maxScreenHeightAllowed = (screenH / kbScale) * 0.45f;
-                int maxItemsPerCol = Math.max(5, (int)((maxScreenHeightAllowed - headerHeight - 6.0f) / rowHeight));
-                
-                int numCols = (int) Math.ceil((double) mNames.size() / maxItemsPerCol);
-                int itemsInFirstCol = Math.min(mNames.size(), maxItemsPerCol);
-                
-                float singleColWidth = maxItemWidth + 12;
-                float cardWidth = (singleColWidth * numCols) + ((numCols - 1) * 8) + 16;
-                float cardHeight = headerHeight + (itemsInFirstCol * rowHeight) + 6.0f;
-                
-                int drawX = isKBRight ? (int)(screenWidth - cardWidth * kbScale - 10) : 10;
-                int drawY = 10;
-                
-                float scaledX = (float)(drawX / kbScale);
-                float scaledY = (float)(drawY / kbScale);
-                float scaledW = cardWidth;
-                float scaledH = cardHeight;
-                
-                Render2DEngine.activeContext = guiGraphics;
-
-                int bgAlpha = 225;
-                int currentBg = (bgAlpha << 24) | 0x0C0C12;
-                Render2DEngine.drawRoundedRect(
-                    guiGraphics.pose(), 
-                    scaledX, 
-                    scaledY, 
-                    scaledW, 
-                    scaledH, 
-                    4.5f, 
-                    new java.awt.Color(currentBg, true)
-                );
-                
-                int outlineColor = 0x22FFFFFF;
-                Render2DEngine.drawRoundedOutline(
-                    guiGraphics.pose(),
-                    scaledX,
-                    scaledY,
-                    scaledW,
-                    scaledH,
-                    4.5f,
-                    0.8f,
-                    new java.awt.Color(outlineColor, true)
-                );
-
-                int alpha = 255;
-                float[] hsb = Color.RGBtoHSB(r, g, b, null);
-                float shiftedHue = (hsb[0] + 0.08f) % 1.0f;
-                int complementary = Color.HSBtoRGB(shiftedHue, hsb[1], hsb[2]);
-                double wave = Math.sin((System.currentTimeMillis() / 1200.0) + (drawY * 0.04)) * 0.5 + 0.5;
-                int elementAccent = interpolateColor(Color.HSBtoRGB(hsb[0], hsb[1], hsb[2]), complementary, (float) wave);
-                int currentAccent = (alpha << 24) | (elementAccent & 0x00FFFFFF);
-
-                Render2DEngine.drawRoundedRect(
-                    guiGraphics.pose(), 
-                    scaledX, 
-                    scaledY, 
-                    scaledW, 
-                    1.5f, 
-                    1.0f, 
-                    new java.awt.Color(currentAccent, true)
-                );
-
-                FontUtils.drawString(guiGraphics, "Keybinds", (int)(scaledX + 8), (int)(scaledY + 5), currentAccent, true);
-
-                String countStr = String.valueOf(mNames.size());
-                int countW = FontUtils.width(countStr);
-                FontUtils.drawString(guiGraphics, "\u00a77" + countStr, (int)(scaledX + scaledW - countW - 8), (int)(scaledY + 5), 0x99FFFFFF, true);
-
-                int dividerColor = (alpha << 24) | 0x1A1A24;
-                guiGraphics.fill((int)(scaledX + 6), (int)(scaledY + 18.5f), (int)(scaledX + scaledW - 6), (int)(scaledY + 19.5f), dividerColor);
-
-                for (int i = 0; i < mNames.size(); i++) {
-                    int col = i / maxItemsPerCol;
-                    int row = i % maxItemsPerCol;
-                    
-                    float colOffsetX = col * (singleColWidth + 8);
-                    float itemX = scaledX + 8 + colOffsetX;
-                    float itemY = scaledY + 23.0f + (row * rowHeight);
-
-                    Module m = keyboundModules.get(i);
-                    String name = mNames.get(i);
-                    String key = mKeys.get(i);
-                    boolean toggled = m.isToggled();
-
-                    int textColor = toggled ? 0xFFFFFFFF : 0x88AAAAAA;
-                    FontUtils.drawString(guiGraphics, name, (int)itemX, (int)itemY, textColor, true);
-
-                    int keyTextW = FontUtils.width(key);
-                    float keyCapW = keyTextW + 8.0f;
-                    float keyCapH = 11.0f;
-                    float keyCapX = itemX + singleColWidth - keyCapW - 4.0f;
-                    float keyCapY = itemY - 1.0f;
-
-                    int keyBg = toggled ? (35 << 24) | 0xFFFFFF : (15 << 24) | 0xFFFFFF;
-                    int keyBorder = toggled ? (currentAccent & 0x55FFFFFF) : 0x20FFFFFF;
-                    
-                    Render2DEngine.drawRoundedRect(guiGraphics.pose(), keyCapX, keyCapY, keyCapW, keyCapH, 3.0f, new java.awt.Color(keyBg, true));
-                    Render2DEngine.drawRoundedOutline(guiGraphics.pose(), keyCapX, keyCapY, keyCapW, keyCapH, 3.0f, 0.8f, new java.awt.Color(keyBorder, true));
-
-                    int keyTextColor = toggled ? 0xFFFFFFFF : 0x99FFFFFF;
-                    FontUtils.drawString(guiGraphics, key, (int)(keyCapX + 4.0f), (int)itemY, keyTextColor, true);
-                }
-
-                guiGraphics.pose().popMatrix();
-            }
-        }
+        lastRenderR = r;
+        lastRenderG = g;
+        lastRenderB = b;
+        lastAlignment = alignment;
+        lastStartY = (float) startY;
+        lastScale = scale;
+        lastAnimSpeed = animSpeed;
+        visibleThisFrame = true;
 
         guiGraphics.pose().popMatrix();
     }

@@ -67,7 +67,7 @@ public class ImguiLoader {
             imGuiPlatform.init(handle);
             imGuiGl3 = new ImGuiImplGl3();
             imGuiGl3.init();
-            rebuildCustomFont(getWindowContentScale());
+            rebuildCustomFont(atlasScale(getWindowContentScale()));
             initialized = true;
         } catch (RuntimeException | Error error) {
             shutdown();
@@ -94,16 +94,16 @@ public class ImguiLoader {
             fontConfig.setOversampleV(2);
             fontConfig.setFontDataOwnedByAtlas(true);
 
-            String fontPath = FontExtractor.getFontPath("font.ttf");
-            File file = new File(fontPath);
-            if (file.exists() && file.length() > 0) {
-                customFont = fontAtlas.addFontFromFileTTF(fontPath, fontSize, fontConfig);
+            byte[] fontBytes = FontExtractor.getFontBytes();
+            if (fontBytes != null && fontBytes.length > 0) {
+                customFont = fontAtlas.addFontFromMemoryTTF(fontBytes, fontSize, fontConfig);
             }
 
             if (customFont == null || !customFont.isValidPtr()) {
-                byte[] fontBytes = FontExtractor.getFontBytes();
-                if (fontBytes != null && fontBytes.length > 0) {
-                    customFont = fontAtlas.addFontFromMemoryTTF(fontBytes, fontSize, fontConfig);
+                String fontPath = FontExtractor.getFontPath("font.ttf");
+                File file = new File(fontPath);
+                if (file.exists() && file.length() > 0) {
+                    customFont = fontAtlas.addFontFromFileTTF(fontPath, fontSize, fontConfig);
                 }
             }
 
@@ -199,6 +199,45 @@ public class ImguiLoader {
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, prevTex2D);
             GL13.glActiveTexture(prevActiveTex);
         }
+    }
+
+    private static int targetFramebuffer = 0;
+    private static int targetFramebufferTexture = 0;
+    private static int currentTargetFramebuffer = 0;
+
+    private static int framebufferFor(com.mojang.renderpearl.api.textures.GpuTexture texture) {
+        if (!(texture instanceof com.mojang.renderpearl.backend.opengl.GlTexture glTexture) || texture.isClosed())
+            return 0;
+        int textureId = glTexture.glId();
+        if (targetFramebuffer != 0 && targetFramebufferTexture == textureId)
+            return targetFramebuffer;
+        int previous = GL11.glGetInteger(org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_BINDING);
+        if (targetFramebuffer == 0)
+            targetFramebuffer = org.lwjgl.opengl.GL30.glGenFramebuffers();
+        org.lwjgl.opengl.GL30.glBindFramebuffer(org.lwjgl.opengl.GL30.GL_FRAMEBUFFER, targetFramebuffer);
+        org.lwjgl.opengl.GL30.glFramebufferTexture2D(org.lwjgl.opengl.GL30.GL_FRAMEBUFFER, org.lwjgl.opengl.GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, textureId, 0);
+        org.lwjgl.opengl.GL30.glBindFramebuffer(org.lwjgl.opengl.GL30.GL_FRAMEBUFFER, previous);
+        targetFramebufferTexture = textureId;
+        return targetFramebuffer;
+    }
+
+    public static void onFrameRender(com.mojang.renderpearl.api.textures.GpuTexture target) {
+        if (!initialized) {
+            try {
+                net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                if (mc != null && mc.getWindow() != null) {
+                    initialize(mc.getWindow().handle());
+                }
+            } catch (Throwable ignored) {}
+            return;
+        }
+        if (!shouldRenderFrame())
+            return;
+        int framebuffer = framebufferFor(target);
+        if (framebuffer == 0)
+            return;
+        currentTargetFramebuffer = framebuffer;
+        renderFrame();
     }
 
     public static void onFrameRender() {
@@ -343,19 +382,45 @@ public class ImguiLoader {
         fontAtlas.addFontDefault();
     }
 
+    private static float atlasScale(float scale) {
+        return Math.max(2.0f, Math.min(3.0f, scale));
+    }
+
     private static void applyDisplayScale() {
         float scale = getWindowContentScale();
         ImGuiIO io = ImGui.getIO();
-        io.setFontGlobalScale(scale > 0f ? 1.0f / scale : 1.0f);
 
-        if (!fontLoaded || (customFontAvailable && Math.abs(scale - loadedFontScale) > 0.15f)) {
-            rebuildCustomFont(scale);
+        if (!fontLoaded) {
+            rebuildCustomFont(atlasScale(scale));
         }
+        io.setFontGlobalScale(loadedFontScale > 0f ? 1.0f / loadedFontScale : 1.0f);
 
         if (Math.abs(scale - appliedUiScale) > 0.05f) {
             ImGui.getStyle().scaleAllSizes(scale / appliedUiScale);
             appliedUiScale = scale;
         }
+    }
+
+    public static float getUiScale() {
+        return getWindowContentScale();
+    }
+
+    private static float resolveUiScale(int framebufferHeight) {
+        float auto = Math.max(1.0f, framebufferHeight / 1080.0f);
+        try {
+            com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient client = com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient.INSTANCE;
+            com.eclipseware.imnotcheatingyouare.client.module.Module gui = client.moduleManager.getModule("GUI");
+            com.eclipseware.imnotcheatingyouare.client.setting.Setting mode = client.settingsManager.getSettingByName(gui, "Scale Mode");
+            com.eclipseware.imnotcheatingyouare.client.setting.Setting value = client.settingsManager.getSettingByName(gui, "Scale");
+            if (mode != null && value != null && mode.getValString().equals("Custom")) {
+                return (float) Math.max(0.5, Math.min(3.0, value.getValDouble()));
+            }
+            if (value != null && mode != null) {
+                return auto;
+            }
+        } catch (Throwable ignored) {
+        }
+        return auto;
     }
 
     private static float getWindowContentScale() {
@@ -368,9 +433,9 @@ public class ImguiLoader {
 
         try {
             com.mojang.blaze3d.platform.Window window = net.minecraft.client.Minecraft.getInstance().getWindow();
-            int guiScaledWidth = window.getGuiScaledWidth();
-            if (guiScaledWidth > 0) {
-                scale = window.queryFramebufferSize().width() / (float) guiScaledWidth;
+            int framebufferHeight = window.queryFramebufferSize().height();
+            if (framebufferHeight > 0) {
+                scale = resolveUiScale(framebufferHeight);
             }
         } catch (Throwable ignored) {
             scale = 1.0f;
@@ -381,13 +446,20 @@ public class ImguiLoader {
 
         scale = Math.round(scale / 0.05f) * 0.05f;
 
-        cachedWindowContentScale = Math.max(1.0f, scale);
+        cachedWindowContentScale = Math.max(0.5f, scale);
         lastContentScaleRefreshNanos = now;
         return cachedWindowContentScale;
     }
 
     private static void endFrame(long windowPtr) {
-        int framebufferBinding = GL11.glGetInteger(org.lwjgl.opengl.GL30.GL_FRAMEBUFFER_BINDING);
+        int drawFramebufferBinding = GL11.glGetInteger(org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER_BINDING);
+        int readFramebufferBinding = GL11.glGetInteger(org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER_BINDING);
+        int[] viewport = new int[4];
+        GL11.glGetIntegerv(GL11.GL_VIEWPORT, viewport);
+        boolean[] colorMask = new boolean[4];
+        java.nio.ByteBuffer colorMaskBuffer = org.lwjgl.BufferUtils.createByteBuffer(16);
+        GL11.glGetBooleanv(GL11.GL_COLOR_WRITEMASK, colorMaskBuffer);
+        for (int i = 0; i < 4; i++) colorMask[i] = colorMaskBuffer.get(i) != 0;
         int activeTexture = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         int texture0Binding = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
@@ -420,7 +492,10 @@ public class ImguiLoader {
             prepareImGuiGlState();
             imGuiGl3.renderDrawData(ImGui.getDrawData());
         } finally {
-            org.lwjgl.opengl.GL30.glBindFramebuffer(org.lwjgl.opengl.GL30.GL_FRAMEBUFFER, framebufferBinding);
+            org.lwjgl.opengl.GL30.glBindFramebuffer(org.lwjgl.opengl.GL30.GL_DRAW_FRAMEBUFFER, drawFramebufferBinding);
+            org.lwjgl.opengl.GL30.glBindFramebuffer(org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER, readFramebufferBinding);
+            GL11.glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+            GL11.glColorMask(colorMask[0], colorMask[1], colorMask[2], colorMask[3]);
             org.lwjgl.opengl.GL20.glUseProgram(program);
             org.lwjgl.opengl.GL30.glBindVertexArray(vao);
             org.lwjgl.opengl.GL15.glBindBuffer(org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER, arrayBuffer);
@@ -447,6 +522,8 @@ public class ImguiLoader {
     }
 
     private static void prepareImGuiGlState() {
+        org.lwjgl.opengl.GL30.glBindFramebuffer(org.lwjgl.opengl.GL30.GL_FRAMEBUFFER, currentTargetFramebuffer);
+        GL11.glColorMask(true, true, true, true);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL33.glBindSampler(0, 0);
         org.lwjgl.opengl.GL15.glBindBuffer(org.lwjgl.opengl.GL21.GL_PIXEL_UNPACK_BUFFER, 0);

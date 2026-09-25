@@ -13,6 +13,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(MultiPlayerGameMode.class)
 public class WTapMixin {
 
+    @Inject(method = "attack", at = @At("HEAD"))
+    private void onAttackHead(Player player, Entity target, CallbackInfo ci) {
+        com.eclipseware.imnotcheatingyouare.client.module.impl.STap.captureSprint(player.isSprinting());
+    }
+
     @Inject(method = "attack", at = @At("RETURN"))
     private void onAttackReturn(Player player, Entity target, CallbackInfo ci) {
         if (ImnotcheatingyouareClient.INSTANCE == null || ImnotcheatingyouareClient.INSTANCE.moduleManager == null) return;

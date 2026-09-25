@@ -11,7 +11,7 @@ base {
 }
 
 tasks.matching { it.name == "jar" || it.name == "remapJar" || it.name == "remapClientJar" }.configureEach {
-    archiveFileName = "marlowwwclient-v4.5.jar"
+    archiveFileName = "marlowwwclient-${project.mod_version}.jar"
 }
 
 loom {

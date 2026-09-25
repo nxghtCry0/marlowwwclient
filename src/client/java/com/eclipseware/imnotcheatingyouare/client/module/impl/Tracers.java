@@ -41,7 +41,7 @@ public class Tracers extends Module {
 
         float displayWidth = ImGui.getIO().getDisplaySizeX();
         float displayHeight = ImGui.getIO().getDisplaySizeY();
-        ImDrawList drawList = ImGui.getForegroundDrawList();
+        ImDrawList drawList = ImGui.getBackgroundDrawList();
 
         float startX, startY;
         if (attachCrosshair) {

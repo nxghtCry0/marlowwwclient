@@ -399,7 +399,7 @@ settingsManager.rSetting(new Setting("Delay (Ticks)", pearlCatch, 4.0, 0.0, 20.0
         settingsManager.rSetting(new Setting("Off Pos Z", handView, 0.0, -2.0, 2.0, false));
 
         java.util.ArrayList<String> espModes = new java.util.ArrayList<>();
-        espModes.add("Outline"); espModes.add("2D"); espModes.add("Hybrid"); espModes.add("Glow");
+        espModes.add("Outline"); espModes.add("2D"); espModes.add("Hybrid"); espModes.add("Glow"); espModes.add("Shader");
         settingsManager.rSetting(new Setting("Mode", esp, "Outline", espModes));
         settingsManager.rSetting(new Setting("Show Mobs", esp, false));
         settingsManager.rSetting(new Setting("Fill", esp, true));
@@ -408,6 +408,20 @@ settingsManager.rSetting(new Setting("Delay (Ticks)", pearlCatch, 4.0, 0.0, 20.0
         settingsManager.rSetting(new Setting("Outline Thickness", esp, 1.0, 1.0, 5.0, true));
         settingsManager.rSetting(new Setting("Corner Gap", esp, 50.0, 10.0, 100.0, true));
         settingsManager.rSetting(new Setting("Border", esp, true));
+        settingsManager.rSetting(new Setting("Feather", esp, 3.0, 1.0, 5.0, true));
+        settingsManager.rSetting(new Setting("Fill Opacity", esp, 20.0, 0.0, 50.0, true));
+        java.util.ArrayList<String> espColorModes = new java.util.ArrayList<>();
+        espColorModes.add("Theme"); espColorModes.add("Custom"); espColorModes.add("Per Type");
+        settingsManager.rSetting(new Setting("Color Mode", esp, "Theme", espColorModes));
+        addColorSettings(settingsManager, esp, "Custom Color", 190, 150, 255);
+        addColorSettings(settingsManager, esp, "Player Color", 190, 150, 255);
+        addColorSettings(settingsManager, esp, "Hostile Color", 255, 95, 95);
+        addColorSettings(settingsManager, esp, "Passive Color", 120, 230, 150);
+        addColorSettings(settingsManager, esp, "Neutral Color", 255, 205, 90);
+        settingsManager.rSetting(new Setting("Name Tags", esp, true));
+        settingsManager.rSetting(new Setting("Tag Distance", esp, true));
+        settingsManager.rSetting(new Setting("Tag Health", esp, true));
+        settingsManager.rSetting(new Setting("Tag Item", esp, true));
 
         settingsManager.rSetting(new Setting("Range", backtrack, 3.0, 1.0, 6.0, false));
         settingsManager.rSetting(new Setting("Delay", backtrack, 150.0, 50.0, 500.0, true));
@@ -492,14 +506,28 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
         settingsManager.rSetting(new Setting("1.8.9 Min CPS", killAura, 8.0, 1.0, 20.0, true));
         settingsManager.rSetting(new Setting("1.8.9 Max CPS", killAura, 12.0, 1.0, 20.0, true));
 
+        moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.SelfShader());
+
         Module menu = new com.eclipseware.imnotcheatingyouare.client.module.impl.Menu();
         moduleManager.modules.add(menu);
+
+        Module guiModule = new Module("GUI", Category.Client, "Layout, size and look of the click GUI.");
+        moduleManager.modules.add(guiModule);
+        java.util.ArrayList<String> guiLayouts = new java.util.ArrayList<>();
+        guiLayouts.add("Compact"); guiLayouts.add("Vertical");
+        settingsManager.rSetting(new Setting("Layout", guiModule, "Compact", guiLayouts));
+        java.util.ArrayList<String> guiScaleModes = new java.util.ArrayList<>();
+        guiScaleModes.add("Auto"); guiScaleModes.add("Custom");
+        settingsManager.rSetting(new Setting("Scale Mode", guiModule, "Auto", guiScaleModes));
+        settingsManager.rSetting(new Setting("Scale", guiModule, 1.0, 0.5, 3.0, false));
+        settingsManager.rSetting(new Setting("Glass Opacity", guiModule, 70.0, 20.0, 100.0, true));
+        settingsManager.rSetting(new Setting("Glow", guiModule, true));
 
         addColorSettings(settingsManager, menu, "Primary", 239, 142, 172);
         addColorSettings(settingsManager, menu, "Secondary", 24, 24, 37);
 
 
-        settingsManager.rSetting(new Setting("Use Verdana Font", menu, false));
+        settingsManager.rSetting(new Setting("Use Verdana Font", menu, true));
 
         addColorSettings(settingsManager, menu, "Background", 30, 30, 46);
         settingsManager.rSetting(new Setting("Background Alpha", menu, 240.0, 0.0, 255.0, true));

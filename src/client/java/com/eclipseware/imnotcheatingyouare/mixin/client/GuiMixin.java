@@ -35,6 +35,5 @@ public class GuiMixin {
             }
         }
         com.eclipseware.imnotcheatingyouare.client.ui.ArrayListHud.INSTANCE.render(guiGraphics, tickDelta.getGameTimeDeltaTicks());
-        com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui.renderChrome(guiGraphics);
     }
 }

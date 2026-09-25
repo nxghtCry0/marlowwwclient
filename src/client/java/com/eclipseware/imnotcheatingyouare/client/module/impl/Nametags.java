@@ -46,7 +46,7 @@ public class Nametags extends Module {
         boolean showMobs = mobsSetting != null && mobsSetting.getValBoolean();
 
         Color themeColor = RenderUtils.getThemeAccentColor();
-        ImDrawList drawList = ImGui.getForegroundDrawList();
+        ImDrawList drawList = ImGui.getBackgroundDrawList();
 
         double maxDist = mc.options != null ? Math.max(256.0, mc.options.getEffectiveRenderDistance() * 16.0) : 256.0;
         float displayWidth = ImGui.getIO().getDisplaySizeX();

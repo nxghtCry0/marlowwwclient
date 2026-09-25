@@ -17,6 +17,8 @@ import java.util.ArrayList;
 
 public class TargetHUD extends Module {
     public static TargetHUD INSTANCE;
+    public static final float WIDTH = 190f;
+    public static final float HEIGHT = 50f;
 
     private LivingEntity target = null;
     private LivingEntity lastTarget = null;
@@ -132,14 +134,17 @@ public class TargetHUD extends Module {
 
         float guiScale = (float) mc.getWindow().getGuiScale();
         if (guiScale <= 0) guiScale = 1.0f;
+        float k = guiScale / xyz.breadloaf.imguimc.imgui.ImguiLoader.getUiScale();
 
-        float x = (float) xVal * guiScale;
-        float y = (float) yVal * guiScale;
-        float width = 175.0f * guiScale;
-        float height = 42.0f * guiScale;
-
+        float slide = (1.0f - animationProgress) * 12f * k;
+        float x = (float) xVal * k;
+        float y = (float) yVal * k + slide;
+        float width = WIDTH * k;
+        float height = HEIGHT * k;
         float alpha = animationProgress;
-        Color themeColor = syncTheme ? RenderUtils.getThemeAccentColor() : new Color(239, 142, 172);
+        int a255 = (int) (alpha * 255.0f);
+
+        Color accent = syncTheme ? RenderUtils.getThemeAccentColor() : new Color(190, 150, 255);
 
         float hp = lastTarget.getHealth();
         float maxHp = lastTarget.getMaxHealth();
@@ -148,71 +153,121 @@ public class TargetHUD extends Module {
 
         animatedHealthFraction = AnimationUtil.animate(animatedHealthFraction, hpPct, 0.18f);
         damageHealthFraction = AnimationUtil.animate(damageHealthFraction, hpPct, 0.04f);
-        if (damageHealthFraction < animatedHealthFraction) {
-            damageHealthFraction = animatedHealthFraction;
-        }
+        if (damageHealthFraction < animatedHealthFraction) damageHealthFraction = animatedHealthFraction;
 
-        Color hpColor;
-        if ("Dynamic Health".equalsIgnoreCase(colorMode)) {
-            hpColor = RenderUtils.getHealthColor(animatedHealthFraction);
-        } else {
-            hpColor = themeColor;
-        }
+        Color hpColor = "Dynamic Health".equalsIgnoreCase(colorMode) ? RenderUtils.getHealthColor(animatedHealthFraction) : accent;
+        float hurt = lastTarget.hurtTime > 0 ? lastTarget.hurtTime / 10.0f : 0f;
 
-        ImDrawList drawList = ImGui.getForegroundDrawList();
+        ImDrawList dl = ImGui.getBackgroundDrawList();
+        float r = 8f * k;
 
-        int cardBgColor = RenderUtils.toImGuiColor(18, 18, 24, (int)(alpha * 255.0f * 0.88f));
-        int cardBorderColor = RenderUtils.toImGuiColor(themeColor, alpha * 0.7f);
-        int trackBgColor = RenderUtils.toImGuiColor(10, 10, 14, (int)(alpha * 255.0f * 0.9f));
-        int dmgBarColor = RenderUtils.toImGuiColor(226, 76, 76, (int)(alpha * 255.0f * 0.7f));
-        int hpBarColor = RenderUtils.toImGuiColor(hpColor, alpha);
+        dl.addRectFilled(x + 2f * k, y + 3f * k, x + width + 2f * k, y + height + 3f * k, RenderUtils.toImGuiColor(0, 0, 0, (int) (a255 * 0.35f)), r);
+        int bgTop = RenderUtils.toImGuiColor(22, 18, 34, (int) (a255 * 0.94f));
+        int bgBottom = RenderUtils.toImGuiColor(14, 11, 22, (int) (a255 * 0.94f));
+        dl.addRectFilled(x, y, x + width, y + height, bgBottom, r);
+        dl.addRectFilledMultiColor(x + r * 0.5f, y, x + width - r * 0.5f, y + height * 0.5f, bgTop, bgTop, bgBottom, bgBottom);
+        dl.addRect(x, y, x + width, y + height, RenderUtils.toImGuiColor(accent, alpha * 0.35f), r, 0, 1.0f * k);
+        dl.addLine(x + r, y + 0.5f * k, x + width - r, y + 0.5f * k, RenderUtils.toImGuiColor(accent, alpha * 0.9f), 1.5f * k);
 
-        drawList.addRectFilled(x, y, x + width, y + height, cardBgColor, 6.0f * guiScale);
-        drawList.addRect(x, y, x + width, y + height, cardBorderColor, 6.0f * guiScale, 0, 1.2f * guiScale);
-
+        float pad = 8f * k;
+        float avatar = height - pad * 2f;
+        float ax = x + pad;
+        float ay = y + pad;
         String name = inEditor ? "Target Preview" : lastTarget.getName().getString();
-        if (name.length() > 16) {
-            name = name.substring(0, 14) + "..";
-        }
-        int nameTextColor = RenderUtils.toImGuiColor(255, 255, 255, (int)(alpha * 255.0f));
-        drawList.addText(x + 10f * guiScale, y + 8f * guiScale, nameTextColor, name);
+        if (name.length() > 16) name = name.substring(0, 14) + "..";
 
-        String hpStr = String.format("%.1f / %.1f", hp, maxHp);
+        com.eclipseware.imnotcheatingyouare.client.utils.ImGuiTextures.Region face = null;
+        com.eclipseware.imnotcheatingyouare.client.utils.ImGuiTextures.Region hat = null;
+        boolean isPlayer = lastTarget instanceof net.minecraft.world.entity.player.Player;
+        if (isPlayer) {
+            face = com.eclipseware.imnotcheatingyouare.client.utils.ImGuiTextures.playerFace((net.minecraft.world.entity.player.Player) lastTarget);
+            hat = com.eclipseware.imnotcheatingyouare.client.utils.ImGuiTextures.playerHat((net.minecraft.world.entity.player.Player) lastTarget);
+        } else {
+            face = com.eclipseware.imnotcheatingyouare.client.utils.ImGuiTextures.entityIcon(lastTarget);
+        }
+
+        float squash = 1f - hurt * 0.08f;
+        float cx = ax + avatar / 2f;
+        float cy = ay + avatar / 2f;
+        float half = avatar / 2f * squash;
+        int avatarBgTop = RenderUtils.toImGuiColor(accent, alpha * 0.45f);
+        int avatarBgBottom = RenderUtils.toImGuiColor(accent.darker().darker(), alpha * 0.6f);
+        dl.addRectFilled(ax, ay, ax + avatar, ay + avatar, avatarBgBottom, 7f * k);
+        dl.addRectFilledMultiColor(ax + 3f * k, ay, ax + avatar - 3f * k, ay + avatar * 0.5f, avatarBgTop, avatarBgTop, avatarBgBottom, avatarBgBottom);
+
+        int imgTint = RenderUtils.toImGuiColor(255, (int) (255 - hurt * 140), (int) (255 - hurt * 140), a255);
+        if (face != null && isPlayer) {
+            float inset = 3f * k;
+            dl.addImageRounded(face.texture(), cx - half + inset, cy - half + inset, cx + half - inset, cy + half - inset, face.u0(), face.v0(), face.u1(), face.v1(), imgTint, 5f * k, imgui.flag.ImDrawFlags.RoundCornersAll);
+            if (hat != null) {
+                float hatOut = inset * 0.4f;
+                dl.addImageRounded(hat.texture(), cx - half + hatOut, cy - half + hatOut, cx + half - hatOut, cy + half - hatOut, hat.u0(), hat.v0(), hat.u1(), hat.v1(), imgTint, 6f * k, imgui.flag.ImDrawFlags.RoundCornersAll);
+            }
+        } else if (face != null) {
+            float inset = avatar * 0.14f;
+            dl.addImage(face.texture(), cx - half + inset, cy - half + inset, cx + half - inset, cy + half - inset, face.u0(), face.v0(), face.u1(), face.v1(), imgTint);
+        } else {
+            String initial = name.isEmpty() ? "?" : name.substring(0, 1).toUpperCase();
+            ImGui.calcTextSize(comboSizeBuf, initial);
+            dl.addText(cx - comboSizeBuf.x / 2f, cy - comboSizeBuf.y / 2f, RenderUtils.toImGuiColor(255, 255, 255, a255), initial);
+        }
+        dl.addRect(ax, ay, ax + avatar, ay + avatar, RenderUtils.toImGuiColor(accent, alpha * (0.35f + hurt * 0.5f)), 7f * k, 0, 1.2f * k);
+
+        float tx = ax + avatar + pad;
+        float right = x + width - pad;
+        dl.addText(tx, y + pad - 1f * k, RenderUtils.toImGuiColor(245, 242, 252, a255), name);
+
+        String hpStr = String.format("%.1f", hp);
         ImGui.calcTextSize(hpSizeBuf, hpStr);
-        int hpTextColor = RenderUtils.toImGuiColor(170, 170, 185, (int)(alpha * 255.0f));
-        drawList.addText(x + width - 10f * guiScale - hpSizeBuf.x, y + 8f * guiScale, hpTextColor, hpStr);
+        dl.addText(right - hpSizeBuf.x, y + pad - 1f * k, RenderUtils.toImGuiColor(hpColor, alpha), hpStr);
 
-        float barX = x + 10f * guiScale;
-        float barY = y + 26f * guiScale;
-        float barW = width - 20f * guiScale - (comboCount > 0 ? 30f * guiScale : 0f);
-        float barH = 6f * guiScale;
-
-        drawList.addRectFilled(barX, barY, barX + barW, barY + barH, trackBgColor, 3.0f * guiScale);
-
-        float dmgW = barW * damageHealthFraction;
-        if (dmgW > 0) {
-            drawList.addRectFilled(barX, barY, barX + dmgW, barY + barH, dmgBarColor, 3.0f * guiScale);
+        String info;
+        int infoCol;
+        if (mc.player != null && lastTarget != mc.player) {
+            float mine = mc.player.getHealth() + mc.player.getAbsorptionAmount();
+            float theirs = hp + lastTarget.getAbsorptionAmount();
+            String dist = String.format("%.1fm", mc.player.distanceTo(lastTarget));
+            String armor = lastTarget.getArmorValue() + " armor";
+            if (mine > theirs + 0.5f) {
+                info = "Winning  " + dist + "  " + armor;
+                infoCol = RenderUtils.toImGuiColor(120, 230, 150, a255);
+            } else if (theirs > mine + 0.5f) {
+                info = "Losing  " + dist + "  " + armor;
+                infoCol = RenderUtils.toImGuiColor(255, 110, 110, a255);
+            } else {
+                info = "Even  " + dist + "  " + armor;
+                infoCol = RenderUtils.toImGuiColor(255, 205, 90, a255);
+            }
+        } else {
+            info = "Drag in the HUD editor";
+            infoCol = RenderUtils.toImGuiColor(150, 145, 170, a255);
         }
+        dl.addText(tx, y + pad + 12f * k, infoCol, info);
 
-        float animatedW = barW * animatedHealthFraction;
-        if (animatedW > 0) {
-            drawList.addRectFilled(barX, barY, barX + animatedW, barY + barH, hpBarColor, 3.0f * guiScale);
+        float barH = 5f * k;
+        float barX = tx;
+        float barY = y + height - pad - barH;
+        float barW = right - tx - (comboCount > 0 ? 26f * k : 0f);
+        dl.addRectFilled(barX, barY, barX + barW, barY + barH, RenderUtils.toImGuiColor(8, 6, 14, (int) (a255 * 0.9f)), barH / 2f);
+        float dmgW = barW * damageHealthFraction;
+        if (dmgW > 0) dl.addRectFilled(barX, barY, barX + dmgW, barY + barH, RenderUtils.toImGuiColor(255, 235, 245, (int) (a255 * 0.45f)), barH / 2f);
+        float hpW = barW * animatedHealthFraction;
+        if (hpW > barH) {
+            int c1 = RenderUtils.toImGuiColor(hpColor.brighter(), alpha);
+            int c2 = RenderUtils.toImGuiColor(hpColor, alpha);
+            dl.addRectFilled(barX, barY, barX + hpW, barY + barH, c2, barH / 2f);
+            dl.addRectFilledMultiColor(barX + barH / 2f, barY, barX + hpW - barH / 2f, barY + barH * 0.5f, c1, c1, c2, c2);
         }
 
         if (comboCount > 0) {
-            String comboStr = "+" + comboCount;
+            String comboStr = "x" + comboCount;
             ImGui.calcTextSize(comboSizeBuf, comboStr);
-
-            float badgeW = comboSizeBuf.x + 8f * guiScale;
-            float badgeH = 12f * guiScale;
-            float badgeX = x + width - 10f * guiScale - badgeW;
-            float badgeY = barY - 3f * guiScale;
-
-            int badgeBgColor = RenderUtils.toImGuiColor(themeColor, alpha * 0.9f);
-            int badgeTextColor = RenderUtils.toImGuiColor(255, 255, 255, (int)(alpha * 255.0f));
-
-            drawList.addRectFilled(badgeX, badgeY, badgeX + badgeW, badgeY + badgeH, badgeBgColor, 3.0f * guiScale);
-            drawList.addText(badgeX + 4f * guiScale, badgeY + (badgeH - comboSizeBuf.y) / 2f, badgeTextColor, comboStr);
+            float bw = Math.max(20f * k, comboSizeBuf.x + 8f * k) * comboPulseScale;
+            float bh = 13f * k;
+            float bx = right - bw;
+            float by = barY + barH / 2f - bh / 2f;
+            dl.addRectFilled(bx, by, bx + bw, by + bh, RenderUtils.toImGuiColor(accent, alpha * 0.9f), bh / 2f);
+            dl.addText(bx + (bw - comboSizeBuf.x) / 2f, by + (bh - comboSizeBuf.y) / 2f, RenderUtils.toImGuiColor(255, 255, 255, a255), comboStr);
         }
     }
 }
