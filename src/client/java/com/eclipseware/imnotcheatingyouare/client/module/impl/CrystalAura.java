@@ -333,7 +333,12 @@ public class CrystalAura extends Module {
         Vec3 top = new Vec3(base.getX() + 0.5, base.getY() + 1.0, base.getZ() + 0.5);
         double dist = mc.player.getEyePosition().distanceTo(top);
         if (dist > placeRange.getValDouble()) return false;
-        return RotationManager.hasLineOfSight(mc.player.getEyePosition(), top) || dist <= wallRange.getValDouble();
+        return canSeeFace(base, top) || dist <= wallRange.getValDouble();
+    }
+
+    private boolean canSeeFace(BlockPos base, Vec3 point) {
+        BlockHitResult hit = mc.level.clip(new ClipContext(mc.player.getEyePosition(), point, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, mc.player));
+        return hit.getType() == HitResult.Type.MISS || hit.getBlockPos().equals(base);
     }
 
     private boolean canPlaceCrystal(BlockPos base) {
