@@ -148,6 +148,7 @@ public class KillAura extends Module {
         if (hitResult != null && hitResult.getEntity() == target) {
             mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
             mc.gameMode.attack(mc.player, target);
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.attackSwing();
             lastAttackTime = System.currentTimeMillis();
 
             if (!modernMode) {

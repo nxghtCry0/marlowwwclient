@@ -62,6 +62,12 @@ public class ModuleUtils {
         lastSentSlot = slot;
     }
     
+    public static void attackSwing() {
+        if (mc.player == null || mc.player.connection == null) return;
+        mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND, mc.player.getMainHandItem().getAttackAnimation(), false);
+        mc.player.connection.send(net.minecraft.network.protocol.game.ServerboundPunchPacket.INSTANCE);
+    }
+
     public static void resetServerSlot() {
         lastSentSlot = -1;
     }

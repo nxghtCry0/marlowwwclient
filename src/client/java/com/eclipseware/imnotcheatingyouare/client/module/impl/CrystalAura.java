@@ -228,7 +228,7 @@ public class CrystalAura extends Module {
     private void doBreak(EndCrystal crystal) {
         AutoTotem.triggerInputPause();
         mc.gameMode.attack(mc.player, crystal);
-        mc.player.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, true);
+        ModuleUtils.attackSwing();
         attackedIds.put(crystal.getId(), mc.player.tickCount);
         breakTicks = (int) breakDelay.getValDouble();
     }
