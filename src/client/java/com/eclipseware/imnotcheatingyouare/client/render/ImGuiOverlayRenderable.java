@@ -59,6 +59,7 @@ public class ImGuiOverlayRenderable implements Renderable {
 
         BlockESP blockESP = (BlockESP) ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("BlockESP");
         if (blockESP != null) {
+            blockESP.renderImGuiOverlay();
             blockESP.renderImGuiSelectorWindow();
         }
 

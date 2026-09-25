@@ -50,7 +50,10 @@ public class BlockESP extends Module {
 
         SettingsManager sm = ImnotcheatingyouareClient.INSTANCE.settingsManager;
 
-        sm.rSetting(new Setting("Range", this, 32.0, 8.0, 128.0, true));
+        sm.rSetting(new Setting("Range", this, 48.0, 8.0, 128.0, true));
+        sm.rSetting(new Setting("Max Blocks", this, 1500.0, 100.0, 5000.0, true));
+        sm.rSetting(new Setting("Fill Opacity", this, 18.0, 0.0, 60.0, true));
+        sm.rSetting(new Setting("Line Width", this, 1.5, 0.5, 4.0, false));
         sm.rSetting(new Setting("Fill", this, true));
         sm.rSetting(new Setting("Outline", this, true));
         sm.rSetting(new Setting("Tracers", this, false));
@@ -62,7 +65,6 @@ public class BlockESP extends Module {
         addDefaultBlock("minecraft:ancient_debris", new Color(200, 120, 80));
         addDefaultBlock("minecraft:spawner", new Color(255, 60, 60));
         addDefaultBlock("minecraft:end_portal_frame", new Color(50, 205, 50));
-        addDefaultBlock("minecraft:obsidian", new Color(160, 32, 240));
 
         loadSelectedBlocksFromFile();
     }
@@ -178,114 +180,218 @@ public class BlockESP extends Module {
         return sb.toString().trim();
     }
 
+    private record Hit(BlockPos pos, int color, int openFaces) {}
+
+    private final java.util.concurrent.ExecutorService scanner = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "Marlow BlockESP");
+        t.setDaemon(true);
+        return t;
+    });
+    private volatile List<Hit> hits = List.of();
+    private volatile boolean scanning = false;
+    private long lastScan = 0;
+    private final org.joml.Matrix4f matrix = new org.joml.Matrix4f();
+    private final org.joml.Vector4f[] clip = new org.joml.Vector4f[8];
+    {
+        for (int i = 0; i < 8; i++) clip[i] = new org.joml.Vector4f();
+    }
+    private static final int[][] EDGES = {{0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3}, {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+    private static final int[][] FACES = {{0, 2, 6, 4}, {1, 5, 7, 3}, {0, 1, 5, 4}, {2, 6, 7, 3}, {0, 1, 3, 2}, {4, 6, 7, 5}};
+    private static final net.minecraft.core.Direction[] FACE_DIRS = {
+            net.minecraft.core.Direction.WEST, net.minecraft.core.Direction.EAST,
+            net.minecraft.core.Direction.DOWN, net.minecraft.core.Direction.UP,
+            net.minecraft.core.Direction.NORTH, net.minecraft.core.Direction.SOUTH};
+
+    private double num(String name, double fallback) {
+        Setting s = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, name);
+        return s != null ? s.getValDouble() : fallback;
+    }
+
+    private boolean bool(String name, boolean fallback) {
+        Setting s = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, name);
+        return s != null ? s.getValBoolean() : fallback;
+    }
+
+    @Override
+    public void onDisable() {
+        hits = List.of();
+    }
+
     @Override
     public void onRenderHUD(GuiGraphicsExtractor guiGraphics, Object tickCounterObj) {
-        if (!isToggled() || mc.player == null || mc.level == null) {
-            cachedBlocks.clear();
+    }
+
+    private void scheduleScan() {
+        if (selectedBlocks.isEmpty()) {
+            hits = List.of();
             return;
         }
+        long now = System.currentTimeMillis();
+        if (scanning || now - lastScan < 400) return;
+        lastScan = now;
+        scanning = true;
+        final net.minecraft.client.multiplayer.ClientLevel level = mc.level;
+        final BlockPos center = mc.player.blockPosition();
+        final int range = (int) num("Range", 48);
+        final int max = (int) num("Max Blocks", 1500);
+        Setting colorSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Block Color");
+        final int defaultColor = colorSetting != null ? colorSetting.getValColor() : 0xFF00DCFF;
+        final Set<Block> wanted = new HashSet<>(selectedBlocks);
+        final Map<Block, Integer> colors = new HashMap<>();
+        for (Map.Entry<Block, Color> e : blockColorMap.entrySet()) colors.put(e.getKey(), e.getValue().getRGB());
+        scanner.execute(() -> {
+            try {
+                hits = scan(level, center, range, max, wanted, colors, defaultColor);
+            } catch (Throwable ignored) {
+            } finally {
+                scanning = false;
+            }
+        });
+    }
 
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastCacheTick >= 250) {
-            lastCacheTick = currentTime;
-            if (selectedBlocks.isEmpty()) {
-                cachedBlocks.clear();
-            } else {
-                Setting rangeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Range");
-                Setting colorSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Block Color");
-                int range = rangeSetting != null ? (int) rangeSetting.getValDouble() : 32;
-                Color defaultColor = colorSetting != null ? new Color(colorSetting.getValColor(), true) : new Color(0, 220, 255);
-
-                BlockPos playerPos = mc.player.blockPosition();
-                List<CachedBlock> newCache = new ArrayList<>();
-
-                for (int x = -range; x <= range; x++) {
-                    for (int y = -range; y <= range; y++) {
-                        for (int z = -range; z <= range; z++) {
-                            BlockPos pos = playerPos.offset(x, y, z);
-                            BlockState state = mc.level.getBlockState(pos);
-                            Block block = state.getBlock();
-
-                            if (selectedBlocks.contains(block)) {
-                                Color color = blockColorMap.getOrDefault(block, defaultColor);
-                                newCache.add(new CachedBlock(pos, color));
+    private static List<Hit> scan(net.minecraft.client.multiplayer.ClientLevel level, BlockPos center, int range, int max,
+                                  Set<Block> wanted, Map<Block, Integer> colors, int defaultColor) {
+        List<Hit> found = new ArrayList<>();
+        int rsq = range * range;
+        int cx0 = (center.getX() - range) >> 4, cx1 = (center.getX() + range) >> 4;
+        int cz0 = (center.getZ() - range) >> 4, cz1 = (center.getZ() + range) >> 4;
+        java.util.function.Predicate<BlockState> pred = st -> wanted.contains(st.getBlock());
+        BlockPos.MutableBlockPos probe = new BlockPos.MutableBlockPos();
+        for (int cx = cx0; cx <= cx1; cx++) {
+            for (int cz = cz0; cz <= cz1; cz++) {
+                net.minecraft.world.level.chunk.LevelChunk chunk = level.getChunkSource().getChunk(cx, cz, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false);
+                if (chunk == null) continue;
+                net.minecraft.world.level.chunk.LevelChunkSection[] sections = chunk.getSections();
+                for (int i = 0; i < sections.length; i++) {
+                    net.minecraft.world.level.chunk.LevelChunkSection section = sections[i];
+                    if (section == null || section.hasOnlyAir() || !section.maybeHas(pred)) continue;
+                    int sy = chunk.getSectionYFromSectionIndex(i) << 4;
+                    if (sy + 15 < center.getY() - range || sy > center.getY() + range) continue;
+                    for (int y = 0; y < 16; y++) {
+                        for (int z = 0; z < 16; z++) {
+                            for (int x = 0; x < 16; x++) {
+                                Block b = section.getBlockState(x, y, z).getBlock();
+                                if (!wanted.contains(b)) continue;
+                                int wx = (cx << 4) + x, wy = sy + y, wz = (cz << 4) + z;
+                                int dx = wx - center.getX(), dy = wy - center.getY(), dz = wz - center.getZ();
+                                if (dx * dx + dy * dy + dz * dz > rsq) continue;
+                                BlockPos pos = new BlockPos(wx, wy, wz);
+                                int open = 0;
+                                for (int d = 0; d < 6; d++) {
+                                    probe.setWithOffset(pos, FACE_DIRS[d]);
+                                    if (level.getBlockState(probe).getBlock() != b) open |= 1 << d;
+                                }
+                                if (open == 0) continue;
+                                found.add(new Hit(pos, colors.getOrDefault(b, defaultColor), open));
                             }
                         }
                     }
                 }
-
-                cachedBlocks.clear();
-                cachedBlocks.addAll(newCache);
             }
         }
+        if (found.size() > max) {
+            found.sort(java.util.Comparator.comparingDouble(h -> h.pos().distSqr(center)));
+            found = new ArrayList<>(found.subList(0, max));
+        }
+        return found;
+    }
 
-        float partialTick = getTickDelta(tickCounterObj);
+    public void renderImGuiOverlay() {
+        if (!isToggled() || mc.player == null || mc.level == null || mc.gameRenderer == null) return;
+        scheduleScan();
+        List<Hit> list = hits;
+        if (list.isEmpty()) return;
 
-        Setting tracersSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Tracers");
-        Setting fillSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Fill");
-        Setting outlineSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Outline");
+        boolean fill = bool("Fill", true);
+        boolean outline = bool("Outline", true);
+        boolean tracers = bool("Tracers", false);
+        float width = (float) num("Line Width", 1.5);
+        int fillAlpha = (int) (num("Fill Opacity", 18) * 2.55);
 
-        boolean showTracers = tracersSetting != null && tracersSetting.getValBoolean();
-        boolean doFill = fillSetting == null || fillSetting.getValBoolean();
-        boolean doOutline = outlineSetting == null || outlineSetting.getValBoolean();
+        net.minecraft.client.Camera camera = mc.gameRenderer.mainCamera();
+        net.minecraft.world.phys.Vec3 cam = camera.position();
+        camera.getViewRotationProjectionMatrix(matrix);
+        float dw = ImGui.getIO().getDisplaySizeX();
+        float dh = ImGui.getIO().getDisplaySizeY();
+        imgui.ImDrawList dl = ImGui.getBackgroundDrawList();
+        org.joml.Vector4f center = new org.joml.Vector4f();
 
-        if (!showTracers && !doFill && !doOutline) return;
+        for (Hit h : list) {
+            BlockPos p = h.pos();
+            float bx = (float) (p.getX() - cam.x), by = (float) (p.getY() - cam.y), bz = (float) (p.getZ() - cam.z);
+            boolean anyFront = false;
+            for (int i = 0; i < 8; i++) {
+                clip[i].set(bx + (i & 1), by + ((i >> 1) & 1), bz + ((i >> 2) & 1), 1f);
+                matrix.transform(clip[i]);
+                if (clip[i].w > 0.05f) anyFront = true;
+            }
+            if (!anyFront) continue;
+            int argb = h.color();
+            int r = (argb >> 16) & 0xFF, g = (argb >> 8) & 0xFF, b = argb & 0xFF;
+            int line = RenderUtils.toImGuiColor(r, g, b, 230);
+            int shade = RenderUtils.toImGuiColor(r, g, b, fillAlpha);
 
-        double screenCenterX = mc.getWindow().getGuiScaledWidth() / 2.0;
-        double screenCenterY = mc.getWindow().getGuiScaledHeight() / 2.0;
-
-        for (CachedBlock cb : cachedBlocks) {
-            if (RenderUtils.project2D(cb.pos.getX() + 0.5, cb.pos.getY() + 0.5, cb.pos.getZ() + 0.5, partialTick, projVec)) {
-                if (projVec.z > 0 && projVec.z < 1.0) {
-                    if (showTracers) {
-                        RenderUtils.drawLine2D(guiGraphics, screenCenterX, screenCenterY, projVec.x, projVec.y, cb.color);
-                    }
-                    if (doFill || doOutline) {
-                        drawBlockBox(guiGraphics, cb.pos, cb.color, doFill, doOutline, partialTick);
-                    }
+            if (fill && fillAlpha > 0) {
+                for (int f = 0; f < 6; f++) {
+                    if ((h.openFaces() & (1 << f)) == 0) continue;
+                    int[] q = FACES[f];
+                    if (clip[q[0]].w <= 0.05f || clip[q[1]].w <= 0.05f || clip[q[2]].w <= 0.05f || clip[q[3]].w <= 0.05f) continue;
+                    dl.addQuadFilled(sx(q[0], dw), sy(q[0], dh), sx(q[1], dw), sy(q[1], dh), sx(q[2], dw), sy(q[2], dh), sx(q[3], dw), sy(q[3], dh), shade);
+                }
+            }
+            if (outline) {
+                for (int[] e : EDGES) {
+                    if (!edgeVisible(h.openFaces(), e[0], e[1])) continue;
+                    drawEdge(dl, clip[e[0]], clip[e[1]], dw, dh, line, width);
+                }
+            }
+            if (tracers) {
+                center.set(bx + 0.5f, by + 0.5f, bz + 0.5f, 1f);
+                matrix.transform(center);
+                if (center.w > 0.05f) {
+                    dl.addLine(dw / 2f, dh / 2f, (center.x / center.w + 1f) * 0.5f * dw, (1f - center.y / center.w) * 0.5f * dh, line, 1f);
                 }
             }
         }
     }
 
-    private void drawBlockBox(GuiGraphicsExtractor guiGraphics, BlockPos pos, Color color, boolean fill, boolean outline, float partialTick) {
-        int x = pos.getX();
-        int y = pos.getY();
-        int z = pos.getZ();
-
-        double minX = Double.MAX_VALUE, minY = Double.MAX_VALUE;
-        double maxX = -Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
-        boolean behind = true;
-
-        for (int i = 0; i < 8; i++) {
-            double cx = x + ((i & 1) == 0 ? 0 : 1);
-            double cy = y + ((i & 2) == 0 ? 0 : 1);
-            double cz = z + ((i & 4) == 0 ? 0 : 1);
-
-            if (RenderUtils.project2D(cx, cy, cz, partialTick, boxProjBuffer[i])) {
-                if (boxProjBuffer[i].z > 0 && boxProjBuffer[i].z < 1.0) {
-                    behind = false;
-                    double px = boxProjBuffer[i].x;
-                    double py = boxProjBuffer[i].y;
-                    minX = Math.min(minX, px);
-                    minY = Math.min(minY, py);
-                    maxX = Math.max(maxX, px);
-                    maxY = Math.max(maxY, py);
-                }
+    private static boolean edgeVisible(int open, int a, int b) {
+        for (int f = 0; f < 6; f++) {
+            if ((open & (1 << f)) == 0) continue;
+            boolean ha = false, hb = false;
+            for (int v : FACES[f]) {
+                if (v == a) ha = true;
+                if (v == b) hb = true;
             }
+            if (ha && hb) return true;
         }
-        if (behind) return;
+        return false;
+    }
 
-        if (fill) {
-            guiGraphics.fill((int)minX, (int)minY, (int)maxX, (int)maxY, new Color(color.getRed(), color.getGreen(), color.getBlue(), 40).getRGB());
+    private float sx(int i, float dw) {
+        return (clip[i].x / clip[i].w + 1f) * 0.5f * dw;
+    }
+
+    private float sy(int i, float dh) {
+        return (1f - clip[i].y / clip[i].w) * 0.5f * dh;
+    }
+
+    private static void drawEdge(imgui.ImDrawList dl, org.joml.Vector4f a, org.joml.Vector4f b, float dw, float dh, int color, float width) {
+        float near = 0.05f;
+        float ax = a.x, ay = a.y, aw = a.w, bx = b.x, by = b.y, bw = b.w;
+        if (aw < near && bw < near) return;
+        if (aw < near) {
+            float t = (near - aw) / (bw - aw);
+            ax += (bx - ax) * t;
+            ay += (by - ay) * t;
+            aw = near;
+        } else if (bw < near) {
+            float t = (near - bw) / (aw - bw);
+            bx += (ax - bx) * t;
+            by += (ay - by) * t;
+            bw = near;
         }
-        if (outline) {
-            int c = color.getRGB();
-            guiGraphics.fill((int)minX, (int)minY, (int)maxX, (int)minY + 1, c);
-            guiGraphics.fill((int)minX, (int)maxY, (int)maxX, (int)maxY + 1, c);
-            guiGraphics.fill((int)minX, (int)minY, (int)minX + 1, (int)maxY, c);
-            guiGraphics.fill((int)maxX, (int)minY, (int)maxX + 1, (int)maxY + 1, c);
-        }
+        dl.addLine((ax / aw + 1f) * 0.5f * dw, (1f - ay / aw) * 0.5f * dh, (bx / bw + 1f) * 0.5f * dw, (1f - by / bw) * 0.5f * dh, color, width);
     }
 
     public void saveSelectedBlocksToFile() {
