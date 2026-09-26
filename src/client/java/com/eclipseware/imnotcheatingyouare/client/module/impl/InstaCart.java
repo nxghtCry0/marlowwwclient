@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 
 public class InstaCart extends Module {
-    private enum Stage { AIM, PLACE, DRAW }
+    private enum Stage { AIM, RAIL, PLACE, DRAW }
 
     private Stage stage = Stage.AIM;
     private BlockPos spot;
@@ -70,11 +70,19 @@ public class InstaCart extends Module {
         switch (stage) {
             case AIM -> {
                 CartHelper.aim(CartHelper.railAim(spot));
+                stage = Stage.RAIL;
+            }
+            case RAIL -> {
+                CartHelper.aim(CartHelper.railAim(spot));
+                if (!CartHelper.placeRail(spot)) {
+                    finish();
+                    return;
+                }
                 stage = Stage.PLACE;
             }
             case PLACE -> {
                 CartHelper.aim(CartHelper.railAim(spot));
-                if (!CartHelper.placeRail(spot) || !CartHelper.placeCart(spot)) {
+                if (!CartHelper.placeCart(spot)) {
                     finish();
                     return;
                 }
