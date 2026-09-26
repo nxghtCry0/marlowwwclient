@@ -4,266 +4,166 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
-import com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor;
+import com.eclipseware.imnotcheatingyouare.client.utils.CartHelper;
+import com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils;
+import com.eclipseware.imnotcheatingyouare.client.utils.RotationManager;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.CrossbowItem;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.level.GameType;
-import java.util.Random;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.ArrayList;
 
 public class XbowCart extends Module {
-    private final Random random = new Random();
-    private int stage = 0;
-    private long lastTime = 0L;
+    private enum Stage { LOAD, AIM, PLACE, FIRE, SHOOT }
+
+    private Stage stage = Stage.LOAD;
+    private BlockPos spot;
+    private BlockPos fireGround;
     private int originalSlot = -1;
-    private float originalPitch = 0.0F;
-    private float originalYaw = 0.0F;
-    private long randomizedDelay = 0L;
-    private boolean loadingCrossbow = false;
+    private int ticks;
 
     public XbowCart() {
-        super("XbowCart", Category.CartPvP, "Crossbow carting macro");
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Swap Back", this, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Rail Delay Min", this, 50.0, 0.0, 1000.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Rail Delay Max", this, 250.0, 0.0, 1000.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Cart Delay Min", this, 50.0, 0.0, 1000.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Cart Delay Max", this, 250.0, 0.0, 1000.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Fire Delay Min", this, 100.0, 0.0, 1000.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Fire Delay Max", this, 300.0, 0.0, 1000.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Load Delay Min", this, 100.0, 0.0, 1000.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Load Delay Max", this, 300.0, 0.0, 1000.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Shoot Delay Min", this, 50.0, 0.0, 1000.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Shoot Delay Max", this, 250.0, 0.0, 1000.0, true));
+        super("XbowCart", Category.CartPvP, "Pre-loads the crossbow, places rail and TNT cart, lights fire in the arrow path and shoots through it, all with silent aim.");
+        var sm = ImnotcheatingyouareClient.INSTANCE.settingsManager;
+        ArrayList<String> modes = new ArrayList<>();
+        modes.add("Auto");
+        modes.add("Crosshair");
+        modes.add("Target");
+        sm.rSetting(new Setting("Spot", this, "Auto", modes));
+        sm.rSetting(new Setting("Target Range", this, 6.0, 2.0, 10.0, false));
+        sm.rSetting(new Setting("Use Fire", this, true));
+        sm.rSetting(new Setting("Swap Back", this, true));
     }
 
-    private double getVal(String name) {
-        Setting s = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, name);
-        return s != null ? s.getValDouble() : 0.0;
-    }
-
-    private boolean getBool(String name) {
-        Setting s = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, name);
-        return s != null && s.getValBoolean();
+    private Setting s(String name) {
+        return ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, name);
     }
 
     @Override
     public void onEnable() {
-        if (mc.player == null || mc.level == null) {
-            this.toggle();
+        if (mc.player == null || mc.level == null || mc.gameMode == null) {
+            toggle();
             return;
         }
-        if (findRailSlot() == -1 || findItemSlot(Items.TNT_MINECART) == -1 || 
-            findItemSlot(Items.FLINT_AND_STEEL) == -1 || findItemSlot(Items.CROSSBOW) == -1) {
-            this.toggle();
+        if (CartHelper.railSlot() == -1 || CartHelper.slot(Items.TNT_MINECART) == -1 || CartHelper.slot(Items.CROSSBOW) == -1) {
+            toggle();
             return;
         }
-        originalSlot = mc.player.getInventory().getSelectedSlot();
-        originalPitch = mc.player.getXRot();
-        originalYaw = mc.player.getYRot();
-        
-        lastTime = System.currentTimeMillis();
-        randomizedDelay = 0L;
-        stage = 0;
-        loadingCrossbow = false;
+        spot = CartHelper.findSpot(s("Spot").getValString(), s("Target Range").getValDouble());
+        if (spot == null) {
+            toggle();
+            return;
+        }
+        originalSlot = ModuleUtils.getSelectedSlot();
+        fireGround = null;
+        ticks = 0;
+        stage = charged() ? Stage.AIM : Stage.LOAD;
+    }
+
+    private ItemStack crossbow() {
+        int slot = CartHelper.slot(Items.CROSSBOW);
+        return slot == -1 ? ItemStack.EMPTY : mc.player.getInventory().getItem(slot);
+    }
+
+    private boolean charged() {
+        return CrossbowItem.isCharged(crossbow());
     }
 
     @Override
     public void onTick() {
-        if (mc.player == null || mc.level == null) {
-            this.toggle();
+        if (mc.player == null || mc.level == null || spot == null) {
+            finish();
             return;
         }
-        long currentTime = System.currentTimeMillis();
-        if (currentTime - lastTime < randomizedDelay) {
-            return;
-        }
-        
         switch (stage) {
-            case 0:
-                int railSlot = findRailSlot();
-                if (railSlot == -1) {
-                    finish();
-                    return;
-                }
-                switchTo(railSlot);
-                tryPlace();
-                
-                lastTime = currentTime;
-                randomizedDelay = 50L + getDelay(getVal("Rail Delay Min"), getVal("Rail Delay Max"));
-                stage = 1;
-                break;
-              
-            case 1:
-                int cartSlot = findItemSlot(Items.TNT_MINECART);
-                if (cartSlot == -1) {
-                    finish();
-                    return;
-                }
-                switchTo(cartSlot);
-                tryPlace();
-                
-                lastTime = currentTime;
-                randomizedDelay = 50L + getDelay(getVal("Cart Delay Min"), getVal("Cart Delay Max"));
-                stage = 2;
-                break;
-              
-            case 2:
-                mc.player.setYRot(originalYaw);
-                mc.player.setXRot(28.1F);
-                
-                int flintSlot = findItemSlot(Items.FLINT_AND_STEEL);
-                if (flintSlot == -1) {
-                    finish();
-                    return;
-                }
-                switchTo(flintSlot);
-                
-                lastTime = currentTime;
-                randomizedDelay = 50L;
-                stage = 21;
-                break;
-              
-            case 21:
-                if (!tryPlace()) {
-                    doClick();
-                }
-                lastTime = currentTime;
-                randomizedDelay = 50L + getDelay(getVal("Fire Delay Min"), getVal("Fire Delay Max"));
-                stage = 4;
-                break;
-              
-            case 4:
-                int crossbowSlot = findItemSlot(Items.CROSSBOW);
-                if (crossbowSlot == -1) {
-                    finish();
-                    return;
-                }
-                switchTo(crossbowSlot);
-                
-                ItemStack crossbowStack = mc.player.getInventory().getItem(crossbowSlot);
-                if (!CrossbowItem.isCharged(crossbowStack)) {
-                    if (loadingCrossbow) {
-                        finish();
-                        return;
-                    }
-                    mc.options.keyUse.setDown(true);
-                    doClick();
-                    loadingCrossbow = true;
-                    
-                    lastTime = currentTime;
-                    randomizedDelay = 1300L + getDelay(getVal("Load Delay Min"), getVal("Load Delay Max"));
-                } else {
-                    lastTime = currentTime;
-                    randomizedDelay = 50L + getDelay(getVal("Shoot Delay Min"), getVal("Shoot Delay Max"));
-                    stage = 5;
-                }
-                break;
-        
-            case 5:
-                if (loadingCrossbow) {
+            case LOAD -> {
+                if (charged()) {
                     mc.options.keyUse.setDown(false);
-                    loadingCrossbow = false;
-                    
-                    lastTime = currentTime;
-                    randomizedDelay = 100L;
-                    stage = 6;
-                    break;
+                    if (mc.player.isUsingItem()) mc.gameMode.releaseUsingItem(mc.player);
+                    stage = Stage.AIM;
+                    return;
                 }
-                stage = 6;
-              
-            case 6:
-                mc.player.setXRot(24.2F);
-                
-                lastTime = currentTime;
-                randomizedDelay = 50L;
-                stage = 61;
-                break;
-              
-            case 61:
-                doClick();
-                
-                lastTime = currentTime;
-                randomizedDelay = 150L;
-                stage = 7;
-                break;
-              
-            case 7:
+                if (ticks == 0) {
+                    ModuleUtils.switchToSlot(CartHelper.slot(Items.CROSSBOW));
+                    mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
+                }
+                mc.options.keyUse.setDown(true);
+                if (++ticks > 40) finish();
+            }
+            case AIM -> {
+                CartHelper.aim(CartHelper.railAim(spot));
+                stage = Stage.PLACE;
+            }
+            case PLACE -> {
+                CartHelper.aim(CartHelper.railAim(spot));
+                if (!CartHelper.placeRail(spot) || !CartHelper.placeCart(spot)) {
+                    finish();
+                    return;
+                }
+                fireGround = s("Use Fire").getValBoolean() && CartHelper.slot(Items.FLINT_AND_STEEL) != -1 ? fireSpot() : null;
+                if (fireGround != null) {
+                    CartHelper.aim(CartHelper.railAim(fireGround));
+                    stage = Stage.FIRE;
+                } else {
+                    aimCart();
+                    stage = Stage.SHOOT;
+                }
+            }
+            case FIRE -> {
+                CartHelper.aim(CartHelper.railAim(fireGround));
+                CartHelper.useOn(CartHelper.slot(Items.FLINT_AND_STEEL), new BlockHitResult(CartHelper.railAim(fireGround), Direction.UP, fireGround, false));
+                aimCart();
+                stage = Stage.SHOOT;
+            }
+            case SHOOT -> {
+                aimCart();
+                ModuleUtils.switchToSlot(CartHelper.slot(Items.CROSSBOW));
+                mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
                 finish();
-                break;
+            }
         }
+    }
+
+    private BlockPos fireSpot() {
+        Vec3 eye = mc.player.getEyePosition();
+        BlockPos best = null;
+        double bestDist = Double.MAX_VALUE;
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            BlockPos ground = spot.relative(dir);
+            BlockPos cell = ground.above();
+            if (!mc.level.getBlockState(cell).isAir()) continue;
+            if (!mc.level.getBlockState(ground).isFaceSturdy(mc.level, ground, Direction.UP)) continue;
+            if (!CartHelper.inReach(ground)) continue;
+            double d = eye.distanceToSqr(Vec3.atCenterOf(cell));
+            if (d < bestDist) {
+                bestDist = d;
+                best = ground;
+            }
+        }
+        return best;
+    }
+
+    private void aimCart() {
+        BlockPos rail = spot.above();
+        CartHelper.aim(new Vec3(rail.getX() + 0.5, rail.getY() + 0.35, rail.getZ() + 0.5));
     }
 
     private void finish() {
-        mc.options.keyUse.setDown(false);
-        if (getBool("Swap Back") && originalSlot != -1) {
-            switchTo(originalSlot);
-        }
-        mc.player.setXRot(originalPitch);
-        mc.player.setYRot(originalYaw);
-        
+        if (mc.options != null) mc.options.keyUse.setDown(false);
+        if (mc.player != null && s("Swap Back").getValBoolean() && originalSlot >= 0) ModuleUtils.switchToSlot(originalSlot);
         originalSlot = -1;
-        stage = 0;
-        this.toggle();
+        spot = null;
+        RotationManager.requestReturn();
+        if (isToggled()) toggle();
     }
 
-    private void switchTo(int slot) {
-        if (mc.player.getInventory().getSelectedSlot() != slot) {
-            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(slot);
-        }
-    }
-
-    private void doClick() {
-        if (mc instanceof MinecraftAccessor accessor) {
-            accessor.invokeStartUseItem();
-        }
-    }
-
-    private boolean tryPlace() {
-        if (mc.player == null || mc.level == null || mc.gameMode == null) {
-            return false;
-        }
-        if (mc.gui.screen() != null) {
-            return false;
-        }
-        if (mc.hitResult == null || mc.hitResult.getType() != HitResult.Type.BLOCK) {
-            return false;
-        }
-        if (mc.gameMode.getPlayerMode() == GameType.SPECTATOR) {
-            return false;
-        }
-        doClick();
-        return true;
-    }
-
-    private int findRailSlot() {
-        for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getItem(i);
-            if (!stack.isEmpty()) {
-                Item item = stack.getItem();
-                if (item == Items.RAIL || item == Items.POWERED_RAIL || item == Items.DETECTOR_RAIL || item == Items.ACTIVATOR_RAIL) {
-                    return i;
-                }
-            }
-        }
-        return -1;
-    }
-
-    private int findItemSlot(Item item) {
-        for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getItem(i);
-            if (!stack.isEmpty() && stack.getItem() == item) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private long getDelay(double min, double max) {
-        if (min >= max) {
-            return (long) min;
-        }
-        return (long) (min + random.nextDouble() * (max - min));
+    @Override
+    public void onDisable() {
+        if (spot != null) finish();
     }
 }

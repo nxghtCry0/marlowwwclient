@@ -25,12 +25,12 @@ public class CartRefill extends Module {
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Smart Mode", this, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Auto Open", this, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Auto Close", this, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Min Open Delay", this, 50.0, 0.0, 300.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Max Open Delay", this, 150.0, 0.0, 300.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Min Refill Delay", this, 50.0, 0.0, 300.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Max Refill Delay", this, 150.0, 0.0, 300.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Min Close Delay", this, 50.0, 0.0, 300.0, true));
-        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Max Close Delay", this, 150.0, 0.0, 300.0, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Min Open Delay", this, 0.0, 0.0, 300.0, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Max Open Delay", this, 50.0, 0.0, 300.0, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Min Refill Delay", this, 0.0, 0.0, 300.0, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Max Refill Delay", this, 30.0, 0.0, 300.0, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Min Close Delay", this, 0.0, 0.0, 300.0, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Max Close Delay", this, 30.0, 0.0, 300.0, true));
 
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Refill Slot 1", this, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Refill Slot 2", this, false));
