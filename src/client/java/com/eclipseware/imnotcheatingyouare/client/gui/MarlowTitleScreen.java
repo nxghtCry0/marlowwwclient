@@ -148,7 +148,7 @@ public class MarlowTitleScreen extends TitleScreen {
             button.extractRenderState(graphics, mouseX, mouseY, partialTick);
         }
 
-        graphics.text(minecraft.font, FontUtils.verdana("Marlowww V4"), 6, height - 12, 0xB0FFFFFF, false);
+        graphics.text(minecraft.font, FontUtils.verdana("Marlowww V5"), 6, height - 12, 0xB0FFFFFF, false);
         String version = "Minecraft " + net.minecraft.SharedConstants.getCurrentVersion().name();
         graphics.text(minecraft.font, FontUtils.verdana(version), width - 6 - FontUtils.verdanaWidth(version), height - 12, 0xB0FFFFFF, false);
     }
