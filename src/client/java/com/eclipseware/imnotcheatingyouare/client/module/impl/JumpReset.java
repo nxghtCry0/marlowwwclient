@@ -106,7 +106,9 @@ public class JumpReset extends Module {
     }
 
     private boolean isPhysicallyHoldingJump() {
-        return com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.isDown(getKeyCode(mc.options.keyJump));
+        long window = getWindowHandle();
+        if (window == 0) return false;
+        return org.lwjgl.glfw.GLFW.glfwGetKey(window, getKeyCode(mc.options.keyJump)) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
     }
 
     private int getKeyCode(net.minecraft.client.KeyMapping mapping) {

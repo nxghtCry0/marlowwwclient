@@ -43,7 +43,7 @@ public final class GlassyDropdown<T> extends CompatAbstractWidget {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (event != null && this.active && this.visible && event.button() == 1) {
+        if (event != null && this.active && this.visible && event.button() == 0) {
             double mx = event.x();
             double my = event.y();
             

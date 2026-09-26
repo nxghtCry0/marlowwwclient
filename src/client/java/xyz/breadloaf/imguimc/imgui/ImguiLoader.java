@@ -205,8 +205,8 @@ public class ImguiLoader {
     private static int targetFramebufferTexture = 0;
     private static int currentTargetFramebuffer = 0;
 
-    private static int framebufferFor(com.mojang.renderpearl.api.textures.GpuTexture texture) {
-        if (!(texture instanceof com.mojang.renderpearl.backend.opengl.GlTexture glTexture) || texture.isClosed())
+    private static int framebufferFor(com.mojang.blaze3d.textures.GpuTexture texture) {
+        if (!(texture instanceof com.mojang.blaze3d.opengl.GlTexture glTexture) || texture.isClosed())
             return 0;
         int textureId = glTexture.glId();
         if (targetFramebuffer != 0 && targetFramebufferTexture == textureId)
@@ -221,7 +221,7 @@ public class ImguiLoader {
         return targetFramebuffer;
     }
 
-    public static void onFrameRender(com.mojang.renderpearl.api.textures.GpuTexture target) {
+    public static void onFrameRender(com.mojang.blaze3d.textures.GpuTexture target) {
         if (!initialized) {
             try {
                 net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
@@ -336,9 +336,9 @@ public class ImguiLoader {
             return;
 
         if (wantsText) {
-            mc.textInputManager().startTextInput(TEXT_INPUT_OWNER);
+            mc.textInputManager().startTextInput();
         } else {
-            mc.textInputManager().stopTextInput(TEXT_INPUT_OWNER);
+            mc.textInputManager().stopTextInput();
         }
     }
 
@@ -433,7 +433,7 @@ public class ImguiLoader {
 
         try {
             com.mojang.blaze3d.platform.Window window = net.minecraft.client.Minecraft.getInstance().getWindow();
-            int framebufferHeight = window.queryFramebufferSize().height();
+            int framebufferHeight = window.getHeight();
             if (framebufferHeight > 0) {
                 scale = resolveUiScale(framebufferHeight);
             }
@@ -565,7 +565,7 @@ public class ImguiLoader {
             sdlTextInputActive = false;
             try {
                 net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-                if (mc != null) mc.textInputManager().stopTextInput(TEXT_INPUT_OWNER);
+                if (mc != null) mc.textInputManager().stopTextInput();
             } catch (Throwable ignored) {}
         }
         initialized = false;

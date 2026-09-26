@@ -106,7 +106,7 @@ public class GhostBlockMacro extends Module {
         ));
 
         mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, blockHit);
-        mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+        mc.player.swing(InteractionHand.MAIN_HAND);
     }
 
     private int findBlockInHotbar() {

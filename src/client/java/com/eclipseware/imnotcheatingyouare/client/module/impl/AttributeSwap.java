@@ -66,7 +66,7 @@ public class AttributeSwap extends Module {
                     player.isShiftKeyDown()
                 ));
             }
-            player.swing(net.minecraft.world.InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+            player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
             player.resetAttackStrengthTicker();
 
             if (swapBackVal) {

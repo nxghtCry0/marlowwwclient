@@ -386,6 +386,27 @@ public class ArrayListHud {
     }
 
     private String getKeyName(int key) {
-        return com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.getName(key);
+        if (key == -1) return "NONE"; 
+        if (key >= 0 && key <= 7) {
+            if (key == 1) return "RMB"; 
+            if (key == 2) return "MMB"; 
+            return "MB" + (key + 1);
+        } 
+        switch (key) {
+            case 344: return "RSHIFT";
+            case 340: return "LSHIFT";
+            case 345: return "RCTRL";
+            case 341: return "LCTRL";
+            case 346: return "RALT";
+            case 342: return "LALT";
+            case 258: return "TAB";
+            case 32: return "SPACE";
+            case 257: return "ENTER";
+            case 256: return "NONE";
+        }
+        
+        String str = org.lwjgl.glfw.GLFW.glfwGetKeyName(key, 0);
+        if (str == null) return "KEY " + key; 
+        return str.toUpperCase();
     }
 }

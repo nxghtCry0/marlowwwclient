@@ -3,8 +3,8 @@ package com.eclipseware.imnotcheatingyouare.client.render;
 import com.eclipseware.imnotcheatingyouare.client.module.impl.SelfShader;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
-import com.mojang.renderpearl.api.GpuFormat;
-import com.mojang.renderpearl.backend.opengl.GlTexture;
+import com.mojang.blaze3d.GpuFormat;
+import com.mojang.blaze3d.opengl.GlTexture;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
@@ -106,7 +106,7 @@ public final class HandShaderRenderer {
 
     public static RenderTarget captureTarget(RenderTarget main) {
         if (target == null) {
-            target = new TextureTarget("Marlow Hand Shader", main.width, main.height, GpuFormat.RGBA8_UNORM, null);
+            target = new TextureTarget("Marlow Hand Shader", main.width, main.height, false, com.mojang.blaze3d.GpuFormat.RGBA8_UNORM);
         } else if (target.width != main.width || target.height != main.height) {
             target.resize(main.width, main.height);
         }

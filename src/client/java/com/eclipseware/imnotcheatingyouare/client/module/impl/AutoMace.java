@@ -9,7 +9,7 @@ import com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.tags.ItemTags;
+import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -190,7 +190,7 @@ public class AutoMace extends Module {
     }
 
     private boolean isAxe(ItemStack stack) {
-        return stack.is(ItemTags.AXES);
+        return stack.getItem() instanceof AxeItem;
     }
 
     private boolean hasMace() {

@@ -94,7 +94,7 @@ public class MarlowTitleScreen extends TitleScreen {
         y += BUTTON_HEIGHT + BUTTON_GAP;
         buttons.add(new MenuButton(x, y, w, "Multiplayer", false, () -> minecraft.setScreenAndShow(new JoinMultiplayerScreen(this))));
         y += BUTTON_HEIGHT + BUTTON_GAP;
-        buttons.add(new MenuButton(x, y, w, "Settings", false, () -> minecraft.setScreenAndShow(new OptionsScreen(this, minecraft.options))));
+        buttons.add(new MenuButton(x, y, w, "Settings", false, () -> minecraft.setScreenAndShow(new OptionsScreen(this, minecraft.options, false))));
         y += BUTTON_HEIGHT + BUTTON_GAP;
         buttons.add(new MenuButton(x, y, w, "Config", false, () -> minecraft.setScreenAndShow(new MenuConfigScreen(this))));
         y += BUTTON_HEIGHT + BUTTON_GAP + 8;

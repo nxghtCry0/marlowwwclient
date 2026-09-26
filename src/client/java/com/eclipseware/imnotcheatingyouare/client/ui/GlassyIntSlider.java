@@ -95,10 +95,10 @@ public final class GlassyIntSlider extends CompatSliderButton {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (event != null && this.active && this.visible && event.button() == 3 && isMouseOver(event.x(), event.y())) {
+        if (event != null && this.active && this.visible && event.button() == 1 && isMouseOver(event.x(), event.y())) {
             return true;
         }
-        if (event != null && this.active && this.visible && event.button() == 1 && isMouseOver(event.x(), event.y())) {
+        if (event != null && this.active && this.visible && event.button() == 0 && isMouseOver(event.x(), event.y())) {
             updateValueFromMouse(event.x());
             return true;
         } 
@@ -107,7 +107,7 @@ public final class GlassyIntSlider extends CompatSliderButton {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
-        if (event != null && this.active && this.visible && event.button() == 1) {
+        if (event != null && this.active && this.visible && event.button() == 0) {
             updateValueFromMouse(event.x());
             return true;
         } 

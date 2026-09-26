@@ -103,7 +103,7 @@ public class HudEditorScreen extends Screen {
         double mouseX = event.x();
         double mouseY = event.y();
 
-        if (event.button() == 1) {
+        if (event.button() == 0) {
             for (Module m : getHudModules()) {
                 Setting xSet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(m, "X");
                 Setting ySet = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(m, "Y");
@@ -145,7 +145,7 @@ public class HudEditorScreen extends Screen {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        if (event.button() == 1 && draggingModule != null) {
+        if (event.button() == 0 && draggingModule != null) {
             draggingModule = null;
             com.eclipseware.imnotcheatingyouare.client.setting.ConfigManager.save();
             return true;

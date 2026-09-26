@@ -6,7 +6,7 @@ import com.eclipseware.imnotcheatingyouare.client.module.Module;
 public class HUDEditor extends Module {
     public HUDEditor() {
         super("HUDEditor", Category.HUD, "Opens the interactive screen overlay editor.");
-        this.setKeyBind(com.mojang.blaze3d.platform.InputConstants.KEY_GRAVE);
+        this.setKeyBind(org.lwjgl.glfw.GLFW.GLFW_KEY_GRAVE_ACCENT);
     }
 
     @Override

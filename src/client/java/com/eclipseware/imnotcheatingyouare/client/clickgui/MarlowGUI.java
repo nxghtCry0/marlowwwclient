@@ -23,6 +23,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import org.joml.Matrix3x2fStack;
 import org.joml.Vector2f;
+import org.lwjgl.glfw.GLFW;
 
 public class MarlowGUI extends Screen {
   private static final float PANEL_WIDTH = 120.0F;
@@ -368,7 +369,27 @@ public class MarlowGUI extends Screen {
   }
   
   private String getKeyName(int key) {
-    return com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.getName(key);
+    if (key == -1) return "NONE"; 
+    if (key >= 0 && key <= 7) {
+      if (key == 1) return "RMB"; 
+      if (key == 2) return "MMB"; 
+      return "MB" + key + 1;
+    } 
+    switch (key) { case 344:
+        return "RSHIFT";
+      case 340: return "LSHIFT";
+      case 345: return "RCTRL";
+      case 341: return "LCTRL";
+      case 346: return "RALT";
+      case 342: return "LALT";
+      case 258: return "TAB";
+      case 32: return "SPACE";
+      case 257: return "ENTER";
+      case 256: return "NONE"; }
+    
+    String str = GLFW.glfwGetKeyName(key, 0);
+    if (str == null) return "KEY " + key; 
+    return str.toUpperCase();
   }
 
   
@@ -630,12 +651,12 @@ public class MarlowGUI extends Screen {
   public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
     double mouseX = click.x();
     double mouseY = click.y();
-    int button = com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.toLegacyOrdinal(click.button());
+    int button = click.button();
     if (this.bindingModule != null) {
-      this.bindingModule.setKeyBind(com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.fromClickOrdinal(button));
+      this.bindingModule.setKeyBind(button);
       this.bindingModule = null;
       return true;
-    }
+    } 
     if (button == 0) {
       float searchX = 10.0F;
       float searchY = 10.0F;
@@ -848,7 +869,7 @@ public class MarlowGUI extends Screen {
   }
   
   public boolean mouseReleased(MouseButtonEvent click) {
-    if (com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.toLegacyOrdinal(click.button()) == 0) {
+    if (click.button() == 0) {
       for (Panel panel : panels.values()) {
         if (panel.isDragging()) {
           panel.setDragging(false);
@@ -867,14 +888,14 @@ public class MarlowGUI extends Screen {
   public boolean keyPressed(KeyEvent event) {
     int keyCode = event.input();
     if (this.searchActive) {
-      if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE) {
+      if (keyCode == 259) {
         if (!this.searchQuery.isEmpty()) {
           this.searchQuery = this.searchQuery.substring(0, this.searchQuery.length() - 1);
           checkSearchEasterEgg();
         }
         return true;
       } 
-      if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN) {
+      if (keyCode == 256 || keyCode == 257) {
         this.searchActive = false;
         return true;
       } 
@@ -883,13 +904,13 @@ public class MarlowGUI extends Screen {
       }
     } 
     if (this.editingSlider != null) {
-      if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE) {
+      if (keyCode == 259) {
         if (!this.sliderInputBuffer.isEmpty()) {
           this.sliderInputBuffer = this.sliderInputBuffer.substring(0, this.sliderInputBuffer.length() - 1);
         }
         return true;
       }
-      if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_NUMPADENTER) {
+      if (keyCode == 256 || keyCode == 257 || keyCode == 335) {
         try {
           if (!this.sliderInputBuffer.isEmpty()) {
             double parsed = Double.parseDouble(this.sliderInputBuffer);
@@ -907,29 +928,29 @@ public class MarlowGUI extends Screen {
       return true;
     }
     if (this.focusedSetting != null) {
-      if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_BACKSPACE) {
+      if (keyCode == 259) {
         String val = this.focusedSetting.getValText();
         if (!val.isEmpty()) {
           this.focusedSetting.setValText(val.substring(0, val.length() - 1));
         }
         return true;
       } 
-      if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE || keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_RETURN) {
+      if (keyCode == 256 || keyCode == 257) {
         this.focusedSetting = null;
         return true;
       } 
       return true;
     } 
     if (this.bindingModule != null) {
-      if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
-        this.bindingModule.setKeyBind(0);
+      if (keyCode == 256) {
+        this.bindingModule.setKeyBind(-1);
       } else {
         this.bindingModule.setKeyBind(keyCode);
       } 
       this.bindingModule = null;
       return true;
     } 
-    if (keyCode == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
+    if (keyCode == 256) {
       onClose();
       return true;
     } 

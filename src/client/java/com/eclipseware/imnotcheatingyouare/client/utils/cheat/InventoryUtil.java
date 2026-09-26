@@ -4,7 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.tags.ItemTags;
+import net.minecraft.world.item.AxeItem;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 
@@ -27,7 +27,7 @@ public class InventoryUtil {
         if (mc.player == null) return -1;
         for (int i = 0; i < HOTBAR_SIZE; i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
-            if (stack.is(ItemTags.AXES)) {
+            if (stack.getItem() instanceof AxeItem) {
                 return i;
             }
         }
@@ -49,7 +49,7 @@ public class InventoryUtil {
         if (mc.player == null) return -1;
         for (int i = 0; i < HOTBAR_SIZE; i++) {
             ItemStack stack = mc.player.getInventory().getItem(i);
-            if (!stack.isEmpty() && (getItemName(stack).contains("sword") || stack.is(ItemTags.AXES))) {
+            if (!stack.isEmpty() && (getItemName(stack).contains("sword") || stack.getItem() instanceof AxeItem)) {
                 return i;
             }
         }
@@ -63,7 +63,7 @@ public class InventoryUtil {
     public static boolean isHoldingWeapon() {
         if (mc.player == null) return false;
         ItemStack stack = mc.player.getMainHandItem();
-        return !stack.isEmpty() && (getItemName(stack).contains("sword") || stack.is(ItemTags.AXES));
+        return !stack.isEmpty() && (getItemName(stack).contains("sword") || stack.getItem() instanceof AxeItem);
     }
 
     public static String getItemName(ItemStack stack) {

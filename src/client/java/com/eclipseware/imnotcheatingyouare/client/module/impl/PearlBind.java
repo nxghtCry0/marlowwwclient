@@ -45,7 +45,7 @@ public class PearlBind extends Module {
         
         if (phase == 1) {
             mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
-            mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+            mc.player.swing(InteractionHand.MAIN_HAND);
             phase = 2; 
         } else if (phase == 2) {
             com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(originalSlot);

@@ -1,6 +1,6 @@
 package com.eclipseware.imnotcheatingyouare.client.utils;
 
-import com.mojang.renderpearl.backend.opengl.GlTexture;
+import com.mojang.blaze3d.opengl.GlTexture;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.renderer.texture.AbstractTexture;

@@ -94,22 +94,33 @@ public class Clickgui extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent click, boolean doubled) {
-        int legacyButton = com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.toLegacyOrdinal(click.button());
-        this.widgets.forEach(components -> components.mouseClicked((int) click.x(), (int) click.y(), legacyButton));
+        this.widgets.forEach(components -> components.mouseClicked((int) click.x(), (int) click.y(), click.button()));
         return super.mouseClicked(click, doubled);
     }
 
     @Override
     public boolean mouseReleased(MouseButtonEvent click) {
-        int legacyButton = com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.toLegacyOrdinal(click.button());
-        this.widgets.forEach(components -> components.mouseReleased((int) click.x(), (int) click.y(), legacyButton));
+        this.widgets.forEach(components -> components.mouseReleased((int) click.x(), (int) click.y(), click.button()));
         return super.mouseReleased(click);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        boolean shiftDown = com.mojang.blaze3d.platform.InputConstants.isKeyDown(com.mojang.blaze3d.platform.InputConstants.KEY_LSHIFT)
-                || com.mojang.blaze3d.platform.InputConstants.isKeyDown(com.mojang.blaze3d.platform.InputConstants.KEY_RSHIFT);
+        long windowHandle = 0;
+        try {
+            for (java.lang.reflect.Field f : Minecraft.getInstance().getWindow().getClass().getDeclaredFields()) {
+                if (f.getType() == long.class) {
+                    f.setAccessible(true);
+                    windowHandle = f.getLong(Minecraft.getInstance().getWindow());
+                    break;
+                }
+            }
+        } catch (Exception e) {}
+        
+        boolean shiftDown = false;
+        if (windowHandle != 0) {
+            shiftDown = org.lwjgl.glfw.GLFW.glfwGetKey(windowHandle, org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT) == org.lwjgl.glfw.GLFW.GLFW_PRESS || org.lwjgl.glfw.GLFW.glfwGetKey(windowHandle, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+        }
 
         float scale = getScaleFactor();
         double scaledMouseX = mouseX / scale;
@@ -155,13 +166,13 @@ public class Clickgui extends Screen {
 
         this.widgets.forEach(component -> component.onKeyPressed(input.input()));
         
-        if (wasBinding && input.input() == com.mojang.blaze3d.platform.InputConstants.KEY_ESCAPE) {
+        if (wasBinding && input.input() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
             return true;
         }
-
+        
         if (!wasBinding) {
             Module menuMod = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Menu");
-            int menuKey = menuMod != null ? menuMod.getKeyBind() : com.mojang.blaze3d.platform.InputConstants.KEY_RSHIFT;
+            int menuKey = menuMod != null ? menuMod.getKeyBind() : org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT;
             if (input.input() == menuKey) {
                 this.onClose();
                 return true;

@@ -1,6 +1,7 @@
 package com.eclipseware.imnotcheatingyouare.client.utils;
 
 import net.minecraft.client.Minecraft;
+import org.lwjgl.glfw.GLFW;
 
 public final class MouseAimHelper {
     private static double manualDeltaX;

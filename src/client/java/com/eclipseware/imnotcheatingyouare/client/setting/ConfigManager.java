@@ -15,14 +15,6 @@ public class ConfigManager {
     private static final File CONFIG_FILE = new File(DIR, "config.enc");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    /**
-     * Bumped when the on-disk "Keybind" encoding changes. Minecraft 26.3 switched from GLFW to
-     * SDL keycodes, so a config saved by an older build stores keybinds in the old GLFW numbering
-     * (e.g. 344 for Right Shift) - those numbers don't correspond to anything meaningful under the
-     * new SDL-based encoding and must not be applied as-is, or the bind will silently never fire.
-     */
-    private static final int CONFIG_VERSION = 2;
-
     public static String exportSpecific(java.util.List<Module> modulesToInclude) {
         JsonObject json = new JsonObject();
         JsonArray modulesArray = new JsonArray();
@@ -48,7 +40,6 @@ public class ConfigManager {
             modulesArray.add(moduleJson);
         }
         json.add("Modules", modulesArray);
-        json.addProperty("ConfigVersion", CONFIG_VERSION);
 
         try {
             return CryptoUtils.encrypt(GSON.toJson(json));
@@ -63,22 +54,20 @@ public class ConfigManager {
             String rawJson = CryptoUtils.decrypt(encrypted);
             if (rawJson == null) return;
             JsonObject json = JsonParser.parseString(rawJson).getAsJsonObject();
-            int savedVersion = json.has("ConfigVersion") ? json.get("ConfigVersion").getAsInt() : 1;
-            boolean keybindsAreCurrent = savedVersion >= CONFIG_VERSION;
             if (json.has("Modules")) {
                 JsonArray modulesArray = json.getAsJsonArray("Modules");
                 for (JsonElement elem : modulesArray) {
                     JsonObject moduleJson = elem.getAsJsonObject();
                     String name = moduleJson.get("Name").getAsString();
                     Module m = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule(name);
-
+                    
                     if (m != null) {
                         if (moduleJson.has("Toggled")) {
                             boolean shouldBeToggled = moduleJson.get("Toggled").getAsBoolean();
                             if (shouldBeToggled && !m.isToggled()) m.toggle();
                             else if (!shouldBeToggled && m.isToggled()) m.toggle();
                         }
-                        if (keybindsAreCurrent && moduleJson.has("Keybind")) {
+                        if (moduleJson.has("Keybind")) {
                             m.setKeyBind(moduleJson.get("Keybind").getAsInt());
                         }
                         if (moduleJson.has("Settings")) {
@@ -127,8 +116,7 @@ public class ConfigManager {
             modulesArray.add(moduleJson);
         }
         json.add("Modules", modulesArray);
-        json.addProperty("ConfigVersion", CONFIG_VERSION);
-
+        
         JsonArray panelsArray = new JsonArray();
         try {
             for (java.util.Map.Entry<com.eclipseware.imnotcheatingyouare.client.module.Category, com.eclipseware.imnotcheatingyouare.client.clickgui.MarlowGUI.Panel> entry : com.eclipseware.imnotcheatingyouare.client.clickgui.MarlowGUI.panels.entrySet()) {
@@ -163,19 +151,13 @@ public class ConfigManager {
             if (rawJson == null) return; 
 
             JsonObject json = JsonParser.parseString(rawJson).getAsJsonObject();
-            int savedVersion = json.has("ConfigVersion") ? json.get("ConfigVersion").getAsInt() : 1;
-            boolean keybindsAreCurrent = savedVersion >= CONFIG_VERSION;
-            if (!keybindsAreCurrent) {
-                System.out.println("[EclipseWare] Config predates the SDL keybind migration; ignoring saved keybinds and keeping defaults.");
-            }
-
             if (json.has("Modules")) {
                 JsonArray modulesArray = json.getAsJsonArray("Modules");
                 for (JsonElement elem : modulesArray) {
                     JsonObject moduleJson = elem.getAsJsonObject();
                     String name = moduleJson.get("Name").getAsString();
                     Module m = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule(name);
-
+                    
                     if (m != null) {
                         if (moduleJson.has("Toggled")) {
                             boolean shouldBeToggled = moduleJson.get("Toggled").getAsBoolean();
@@ -185,7 +167,7 @@ public class ConfigManager {
                                 m.toggle();
                             }
                         }
-                        if (keybindsAreCurrent && moduleJson.has("Keybind")) {
+                        if (moduleJson.has("Keybind")) {
                             m.setKeyBind(moduleJson.get("Keybind").getAsInt());
                         }
                         if (moduleJson.has("Settings")) {
@@ -227,10 +209,6 @@ public class ConfigManager {
                         }
                     } catch (Exception ignored) {}
                 }
-            }
-
-            if (!keybindsAreCurrent) {
-                save();
             }
         } catch (Exception e) {
             System.err.println("[EclipseWare] Failed to load config from disk: " + e.getMessage());

@@ -5,6 +5,7 @@ import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.utils.cheat.AntiCheatProfile;
+import org.lwjgl.glfw.GLFW;
 
 public class WTap extends Module {
 
@@ -107,7 +108,9 @@ public class WTap extends Module {
     }
 
     private boolean isPhysicallyHoldingW() {
-        return com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.isDown(getKeyCode(mc.options.keyUp));
+        long window = getWindowHandle();
+        if (window == 0) return false;
+        return GLFW.glfwGetKey(window, getKeyCode(mc.options.keyUp)) == GLFW.GLFW_PRESS;
     }
 
     private int getKeyCode(net.minecraft.client.KeyMapping mapping) {

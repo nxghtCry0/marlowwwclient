@@ -6,7 +6,7 @@ import imgui.ImGui;
 import imgui.ImGuiIO;
 import imgui.flag.ImGuiKey;
 import net.minecraft.client.Minecraft;
-import org.lwjgl.sdl.SDLMouse;
+import org.lwjgl.glfw.GLFW;
 
 /**
  * Minimal replacement for imgui-java's {@code ImGuiImplGlfw}, since Minecraft 26.3 replaced its
@@ -56,9 +56,8 @@ public final class SdlImGuiPlatform {
         Minecraft mc = Minecraft.getInstance();
         Window window = mc.getWindow();
 
-        Window.FramebufferSize framebufferSize = window.queryFramebufferSize();
         float uiScale = ImguiLoader.getUiScale();
-        io.setDisplaySize(framebufferSize.width() / uiScale, framebufferSize.height() / uiScale);
+        io.setDisplaySize(window.getWidth() / uiScale, window.getHeight() / uiScale);
         io.setDisplayFramebufferScale(uiScale, uiScale);
 
         long now = System.nanoTime();
@@ -69,14 +68,8 @@ public final class SdlImGuiPlatform {
         double guiScale = window.getGuiScale();
         io.setMousePos((float) (mc.mouseHandler.getScaledXPos(window) * guiScale / uiScale), (float) (mc.mouseHandler.getScaledYPos(window) * guiScale / uiScale));
 
-        int mask = SDLMouse.SDL_GetMouseState(null, null);
-        boolean[] rawMouseDown = {
-                (mask & (1 << (SDLMouse.SDL_BUTTON_LEFT - 1))) != 0,
-                (mask & (1 << (SDLMouse.SDL_BUTTON_RIGHT - 1))) != 0,
-                (mask & (1 << (SDLMouse.SDL_BUTTON_MIDDLE - 1))) != 0,
-                (mask & (1 << (SDLMouse.SDL_BUTTON_X1 - 1))) != 0,
-                (mask & (1 << (SDLMouse.SDL_BUTTON_X2 - 1))) != 0,
-        };
+        boolean[] rawMouseDown = new boolean[5];
+        for (int b = 0; b < 5; b++) rawMouseDown[b] = GLFW.glfwGetMouseButton(window.handle(), b) == GLFW.GLFW_PRESS;
         for (int i = 0; i < rawMouseDown.length; i++) {
             if (rawMouseDown[i]) {
                 confirmedMouseDown[i] = true;
@@ -89,13 +82,13 @@ public final class SdlImGuiPlatform {
             io.setMouseDown(i, confirmedMouseDown[i]);
         }
 
-        io.setKeyCtrl(InputConstants.isKeyDown(InputConstants.KEY_LCONTROL) || InputConstants.isKeyDown(InputConstants.KEY_RCONTROL));
-        io.setKeyShift(InputConstants.isKeyDown(InputConstants.KEY_LSHIFT) || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT));
-        io.setKeyAlt(InputConstants.isKeyDown(InputConstants.KEY_LALT) || InputConstants.isKeyDown(InputConstants.KEY_RALT));
-        io.setKeySuper(InputConstants.isKeyDown(InputConstants.KEY_LGUI) || InputConstants.isKeyDown(InputConstants.KEY_RGUI));
+        io.setKeyCtrl(InputConstants.isKeyDown(window, InputConstants.KEY_LCONTROL) || InputConstants.isKeyDown(window, InputConstants.KEY_RCONTROL));
+        io.setKeyShift(InputConstants.isKeyDown(window, InputConstants.KEY_LSHIFT) || InputConstants.isKeyDown(window, InputConstants.KEY_RSHIFT));
+        io.setKeyAlt(InputConstants.isKeyDown(window, InputConstants.KEY_LALT) || InputConstants.isKeyDown(window, InputConstants.KEY_RALT));
+        io.setKeySuper(InputConstants.isKeyDown(window, InputConstants.KEY_LSUPER) || InputConstants.isKeyDown(window, InputConstants.KEY_RSUPER));
 
         for (int key : TRACKED_KEYS) {
-            io.setKeysDown(key, InputConstants.isKeyDown(key));
+            io.setKeysDown(key, InputConstants.isKeyDown(window, key));
         }
 
         io.setMouseWheel(pollAndResetScroll());

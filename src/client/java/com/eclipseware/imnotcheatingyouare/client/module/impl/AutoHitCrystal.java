@@ -78,7 +78,7 @@ public class AutoHitCrystal extends Module {
             mc.crosshairPickEntity = crystal;
 
             ((MinecraftAccessor) mc).invokeStartAttack();
-            mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+            mc.player.swing(InteractionHand.MAIN_HAND);
             lastHitTick = mc.player.tickCount;
 
             if (mc.hitResult instanceof EntityHitResult) ((MinecraftAccessor) mc).setRightClickDelay(1);

@@ -279,7 +279,7 @@ public class ImGuiClickGui {
     private static int resolveLogoTexture() {
         try {
             net.minecraft.client.renderer.texture.AbstractTexture tex = Minecraft.getInstance().getTextureManager().getTexture(LOGO_ID);
-            if (tex != null && tex.getTexture() instanceof com.mojang.renderpearl.backend.opengl.GlTexture gl)
+            if (tex != null && tex.getTexture() instanceof com.mojang.blaze3d.opengl.GlTexture gl)
                 return com.eclipseware.imnotcheatingyouare.client.utils.ImGuiTextures.prepare(gl.glId(), true);
         } catch (Throwable ignored) {
         }

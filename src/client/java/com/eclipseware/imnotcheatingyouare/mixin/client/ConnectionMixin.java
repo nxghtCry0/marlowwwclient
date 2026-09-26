@@ -144,15 +144,15 @@ public class ConnectionMixin {
 
         if (packet instanceof ServerboundSignUpdatePacket signPacket) {
             boolean hasText = false;
-            for (String line : signPacket.lines()) {
+            for (String line : java.util.Arrays.asList(signPacket.getLines())) {
                 if (line != null && !line.isEmpty()) {
                     hasText = true;
                     break;
                 }
             }
             if (hasText) {
-                com.eclipseware.imnotcheatingyouare.client.module.impl.AutoSign.savedLines = signPacket.lines().toArray(new String[0]);
-                com.eclipseware.imnotcheatingyouare.client.module.impl.AutoSign.isFront = signPacket.slot() == net.minecraft.world.level.block.entity.SignTextSlot.FRONT;
+                com.eclipseware.imnotcheatingyouare.client.module.impl.AutoSign.savedLines = signPacket.getLines();
+                com.eclipseware.imnotcheatingyouare.client.module.impl.AutoSign.isFront = signPacket.isFrontText();
             }
         }
 

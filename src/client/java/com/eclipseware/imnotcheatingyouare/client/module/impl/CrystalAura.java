@@ -265,7 +265,7 @@ public class CrystalAura extends Module {
             swapped = true;
         }
         InteractionResult result = mc.gameMode.useItemOn(mc.player, hand, hit);
-        if (result.consumesAction()) mc.player.swing(hand, SwingAnimation.DEFAULT, true);
+        if (result.consumesAction()) mc.player.swing(hand);
         if (swapped && swapMode.getValString().equals("Silent")) ModuleUtils.switchToSlot(original);
         return result.consumesAction();
     }

@@ -7,7 +7,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
-import com.eclipseware.imnotcheatingyouare.client.utils.InputUtil;
+import org.lwjgl.glfw.GLFW;
 
 public class FriendProtector extends Module {
     private boolean wasMidDown = false;
@@ -20,7 +20,20 @@ public class FriendProtector extends Module {
     public void onTick() {
         if (mc.player == null || mc.level == null) return;
 
-        boolean midDown = InputUtil.isMouseButtonDown(InputUtil.MOUSE_MIDDLE);
+        long window = 0;
+        try {
+            for (java.lang.reflect.Field f : mc.getWindow().getClass().getDeclaredFields()) {
+                if (f.getType() == long.class) {
+                    f.setAccessible(true);
+                    window = f.getLong(mc.getWindow());
+                    break;
+                }
+            }
+        } catch (Exception ignored) {}
+
+        if (window == 0) return;
+
+        boolean midDown = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_MIDDLE) == GLFW.GLFW_PRESS;
         if (midDown && !wasMidDown && mc.hitResult != null && mc.hitResult.getType() == HitResult.Type.ENTITY) {
             Entity ent = ((EntityHitResult) mc.hitResult).getEntity();
             if (ent instanceof Player target && target != mc.player) {

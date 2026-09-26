@@ -66,7 +66,7 @@ public final class RoundedSlider extends CompatAbstractWidget {
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (event != null && this.active && this.visible
-                && event.button() == 1 && isMouseOver(event.x(), event.y())) {
+                && event.button() == 0 && isMouseOver(event.x(), event.y())) {
             this.dragging = true;
             applyFromMouse(event.x());
             return true;

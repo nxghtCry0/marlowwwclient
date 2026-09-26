@@ -146,7 +146,7 @@ public class KillAura extends Module {
         EntityHitResult hitResult = ProjectileUtil.getEntityHitResult(mc.player, from, to, aabb, (e) -> e == target, attackRange * attackRange);
 
         if (hitResult != null && hitResult.getEntity() == target) {
-            mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+            mc.player.swing(InteractionHand.MAIN_HAND);
             mc.gameMode.attack(mc.player, target);
             com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.attackSwing();
             lastAttackTime = System.currentTimeMillis();

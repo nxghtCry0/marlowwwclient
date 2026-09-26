@@ -40,7 +40,7 @@ public class BreachSwap extends Module {
                     player.isShiftKeyDown()
                 ));
             }
-            player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+            player.swing(InteractionHand.MAIN_HAND);
             player.resetAttackStrengthTicker();
             needsSwapBack = true;
             originalSlot = oldSlot;

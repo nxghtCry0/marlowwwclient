@@ -93,7 +93,7 @@ public class AntiAFK extends Module {
 
     private void swing() {
         if (mc.player != null)
-            mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+            mc.player.swing(InteractionHand.MAIN_HAND);
     }
 
     private void jump() {

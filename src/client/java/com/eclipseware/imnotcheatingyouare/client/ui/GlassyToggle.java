@@ -27,7 +27,7 @@ public final class GlassyToggle extends CompatAbstractWidget {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-        if (event != null && this.active && this.visible && event.button() == 1 && isMouseOver(event.x(), event.y())) {
+        if (event != null && this.active && this.visible && event.button() == 0 && isMouseOver(event.x(), event.y())) {
             if (this.setter != null) {
                 this.setter.accept(!value());
             }

@@ -258,7 +258,7 @@ public class ConfigGui extends Screen {
         float scale = getScaleFactor();
         double mouseX = event.x() / scale;
         double mouseY = event.y() / scale;
-        int button = com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.toLegacyOrdinal(event.button());
+        int button = event.button();
 
         int virtualWidth = (int) (this.width / scale);
         int virtualHeight = (int) (this.height / scale);

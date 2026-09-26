@@ -6,7 +6,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.inventory.AnvilScreen;
 import net.minecraft.client.gui.screens.inventory.SignEditScreen;
-import com.eclipseware.imnotcheatingyouare.client.utils.InputUtil;
+import org.lwjgl.glfw.GLFW;
 
 public class GUIMove extends Module {
     public GUIMove() {
@@ -18,12 +18,25 @@ public class GUIMove extends Module {
         if (mc.player == null) return;
         if (com.eclipseware.imnotcheatingyouare.client.module.impl.AutoTotem.shouldPauseInputs()) return;
         if (mc.gui.screen() != null && !(mc.gui.screen() instanceof ChatScreen) && !(mc.gui.screen() instanceof SignEditScreen) && !(mc.gui.screen() instanceof AnvilScreen)) {
-            mc.options.keyUp.setDown(InputUtil.isDown(getKeyCode(mc.options.keyUp)));
-            mc.options.keyDown.setDown(InputUtil.isDown(getKeyCode(mc.options.keyDown)));
-            mc.options.keyLeft.setDown(InputUtil.isDown(getKeyCode(mc.options.keyLeft)));
-            mc.options.keyRight.setDown(InputUtil.isDown(getKeyCode(mc.options.keyRight)));
-            mc.options.keyJump.setDown(InputUtil.isDown(getKeyCode(mc.options.keyJump)));
-            mc.options.keySprint.setDown(InputUtil.isDown(getKeyCode(mc.options.keySprint)));
+            long window = 0;
+            try {
+                for (java.lang.reflect.Field f : mc.getWindow().getClass().getDeclaredFields()) {
+                    if (f.getType() == long.class) {
+                        f.setAccessible(true);
+                        window = f.getLong(mc.getWindow());
+                        break;
+                    }
+                }
+            } catch (Exception ignored) {}
+
+            if (window == 0) return;
+
+            mc.options.keyUp.setDown(GLFW.glfwGetKey(window, getKeyCode(mc.options.keyUp)) == GLFW.GLFW_PRESS);
+            mc.options.keyDown.setDown(GLFW.glfwGetKey(window, getKeyCode(mc.options.keyDown)) == GLFW.GLFW_PRESS);
+            mc.options.keyLeft.setDown(GLFW.glfwGetKey(window, getKeyCode(mc.options.keyLeft)) == GLFW.GLFW_PRESS);
+            mc.options.keyRight.setDown(GLFW.glfwGetKey(window, getKeyCode(mc.options.keyRight)) == GLFW.GLFW_PRESS);
+            mc.options.keyJump.setDown(GLFW.glfwGetKey(window, getKeyCode(mc.options.keyJump)) == GLFW.GLFW_PRESS);
+            mc.options.keySprint.setDown(GLFW.glfwGetKey(window, getKeyCode(mc.options.keySprint)) == GLFW.GLFW_PRESS);
             if (mc.options.keySprint.isDown()) {
                 mc.player.setSprinting(true);
             }

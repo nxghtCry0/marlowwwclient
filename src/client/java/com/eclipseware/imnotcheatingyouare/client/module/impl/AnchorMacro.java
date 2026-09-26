@@ -187,7 +187,7 @@ public class AnchorMacro extends Module {
         ModuleUtils.switchToSlot(slot);
         InteractionResult result = mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hit);
         if (result.consumesAction()) {
-            mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+            mc.player.swing(InteractionHand.MAIN_HAND);
         }
         rotated = false;
     }

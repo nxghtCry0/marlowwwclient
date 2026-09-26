@@ -1,8 +1,7 @@
 package com.eclipseware.imnotcheatingyouare.client.utils;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import org.lwjgl.sdl.SDLKeyboard;
-import org.lwjgl.sdl.SDLMouse;
+import org.lwjgl.glfw.GLFW;
 
 /**
  * Keyboard/mouse polling for Minecraft 26.3+, which replaced its GLFW window with an SDL one.
@@ -50,11 +49,11 @@ public final class InputUtil {
     private static int sdlButtonFor(int mouseCode) {
         int ordinal = -mouseCode - 1;
         return switch (ordinal) {
-            case 0 -> SDLMouse.SDL_BUTTON_LEFT;
-            case 1 -> SDLMouse.SDL_BUTTON_RIGHT;
-            case 2 -> SDLMouse.SDL_BUTTON_MIDDLE;
-            case 3 -> SDLMouse.SDL_BUTTON_X1;
-            case 4 -> SDLMouse.SDL_BUTTON_X2;
+            case 0 -> 0;
+            case 1 -> 1;
+            case 2 -> 2;
+            case 3 -> 3;
+            case 4 -> 4;
             default -> -1;
         };
     }
@@ -64,14 +63,13 @@ public final class InputUtil {
         if (isMouseBind(code)) {
             return isMouseButtonDown(code);
         }
-        return InputConstants.isKeyDown(code);
+        return InputConstants.isKeyDown(net.minecraft.client.Minecraft.getInstance().getWindow(), code);
     }
 
     public static boolean isMouseButtonDown(int mouseCode) {
         int sdlButton = sdlButtonFor(mouseCode);
         if (sdlButton < 0) return false;
-        int mask = SDLMouse.SDL_GetMouseState(null, null);
-        return (mask & (1 << (sdlButton - 1))) != 0;
+        return GLFW.glfwGetMouseButton(net.minecraft.client.Minecraft.getInstance().getWindow().handle(), sdlButton) == GLFW.GLFW_PRESS;
     }
 
     /** Human-readable name for a keybind code, mouse or keyboard. */
@@ -103,7 +101,7 @@ public final class InputUtil {
         }
 
         try {
-            String name = SDLKeyboard.SDL_GetScancodeName(code);
+            String name = GLFW.glfwGetKeyName(code, 0);
             if (name != null && !name.isEmpty()) return name.toUpperCase();
         } catch (Throwable ignored) {}
         return "KEY " + code;

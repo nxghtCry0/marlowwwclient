@@ -11,8 +11,9 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 @Mixin(LevelRenderer.class)
 public class LevelRendererMixin {
 
-    @ModifyArg(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/ShaderManager;getPostChain(Lnet/minecraft/resources/Identifier;Ljava/util/Set;)Lnet/minecraft/client/renderer/PostChain;"), index = 0)
+    @ModifyArg(method = "*", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/ShaderManager;getPostChain(Lnet/minecraft/resources/Identifier;Ljava/util/Set;)Lnet/minecraft/client/renderer/PostChain;"), index = 0)
     private Identifier swapOutlineChain(Identifier id) {
+        if (id == null || !id.getPath().equals("entity_outline")) return id;
         if (ImnotcheatingyouareClient.INSTANCE == null || ImnotcheatingyouareClient.INSTANCE.moduleManager == null) return id;
         if (ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("ESP") instanceof ESP esp && esp.isShaderMode()) {
             return esp.getShaderChainId();
