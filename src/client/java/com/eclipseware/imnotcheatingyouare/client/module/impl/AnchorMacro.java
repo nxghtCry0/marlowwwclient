@@ -34,7 +34,6 @@ public class AnchorMacro extends Module {
     private BlockPos anchor;
     private int originalSlot = -1;
     private int waitTicks = 0;
-    private boolean rotated = false;
 
     public AnchorMacro() {
         super("AnchorMacro", Category.Farming, "Charges and detonates the respawn anchor you look at, optionally shielding yourself with glowstone first.");
@@ -66,6 +65,9 @@ public class AnchorMacro extends Module {
         finish();
     }
 
+    private int sentCharges = 0;
+    private Vec3 aimedAt = null;
+
     @Override
     public void onTick() {
         if (mc.player == null || mc.level == null || mc.gameMode == null) return;
@@ -77,12 +79,14 @@ public class AnchorMacro extends Module {
 
         if (step == Step.IDLE) {
             if (!(mc.hitResult instanceof BlockHitResult bhr) || mc.hitResult.getType() != HitResult.Type.BLOCK) return;
-            if (!mc.level.getBlockState(bhr.getBlockPos()).is(Blocks.RESPAWN_ANCHOR)) return;
+            BlockState looked = mc.level.getBlockState(bhr.getBlockPos());
+            if (!looked.is(Blocks.RESPAWN_ANCHOR)) return;
             anchor = bhr.getBlockPos();
             originalSlot = ModuleUtils.getSelectedSlot();
+            sentCharges = looked.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES);
             step = Step.CHARGE;
             waitTicks = 0;
-            rotated = false;
+            aimedAt = null;
         }
 
         BlockState state = mc.level.getBlockState(anchor);
@@ -94,72 +98,75 @@ public class AnchorMacro extends Module {
             finish();
             return;
         }
+        sentCharges = Math.max(sentCharges, state.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES));
 
         if (waitTicks > 0) {
             waitTicks--;
+            Action next = nextAction();
+            if (next != null) preAim(next.hit);
             return;
         }
 
-        int charges = state.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES);
+        Action action = nextAction();
+        if (action == null) {
+            finish();
+            return;
+        }
+        if (!ready(action.hit)) return;
 
-        switch (step) {
-            case CHARGE -> {
-                int wanted = (int) chargeCount.getValDouble();
-                if (charges >= wanted) {
-                    step = safeAnchor.getValBoolean() ? Step.SHIELD : Step.DETONATE;
-                    rotated = false;
-                    return;
+        interact(action.slot, action.hit);
+        advance(action);
+
+        Action next = nextAction();
+        if (next == null) {
+            finish();
+            return;
+        }
+        waitTicks = delay();
+        preAim(next.hit);
+    }
+
+    private record Action(Step step, int slot, BlockHitResult hit) {}
+
+    private Action nextAction() {
+        while (true) {
+            switch (step) {
+                case CHARGE -> {
+                    if (sentCharges >= (int) chargeCount.getValDouble()) {
+                        step = safeAnchor.getValBoolean() ? Step.SHIELD : Step.DETONATE;
+                        continue;
+                    }
+                    int glowstone = ModuleUtils.findItemInHotbar(Items.GLOWSTONE);
+                    if (glowstone == -1) return null;
+                    return new Action(Step.CHARGE, glowstone, anchorHit());
                 }
-                int glowstone = ModuleUtils.findItemInHotbar(Items.GLOWSTONE);
-                if (glowstone == -1) {
-                    finish();
-                    return;
+                case SHIELD -> {
+                    BlockHitResult shieldHit = shieldPlacement();
+                    int glowstone = ModuleUtils.findItemInHotbar(Items.GLOWSTONE);
+                    if (shieldHit == null || glowstone == -1) {
+                        step = Step.DETONATE;
+                        continue;
+                    }
+                    return new Action(Step.SHIELD, glowstone, shieldHit);
                 }
-                BlockHitResult hit = anchorHit();
-                if (!aim(hit)) return;
-                interact(glowstone, hit);
-                waitTicks = delay();
+                case DETONATE -> {
+                    if (!autoDetonate.getValBoolean() || sentCharges == 0) return null;
+                    int slot = detonateSlot();
+                    if (slot == -1) return null;
+                    return new Action(Step.DETONATE, slot, detonateHit());
+                }
+                default -> {
+                    return null;
+                }
             }
-            case SHIELD -> {
-                BlockHitResult shieldHit = shieldPlacement();
-                if (shieldHit == null) {
-                    step = Step.DETONATE;
-                    rotated = false;
-                    return;
-                }
-                int glowstone = ModuleUtils.findItemInHotbar(Items.GLOWSTONE);
-                if (glowstone == -1) {
-                    step = Step.DETONATE;
-                    rotated = false;
-                    return;
-                }
-                if (!aim(shieldHit)) return;
-                interact(glowstone, shieldHit);
-                step = Step.DETONATE;
-                rotated = false;
-                waitTicks = delay();
-            }
-            case DETONATE -> {
-                if (!autoDetonate.getValBoolean()) {
-                    finish();
-                    return;
-                }
-                if (charges == 0) {
-                    finish();
-                    return;
-                }
-                int slot = detonateSlot();
-                if (slot == -1) {
-                    finish();
-                    return;
-                }
-                BlockHitResult hit = detonateHit();
-                if (!aim(hit)) return;
-                interact(slot, hit);
-                step = Step.DONE;
-                waitTicks = delay();
-            }
-            case DONE -> finish();
+        }
+    }
+
+    private void advance(Action action) {
+        switch (action.step) {
+            case CHARGE -> sentCharges++;
+            case SHIELD -> step = Step.DETONATE;
+            case DETONATE -> step = Step.DONE;
             default -> {
             }
         }
@@ -169,17 +176,20 @@ public class AnchorMacro extends Module {
         return (int) delaySetting.getValDouble();
     }
 
-    private boolean aim(BlockHitResult hit) {
+    private void preAim(BlockHitResult hit) {
+        if (!silentAim.getValBoolean()) return;
+        float[] rots = ModuleUtils.getRotations(mc.player.getEyePosition(), hit.getLocation());
+        RotationManager.keepRotated(rots[0], rots[1], 180f, true);
+        aimedAt = hit.getLocation();
+    }
+
+    private boolean ready(BlockHitResult hit) {
         if (!silentAim.getValBoolean()) {
             return mc.hitResult instanceof BlockHitResult current && current.getBlockPos().equals(hit.getBlockPos());
         }
-        float[] rots = ModuleUtils.getRotations(mc.player.getEyePosition(), hit.getLocation());
-        RotationManager.keepRotated(rots[0], rots[1], 180f, true);
-        if (!rotated) {
-            rotated = true;
-            return false;
-        }
-        return true;
+        boolean aimedLastTick = aimedAt != null && aimedAt.distanceToSqr(hit.getLocation()) < 0.01;
+        preAim(hit);
+        return aimedLastTick;
     }
 
     private void interact(int slot, BlockHitResult hit) {
@@ -189,7 +199,6 @@ public class AnchorMacro extends Module {
         if (result.consumesAction()) {
             mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
         }
-        rotated = false;
     }
 
     private BlockHitResult anchorHit() {
@@ -269,6 +278,7 @@ public class AnchorMacro extends Module {
         anchor = null;
         originalSlot = -1;
         waitTicks = 0;
-        rotated = false;
+        sentCharges = 0;
+        aimedAt = null;
     }
 }
