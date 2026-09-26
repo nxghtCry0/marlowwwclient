@@ -32,6 +32,8 @@ public class AutoMace extends Module {
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Target Mobs", this, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Stun Slam", this, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Only Axe", this, false));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Chain Slams", this, true));
+        ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Slam Min Fall", this, 1.5, 0.5, 10.0, false));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Auto Switch Mace", this, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Detect Mace", this, true));
         ImnotcheatingyouareClient.INSTANCE.settingsManager.rSetting(new Setting("Require Full Cooldown", this, true));
@@ -63,8 +65,9 @@ public class AutoMace extends Module {
             }
             return;
         }
-        if (rising && maceHit) {
+        if (rising && (maceHit || slamExecuted)) {
             maceHit = false;
+            if (getBoolSetting("Chain Slams")) slamExecuted = false;
             fallStartY = currentY;
         }
         if (!isFalling) {
@@ -89,38 +92,55 @@ public class AutoMace extends Module {
             : null;
         if (!isValidTarget(target))
             return;
-        if (getBoolSetting("Stun Slam")) {
-            handleSlam(target, fallDist);
-        }
-        if (!getBoolSetting("Stun Slam") || slamExecuted || slamTick == 0) {
-            handleMaceAttack(target);
-        }
-    }
-
-    private void handleSlam(Entity target, double fallDist) {
-        boolean targetBlocking = target instanceof Player player &&
-                player.isBlocking() &&
-                net.minecraft.world.item.Items.SHIELD.equals(player.getUseItem().getItem());
-        if (getBoolSetting("Only Axe") && !isAxe(mc.player.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND))) {
+        if (getBoolSetting("Stun Slam") && tryStunSlam(target, fallDist)) {
             return;
         }
-        if (targetBlocking && fallDist > getDoubleSetting("Min Fall Distance") && !slamExecuted && slamTick == 0) {
-            if (savedSlot == -1)
-                savedSlot = mc.player.getInventory().getSelectedSlot();
-            slamTick = 1;
+        handleMaceAttack(target);
+    }
+
+    private final java.util.Map<Integer, Integer> slammedAt = new java.util.HashMap<>();
+
+    private boolean tryStunSlam(Entity target, double fallDist) {
+        if (!(target instanceof Player player) || !player.isBlocking()) return false;
+        if (!player.getUseItem().is(Items.SHIELD)) return false;
+        if (fallDist < getDoubleSetting("Slam Min Fall")) return false;
+        if (!getBoolSetting("Chain Slams") && slamExecuted) return false;
+        Integer last = slammedAt.get(player.getId());
+        if (last != null && mc.player.tickCount - last < 3) return false;
+
+        int axeSlot = getBoolSetting("Only Axe") && isAxe(mc.player.getMainHandItem())
+                ? com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.getSelectedSlot()
+                : getAxeSlotId();
+        if (axeSlot == -1) return false;
+        int maceSlot = pickMaceSlot(fallDist);
+        if (maceSlot == -1) return false;
+        if (mc.player.distanceTo(player) > 3.0) return false;
+
+        if (savedSlot == -1) savedSlot = com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.getSelectedSlot();
+
+        com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(axeSlot);
+        mc.gameMode.attack(mc.player, player);
+        com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.attackSwing();
+
+        com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(maceSlot);
+        mc.gameMode.attack(mc.player, player);
+        com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.attackSwing();
+
+        slammedAt.put(player.getId(), mc.player.tickCount);
+        slamExecuted = true;
+        maceHit = true;
+        attackTimer.reset();
+        return true;
+    }
+
+    private int pickMaceSlot(double fallDist) {
+        int slot = -1;
+        if (getBoolSetting("Detect Mace")) {
+            slot = fallDist <= 20.0 ? findBreachMaceSlot() : findDensityMaceSlot();
+        } else if (getBoolSetting("Auto Switch Mace")) {
+            slot = fallDist >= getDoubleSetting("Density Threshold") ? findDensityMaceSlot() : findBreachMaceSlot();
         }
-        if (slamTick == 1) {
-            int axeSlot = getBoolSetting("Only Axe") ? mc.player.getInventory().getSelectedSlot() : getAxeSlotId();
-            if (axeSlot != -1) {
-                mc.player.getInventory().setSelectedSlot(axeSlot);
-                ((MinecraftAccessor) mc).invokeStartAttack();
-            }
-            slamTick = 2;
-        } else if (slamTick == 2) {
-            switchToMace();
-            slamExecuted = true;
-            slamTick = 0;
-        }
+        return slot != -1 ? slot : findAnyMaceSlot();
     }
 
     private void handleMaceAttack(Entity target) {
@@ -262,7 +282,7 @@ public class AutoMace extends Module {
 
     private void switchToSlot(int slot) {
         if (slot >= 0 && slot < 9) {
-            mc.player.getInventory().setSelectedSlot(slot);
+            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(slot);
         }
     }
 

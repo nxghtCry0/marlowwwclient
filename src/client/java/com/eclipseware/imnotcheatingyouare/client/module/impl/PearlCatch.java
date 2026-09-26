@@ -4,91 +4,119 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
-import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
+import com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils;
+import com.eclipseware.imnotcheatingyouare.client.utils.RotationManager;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+
+import java.util.ArrayList;
 
 public class PearlCatch extends Module {
-    private boolean active = false;
-    private int ticksElapsed = 0;
+    private enum Stage { IDLE, AIM, PEARL, CHARGE }
+
+    private Stage stage = Stage.IDLE;
+    private int wait;
     private int originalSlot = -1;
-    private int windChargeSlot = -1;
-    private float targetYaw, targetPitch;
+    private float yaw, pitch;
 
     public PearlCatch() {
-        super("PearlCatch", Category.Mace);
+        super("PearlCatch", Category.Mace, "Throws a pearl and a wind charge that collides with it, launching the pearl much higher for a mace drop.");
+        var sm = ImnotcheatingyouareClient.INSTANCE.settingsManager;
+        ArrayList<String> aims = new ArrayList<>();
+        aims.add("Look");
+        aims.add("Straight Up");
+        sm.rSetting(new Setting("Aim", this, "Look", aims));
+        sm.rSetting(new Setting("Charge Delay", this, 1.0, 0.0, 6.0, true));
+        sm.rSetting(new Setting("Min Pitch", this, 45.0, 0.0, 90.0, true));
+    }
+
+    private Setting setting(String name) {
+        return ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, name);
     }
 
     @Override
     public void onKeybind() {
-        if (mc.player == null || mc.getConnection() == null || mc.gameMode == null || active) return;
+        if (mc.player == null || mc.gameMode == null || mc.getConnection() == null || stage != Stage.IDLE) return;
+        if (slotOf(Items.ENDER_PEARL) == -1 || slotOf(Items.WIND_CHARGE) == -1) return;
+        if (mc.player.getCooldowns().isOnCooldown(Items.ENDER_PEARL.getDefaultInstance())
+                || mc.player.getCooldowns().isOnCooldown(Items.WIND_CHARGE.getDefaultInstance())) return;
 
-        int pearlSlot = findItem("ender_pearl");
-        windChargeSlot = findItem("wind_charge");
-
-        if (pearlSlot == -1 || windChargeSlot == -1) {
-            super.onKeybind(); 
-            return;
+        originalSlot = ModuleUtils.getSelectedSlot();
+        yaw = mc.player.getYRot();
+        Setting aim = setting("Aim");
+        if (aim != null && aim.getValString().equals("Straight Up")) {
+            pitch = -90f;
+        } else {
+            Setting min = setting("Min Pitch");
+            float limit = -(float) (min != null ? min.getValDouble() : 45.0);
+            pitch = Math.min(mc.player.getXRot(), limit);
         }
-
-        originalSlot = com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.getSelectedSlot();
-        targetYaw = mc.player.getYRot();
-        targetPitch = mc.player.getXRot();
-        
-        com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(pearlSlot);
-        active = true;
-        ticksElapsed = 0; 
+        stage = Stage.AIM;
     }
 
     @Override
     public void onTick() {
-        if (!active || mc.player == null || mc.getConnection() == null) return;
+        if (stage == Stage.IDLE || mc.player == null || mc.gameMode == null) return;
+        RotationManager.keepRotated(yaw, pitch, 180f, true);
 
-        mc.player.setYRot(targetYaw);
-        mc.player.setXRot(targetPitch);
-        mc.player.yRotO = targetYaw;
-        mc.player.xRotO = targetPitch;
-
-        com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.keepRotated(targetYaw, targetPitch, 40.0f, false);
-
-        ticksElapsed++;
-        
-        if (ticksElapsed == 1) {
-            mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
-            mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+        switch (stage) {
+            case AIM -> stage = Stage.PEARL;
+            case PEARL -> {
+                if (!throwItem(Items.ENDER_PEARL)) {
+                    finish();
+                    return;
+                }
+                Setting d = setting("Charge Delay");
+                wait = d != null ? (int) d.getValDouble() : 1;
+                stage = Stage.CHARGE;
+                if (wait == 0) {
+                    throwItem(Items.WIND_CHARGE);
+                    finish();
+                }
+            }
+            case CHARGE -> {
+                if (--wait > 0) return;
+                throwItem(Items.WIND_CHARGE);
+                finish();
+            }
+            default -> {
+            }
         }
+    }
 
-        Setting delaySetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Delay (Ticks)");
-        int delay = delaySetting != null ? (int) delaySetting.getValDouble() : 5;
-
-        if (ticksElapsed == delay + 1) {
-            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(windChargeSlot);
+    private boolean throwItem(Item item) {
+        InteractionHand hand;
+        if (mc.player.getOffhandItem().is(item)) {
+            hand = InteractionHand.OFF_HAND;
+        } else {
+            int slot = slotOf(item);
+            if (slot == -1) return false;
+            ModuleUtils.switchToSlot(slot);
+            hand = InteractionHand.MAIN_HAND;
         }
-        
-        if (ticksElapsed >= delay + 2) {
-            mc.gameMode.useItem(mc.player, InteractionHand.MAIN_HAND);
-            mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+        mc.gameMode.useItem(mc.player, hand);
+        return true;
+    }
 
-            com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.switchToSlot(originalSlot);
-            
-            com.eclipseware.imnotcheatingyouare.client.utils.RotationManager.requestReturn();
-            active = false;
-        }
+    private void finish() {
+        if (originalSlot >= 0 && originalSlot < 9) ModuleUtils.switchToSlot(originalSlot);
+        originalSlot = -1;
+        RotationManager.requestReturn();
+        stage = Stage.IDLE;
+    }
+
+    private int slotOf(Item item) {
+        return ModuleUtils.findItemInHotbar(item);
+    }
+
+    @Override
+    public boolean needsTick() {
+        return stage != Stage.IDLE;
     }
 
     @Override
     public void onDisable() {
-        active = false; 
-    }
-
-    private int findItem(String targetName) {
-        for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getItem(i);
-            String itemName = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
-            if (itemName.equals(targetName)) {
-                return i;
-            }
-        }
-        return -1;
+        if (stage != Stage.IDLE) finish();
     }
 }

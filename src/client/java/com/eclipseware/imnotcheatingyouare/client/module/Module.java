@@ -60,6 +60,10 @@ public class Module {
  
     public void onRenderHUD(net.minecraft.client.gui.GuiGraphicsExtractor guiGraphics, Object tickDelta) {}
 
+    public boolean needsTick() {
+        return false;
+    }
+
     public void onKeybind() {
         this.toggle();
     }

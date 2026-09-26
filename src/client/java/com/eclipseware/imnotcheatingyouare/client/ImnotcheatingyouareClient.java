@@ -565,7 +565,7 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
 
             for (Module m : moduleManager.modules) {
                 m.tickKeybind();
-                if (m.isToggled()) {
+                if (m.isToggled() || m.needsTick()) {
                     m.onTick();
                 }
             }
