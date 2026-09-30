@@ -816,6 +816,7 @@ public class ImGuiClickGui {
 
         float rowBtnW = Math.max(10f, cardW - toggleW - 18f);
         ImGui.invisibleButton("##row", rowBtnW, rowH);
+        ImGui.setItemAllowOverlap();
         boolean hovered = ImGui.isItemHovered();
         boolean boundKey = mod.getKeyBind() != 0;
         float pillW = bindPillWidth(mod, hovered);
@@ -1199,6 +1200,7 @@ public class ImGuiClickGui {
                     ImGui.pushID(mod.getName());
                     ImVec2 c = ImGui.getCursorScreenPos();
                     ImGui.invisibleButton("##vrow", rowW, PANEL_ROW);
+                    ImGui.setItemAllowOverlap();
                     boolean hovered = ImGui.isItemHovered();
                     float vPillW = bindPillWidth(mod, hovered);
                     boolean vOverPill = vPillW > 0f && ImGui.isMouseHoveringRect(c.x + rowW - 22f - vPillW, c.y, c.x + rowW - 22f, c.y + PANEL_ROW);
