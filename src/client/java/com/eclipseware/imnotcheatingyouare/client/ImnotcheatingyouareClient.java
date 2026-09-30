@@ -249,6 +249,7 @@ moduleManager.modules.add(armorHUD);
 moduleManager.modules.add(hudEditor);
 moduleManager.modules.add(ghostBlockMacro);
         moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoFish());
+        moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoTrade());
         moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.InventoryClean());
         moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.InventoryFill());
 
