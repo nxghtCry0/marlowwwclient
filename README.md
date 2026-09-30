@@ -71,7 +71,7 @@ Build a release jar:
 
 Build artifacts are generated in `build/libs/`. Use the main jar artifact, not the `-sources` jar.
 
-## Feature Catalog (108 Modules)
+## Feature Catalog (109 Modules)
 
 ### Combat
 
@@ -119,7 +119,7 @@ Build artifacts are generated in `build/libs/`. Use the main jar artifact, not t
 
 ### Utility
 
-- `AutoDHand` | `AutoDrain` | `AutoMLG` | `AutoTool` | `AutoTotem` | `AutoWeb`
+- `AutoDHand` | `AutoDrain` | `AutoMLG` | `AutoTool` | `AutoTotem` | `AutoTrade` | `AutoWeb`
 - `BridgeAssist` | `JumpReset` | `PearlBind` | `PearlGrapple` | `ShieldDrain` | `WebStun`
 
 ### Client
