@@ -309,7 +309,19 @@ public class ImguiLoader {
         return initialized && (!Initializer.renderstack.isEmpty() || renderedComponentsLastFrame);
     }
 
+    private static boolean inRenderFrame = false;
+
     private static void renderFrame() {
+        if (inRenderFrame) return;
+        inRenderFrame = true;
+        try {
+            renderFrameInner();
+        } finally {
+            inRenderFrame = false;
+        }
+    }
+
+    private static void renderFrameInner() {
         if (!initialized) return;
 
         boolean hasComponents = !Initializer.renderstack.isEmpty();
