@@ -150,15 +150,21 @@ public class ImGuiClickGui {
     private static void pollBindingMouse() {
         if (bindingModule == null) return;
 
+        int[] buttons = {InputUtil.MOUSE_LEFT, InputUtil.MOUSE_RIGHT, InputUtil.MOUSE_MIDDLE,
+                InputUtil.MOUSE_BUTTON_4, InputUtil.MOUSE_BUTTON_5};
+
         if (!bindingArmed) {
-            if (!InputUtil.isMouseButtonDown(InputUtil.MOUSE_MIDDLE)) {
-                bindingArmed = true;
+            boolean anyDown = false;
+            for (int mb : buttons) {
+                if (InputUtil.isMouseButtonDown(mb)) {
+                    anyDown = true;
+                    break;
+                }
             }
+            if (!anyDown) bindingArmed = true;
             return;
         }
 
-        int[] buttons = {InputUtil.MOUSE_LEFT, InputUtil.MOUSE_RIGHT, InputUtil.MOUSE_MIDDLE,
-                InputUtil.MOUSE_BUTTON_4, InputUtil.MOUSE_BUTTON_5};
         for (int mb : buttons) {
             if (InputUtil.isMouseButtonDown(mb)) {
                 bindingModule.setKeyBind(mb);
