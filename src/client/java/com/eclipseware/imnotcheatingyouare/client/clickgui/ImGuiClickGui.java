@@ -147,19 +147,26 @@ public class ImGuiClickGui {
         bindingModule = null;
     }
 
+    public static boolean isCapturingMouseBind() {
+        return bindingModule != null && bindingArmed;
+    }
+
+    private static final int[] BIND_MOUSE_BUTTONS = {InputUtil.MOUSE_LEFT, InputUtil.MOUSE_RIGHT, InputUtil.MOUSE_MIDDLE,
+            InputUtil.MOUSE_BUTTON_4, InputUtil.MOUSE_BUTTON_5};
+
     private static void pollBindingMouse() {
         if (bindingModule == null) return;
 
+        // binding can be started with any button, so wait for all of them to be released
         if (!bindingArmed) {
-            if (!InputUtil.isMouseButtonDown(InputUtil.MOUSE_MIDDLE)) {
-                bindingArmed = true;
+            for (int mb : BIND_MOUSE_BUTTONS) {
+                if (InputUtil.isMouseButtonDown(mb)) return;
             }
+            bindingArmed = true;
             return;
         }
 
-        int[] buttons = {InputUtil.MOUSE_LEFT, InputUtil.MOUSE_RIGHT, InputUtil.MOUSE_MIDDLE,
-                InputUtil.MOUSE_BUTTON_4, InputUtil.MOUSE_BUTTON_5};
-        for (int mb : buttons) {
+        for (int mb : BIND_MOUSE_BUTTONS) {
             if (InputUtil.isMouseButtonDown(mb)) {
                 bindingModule.setKeyBind(mb);
                 com.eclipseware.imnotcheatingyouare.client.setting.ConfigManager.save();
