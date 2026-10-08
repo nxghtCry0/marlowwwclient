@@ -21,6 +21,7 @@ public final class SdlImGuiPlatform {
 
     private final boolean[] confirmedMouseDown = new boolean[5];
     private final boolean[] holdReleaseOneFrame = new boolean[5];
+    private final boolean[] suppressedMouseDown = new boolean[5];
 
     private static final java.util.concurrent.ConcurrentLinkedQueue<Integer> pendingChars = new java.util.concurrent.ConcurrentLinkedQueue<>();
 
@@ -70,6 +71,7 @@ public final class SdlImGuiPlatform {
 
         boolean[] rawMouseDown = new boolean[5];
         for (int b = 0; b < 5; b++) rawMouseDown[b] = GLFW.glfwGetMouseButton(window.handle(), b) == GLFW.GLFW_PRESS;
+        boolean capturingBind = com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui.isCapturingMouseBind();
         for (int i = 0; i < rawMouseDown.length; i++) {
             if (rawMouseDown[i]) {
                 confirmedMouseDown[i] = true;
@@ -79,7 +81,10 @@ public final class SdlImGuiPlatform {
             } else {
                 confirmedMouseDown[i] = false;
             }
-            io.setMouseDown(i, confirmedMouseDown[i]);
+            // a press that gets used as a keybind shouldn't also click whatever is under the cursor
+            if (!confirmedMouseDown[i]) suppressedMouseDown[i] = false;
+            else if (capturingBind) suppressedMouseDown[i] = true;
+            io.setMouseDown(i, confirmedMouseDown[i] && !suppressedMouseDown[i]);
         }
 
         io.setKeyCtrl(InputConstants.isKeyDown(window, InputConstants.KEY_LCONTROL) || InputConstants.isKeyDown(window, InputConstants.KEY_RCONTROL));
