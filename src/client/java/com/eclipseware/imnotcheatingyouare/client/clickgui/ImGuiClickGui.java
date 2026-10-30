@@ -305,6 +305,10 @@ public class ImGuiClickGui {
         return bindingModule != null || ImGuiConfigPanel.isMacroBinding();
     }
 
+    public static boolean isCapturingMouseBind() {
+        return isBinding() && bindingConsumedFrame != frameCounter;
+    }
+
     public static Module getBindingModule() {
         return bindingModule;
     }
@@ -2252,10 +2256,10 @@ public class ImGuiClickGui {
         if (mc == null || mc.getWindow() == null) {
             return;
         }
-        boolean activeBind = isBinding() && bindingConsumedFrame != frameCounter;
-        for (int btn = 2; btn < prevBindMouseDown.length; btn++) {
+        boolean activeBind = isCapturingMouseBind();
+        for (int btn = 0; btn < prevBindMouseDown.length; btn++) {
             boolean down = InputUtil.isMouseButtonDown(toMouseBindCode(btn));
-            boolean clicked = (down && !prevBindMouseDown[btn]) || (btn < 5 && ImGui.isMouseClicked(btn));
+            boolean clicked = (down && !prevBindMouseDown[btn]) || (btn >= 2 && btn < 5 && ImGui.isMouseClicked(btn));
             prevBindMouseDown[btn] = down;
             if (activeBind && clicked) {
                 handleBindingMouseButton(btn);
