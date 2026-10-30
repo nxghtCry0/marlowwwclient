@@ -1,6 +1,7 @@
 package com.eclipseware.imnotcheatingyouare.mixin.client;
 
 import com.eclipseware.imnotcheatingyouare.client.gui.PastelShaderBackground;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Menu;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,6 +18,9 @@ public class PanoramaShaderMixin {
 
     @Inject(method = "extractPanorama", at = @At("HEAD"), cancellable = true)
     private void replacePanorama(GuiGraphicsExtractor graphics, float partialTick, CallbackInfo ci) {
+        if (!Menu.shouldReplacePanorama()) {
+            return;
+        }
         if (PastelShaderBackground.render()) {
             graphics.blit(PastelShaderBackground.TEXTURE_ID, 0, 0, width, height, 0.0f, 1.0f, 1.0f, 0.0f);
             ci.cancel();

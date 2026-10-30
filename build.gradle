@@ -73,6 +73,9 @@ dependencies {
     runtimeOnly("org.lwjgl:lwjgl-nanovg:3.4.1:natives-linux") {
         exclude group: "org.lwjgl"
     }
+    runtimeOnly("org.lwjgl:lwjgl-nanovg:3.4.1:natives-linux-arm64") {
+        exclude group: "org.lwjgl"
+    }
     runtimeOnly("org.lwjgl:lwjgl-nanovg:3.4.1:natives-macos") {
         exclude group: "org.lwjgl"
     }
@@ -182,4 +185,3 @@ if (new File(runClientJavaHome, "bin/java.exe").exists()) {
         executable(new File(runClientJavaHome, "bin/java.exe").absolutePath)
     }
 }
-
