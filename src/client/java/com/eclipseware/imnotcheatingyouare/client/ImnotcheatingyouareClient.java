@@ -1,17 +1,23 @@
 package com.eclipseware.imnotcheatingyouare.client;
 
 import com.eclipseware.imnotcheatingyouare.client.clickgui.Clickgui;
+import com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.module.ModuleManager;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.GUI;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Menu;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.setting.SettingsManager;
 import com.mojang.blaze3d.platform.InputConstants;
+import java.awt.Color;
+import java.util.ArrayList;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.multiplayer.ServerData;
+import xyz.breadloaf.imguimc.imgui.ImguiLoader;
 
 public class ImnotcheatingyouareClient implements ClientModInitializer {
     public static ImnotcheatingyouareClient INSTANCE;
@@ -94,6 +100,7 @@ Module crystalHelper = new com.eclipseware.imnotcheatingyouare.client.module.imp
 Module antibot = new com.eclipseware.imnotcheatingyouare.client.module.impl.AntiBot();
 Module teams = new com.eclipseware.imnotcheatingyouare.client.module.impl.Teams();
 Module blink = new com.eclipseware.imnotcheatingyouare.client.module.impl.BlinkModule();
+Module fakeLag = new com.eclipseware.imnotcheatingyouare.client.module.impl.FakeLag();
 Module packetAuditor = new com.eclipseware.imnotcheatingyouare.client.module.impl.PacketAuditor();
 Module autoHitCrystal = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoHitCrystal();
 Module autoPlaceCrystal = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoPlaceCrystal();
@@ -166,6 +173,7 @@ moduleManager.modules.add(anchor);
         moduleManager.modules.add(autoPlaceCrystal);
         moduleManager.modules.add(fastThrowables);
         moduleManager.modules.add(blink);
+        moduleManager.modules.add(fakeLag);
         moduleManager.modules.add(packetAuditor);
         moduleManager.modules.add(trajectories);
         moduleManager.modules.add(surround);
@@ -263,7 +271,7 @@ moduleManager.modules.add(ghostBlockMacro);
 
         Module theme = new Module("Theme", Category.Render, "Customizes the client's UI colors and animations.");
         moduleManager.modules.add(theme);
-        settingsManager.rSetting(new Setting("Accent Color", theme, new java.awt.Color(239, 142, 172)));
+        settingsManager.rSetting(new Setting("Accent Color", theme, new java.awt.Color(255, 118, 26)));
         settingsManager.rSetting(new Setting("Background Alpha", theme, 240.0, 0.0, 255.0, true));
         settingsManager.rSetting(new Setting("Anim Speed", theme, 5.0, 1.0, 10.0, false));
 
@@ -344,7 +352,7 @@ moduleManager.modules.add(ghostBlockMacro);
         alAlignments.add("Left"); alAlignments.add("Right");
         settingsManager.rSetting(new Setting("Alignment", arrayListMod, "Left", alAlignments));
         settingsManager.rSetting(new Setting("Sync Theme", arrayListMod, true));
-        settingsManager.rSetting(new Setting("Text Color", arrayListMod, new java.awt.Color(230, 10, 230)));
+        settingsManager.rSetting(new Setting("Text Color", arrayListMod, new Color(255, 118, 26)));
         settingsManager.rSetting(new Setting("Y Offset", arrayListMod, 5.0, 0.0, 100.0, true));
         settingsManager.rSetting(new Setting("Scale", arrayListMod, 1.0, 0.5, 1.5, false));
 
@@ -509,33 +517,40 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
 
         moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.SelfShader());
 
-        Module menu = new com.eclipseware.imnotcheatingyouare.client.module.impl.Menu();
+        Module menu = new Menu();
         moduleManager.modules.add(menu);
+        ArrayList<String> menuBgModes = new ArrayList<>();
+        menuBgModes.add("Shader");
+        menuBgModes.add("Gradient");
+        menuBgModes.add("Vanilla Panorama");
+        settingsManager.rSetting(new Setting("Background", menu, "Shader", menuBgModes));
+        settingsManager.rSetting(new Setting("Show Logo", menu, true));
+        settingsManager.rSetting(new Setting("Logo Scale", menu, 1.0, 0.5, 1.5, false));
+        settingsManager.rSetting(new Setting("Show Config Button", menu, true));
+        settingsManager.rSetting(new Setting("Show Watermark", menu, true));
+        settingsManager.rSetting(new Setting("Button Width", menu, 200.0, 140.0, 280.0, true));
+        settingsManager.rSetting(new Setting("Panel Alpha", menu, 165.0, 0.0, 255.0, true));
+        addColorSettings(settingsManager, menu, "Primary", 255, 118, 26);
+        addColorSettings(settingsManager, menu, "Secondary", 18, 9, 28);
+        settingsManager.rSetting(new Setting("Use Verdana Font", menu, true));
+        settingsManager.rSetting(new Setting("Background Alpha", menu, 240.0, 0.0, 255.0, true));
+        settingsManager.rSetting(new Setting("Corner Radius", menu, 12.0, 0.0, 30.0, true));
+        settingsManager.rSetting(new Setting("Animation Speed", menu, 5.0, 1.0, 10.0, false));
+        settingsManager.rSetting(new Setting("Hover Glow", menu, 35.0, 0.0, 100.0, true));
 
-        Module guiModule = new Module("GUI", Category.Client, "Layout, size and look of the click GUI.");
+        Module guiModule = new GUI();
         moduleManager.modules.add(guiModule);
-        java.util.ArrayList<String> guiLayouts = new java.util.ArrayList<>();
-        guiLayouts.add("Compact"); guiLayouts.add("Vertical");
+        ArrayList<String> guiLayouts = new ArrayList<>();
+        guiLayouts.add("Compact");
+        guiLayouts.add("Vertical");
         settingsManager.rSetting(new Setting("Layout", guiModule, "Compact", guiLayouts));
-        java.util.ArrayList<String> guiScaleModes = new java.util.ArrayList<>();
-        guiScaleModes.add("Auto"); guiScaleModes.add("Custom");
+        ArrayList<String> guiScaleModes = new ArrayList<>();
+        guiScaleModes.add("Auto");
+        guiScaleModes.add("Custom");
         settingsManager.rSetting(new Setting("Scale Mode", guiModule, "Auto", guiScaleModes));
         settingsManager.rSetting(new Setting("Scale", guiModule, 1.0, 0.5, 3.0, false));
         settingsManager.rSetting(new Setting("Glass Opacity", guiModule, 70.0, 20.0, 100.0, true));
         settingsManager.rSetting(new Setting("Glow", guiModule, true));
-
-        addColorSettings(settingsManager, menu, "Primary", 239, 142, 172);
-        addColorSettings(settingsManager, menu, "Secondary", 24, 24, 37);
-
-
-        settingsManager.rSetting(new Setting("Use Verdana Font", menu, true));
-
-        addColorSettings(settingsManager, menu, "Background", 30, 30, 46);
-        settingsManager.rSetting(new Setting("Background Alpha", menu, 240.0, 0.0, 255.0, true));
-
-        settingsManager.rSetting(new Setting("Corner Radius", menu, 12.0, 0.0, 30.0, true));
-        settingsManager.rSetting(new Setting("Animation Speed", menu, 5.0, 1.0, 10.0, false));
-        settingsManager.rSetting(new Setting("Hover Glow", menu, 35.0, 0.0, 100.0, true));
 
         Module legacyUI = new com.eclipseware.imnotcheatingyouare.client.module.impl.LegacyUI();
         moduleManager.modules.add(legacyUI);
@@ -559,7 +574,9 @@ settingsManager.rSetting(new Setting("Outline", blockESP, true));
             com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.onClientTickStart();
             com.eclipseware.imnotcheatingyouare.client.utils.SpoofManager.onTick();
             com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils.tickSilentRevert();
-            com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui.tick();
+            if (ImguiLoader.isUsable()) {
+                ImGuiClickGui.tick();
+            }
 
             for (Module m : moduleManager.modules) {
                 m.tickKeybind();

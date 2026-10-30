@@ -15,6 +15,7 @@ import xyz.breadloaf.imguimc.interfaces.Theme;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import imgui.type.ImInt;
@@ -24,6 +25,9 @@ import java.nio.ByteBuffer;
 public class ImguiLoader {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final long CONTENT_SCALE_REFRESH_INTERVAL_NANOS = 250_000_000L;
+    private static final String NATIVE_LIBRARY_PROPERTY = "imgui.library.name";
+    private static final String ARM64_NATIVE_LIBRARY = "libimgui-java-arm64.so";
+    private static final String[] GLSL_VERSIONS = {"#version 150", "#version 410", "#version 300 es", "#version 130"};
 
     private static GlfwImGuiPlatform imGuiPlatform = null;
     private static ImGuiImplGl3 imGuiGl3 = null;
@@ -39,6 +43,7 @@ public class ImguiLoader {
 
     private static boolean fontLoaded = false;
     private static boolean initialized = false;
+    private static boolean initFailed = false;
     private static boolean backendUsable = false;
     private static boolean contextCreated = false;
     private static boolean customFontAvailable = false;
@@ -70,10 +75,59 @@ public class ImguiLoader {
         initialize(handle);
     }
 
-    private static void initialize(long handle) {
-        if (initialized)
-            return;
+    static String resolveNativeLibraryName(String osName, String osArch) {
+        String os = osName == null ? "" : osName.toLowerCase(Locale.ROOT);
+        String arch = osArch == null ? "" : osArch.toLowerCase(Locale.ROOT);
+        boolean linuxLike = os.contains("linux") || os.contains("android");
+        boolean arm64 = arch.equals("aarch64") || arch.equals("arm64");
+        return linuxLike && arm64 ? ARM64_NATIVE_LIBRARY : null;
+    }
 
+    static void configureNativeLibrary(String osName, String osArch) {
+        if (System.getProperty(NATIVE_LIBRARY_PROPERTY) != null)
+            return;
+        String library = resolveNativeLibraryName(osName, osArch);
+        if (library != null)
+            System.setProperty(NATIVE_LIBRARY_PROPERTY, library);
+    }
+
+    static void configureNativeLibrary() {
+        configureNativeLibrary(System.getProperty("os.name"), System.getProperty("os.arch"));
+    }
+
+    static boolean isInitFailed() {
+        return initFailed;
+    }
+
+    static void guardedInitialize(Runnable body) {
+        try {
+            body.run();
+        } catch (Throwable error) {
+            shutdown();
+            initFailed = true;
+            LOGGER.warn("ImGui failed to initialize; falling back to the legacy UI", error);
+        }
+    }
+
+    private static void initialize(long handle) {
+        if (initialized || initFailed)
+            return;
+        guardedInitialize(() -> initializeBackend(handle));
+    }
+
+    private static void tryInitializeFromWindow() {
+        if (initFailed)
+            return;
+        try {
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            if (mc != null && mc.getWindow() != null) {
+                initialize(mc.getWindow().handle());
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    private static void initializeBackend(long handle) {
+        configureNativeLibrary();
         try {
             FontExtractor.extractFont();
             customFontAvailable = true;
@@ -82,25 +136,26 @@ public class ImguiLoader {
             LOGGER.warn("Could not extract the custom ImGui font; using the default font", exception);
         }
         windowHandle = handle;
-        try {
-            initializeImGui();
-            imGuiPlatform = new GlfwImGuiPlatform();
-            imGuiPlatform.init(handle);
-            imGuiGl3 = new ImGuiImplGl3();
-            imGuiGl3.init("#version 150");
-            if (!backendLinked()) {
-                LOGGER.warn("ImGui GLSL 150 backend failed to link, retrying with GLSL 410");
+        initializeImGui();
+        imGuiPlatform = new GlfwImGuiPlatform();
+        imGuiPlatform.init(handle);
+        initializeGlBackend();
+        backendUsable = backendLinked();
+        if (!backendUsable) LOGGER.error("ImGui OpenGL backend failed to link; falling back to the legacy UI");
+        rebuildCustomFont(atlasScale(getWindowContentScale()));
+        initialized = true;
+    }
+
+    private static void initializeGlBackend() {
+        for (int i = 0; i < GLSL_VERSIONS.length; i++) {
+            if (i > 0) {
+                LOGGER.warn("ImGui GLSL backend failed to link, retrying with {}", GLSL_VERSIONS[i]);
                 imGuiGl3.dispose();
-                imGuiGl3 = new ImGuiImplGl3();
-                imGuiGl3.init("#version 410");
             }
-            backendUsable = backendLinked();
-            if (!backendUsable) LOGGER.error("ImGui OpenGL backend failed to link; falling back to the legacy UI");
-            rebuildCustomFont(atlasScale(getWindowContentScale()));
-            initialized = true;
-        } catch (RuntimeException | Error error) {
-            shutdown();
-            throw error;
+            imGuiGl3 = new ImGuiImplGl3();
+            imGuiGl3.init(GLSL_VERSIONS[i]);
+            if (backendLinked())
+                return;
         }
     }
 
@@ -271,12 +326,7 @@ public class ImguiLoader {
 
     public static void onFrameRender(com.mojang.blaze3d.textures.GpuTexture target) {
         if (!initialized) {
-            try {
-                net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-                if (mc != null && mc.getWindow() != null) {
-                    initialize(mc.getWindow().handle());
-                }
-            } catch (Throwable ignored) {}
+            tryInitializeFromWindow();
             return;
         }
         if (!shouldRenderFrame())
@@ -292,14 +342,8 @@ public class ImguiLoader {
     }
 
     public static void onFrameRender() {
-        if (!initialized) {
-            try {
-                net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-                if (mc != null && mc.getWindow() != null) {
-                    initialize(mc.getWindow().handle());
-                }
-            } catch (Throwable ignored) {}
-        }
+        if (!initialized)
+            tryInitializeFromWindow();
         if (!shouldRenderFrame())
             return;
         renderFrame();

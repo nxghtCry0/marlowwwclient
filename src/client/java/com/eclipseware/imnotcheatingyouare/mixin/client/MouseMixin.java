@@ -1,8 +1,13 @@
 package com.eclipseware.imnotcheatingyouare.mixin.client;
 
+import com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui;
+import com.eclipseware.imnotcheatingyouare.client.macro.MacroManager;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Freecam;
 import com.eclipseware.imnotcheatingyouare.client.utils.MouseAimHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
+import net.minecraft.client.input.MouseButtonInfo;
+import net.minecraft.client.player.LocalPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,33 +24,45 @@ public abstract class MouseMixin {
     @Inject(method = "turnPlayer", at = @At("HEAD"))
     private void velaris$applyAimDelta(double timeDelta, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.screen != null) return;
-        
+        if (mc.player == null || mc.screen != null) {
+            return;
+        }
+
         double dx = MouseAimHelper.pollDX();
         double dy = MouseAimHelper.pollDY();
-        
-        if (dx == 0.0 && dy == 0.0) return;
-        
+
+        if (dx == 0.0 && dy == 0.0) {
+            return;
+        }
+
         this.accumulatedDX += dx;
         this.accumulatedDY += dy;
     }
 
     @Inject(method = "onButton", at = @At("HEAD"))
-    private void onMousePress(long windowHandle, net.minecraft.client.input.MouseButtonInfo buttonInfo, int action, CallbackInfo ci) {
-        if (Minecraft.getInstance().screen != null) return;
-        if (com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.isRecording()) {
+    private void onMousePress(long windowHandle, MouseButtonInfo buttonInfo, int action, CallbackInfo ci) {
+        if (action == 1 && ImGuiClickGui.isOpen() && ImGuiClickGui.isBinding()) {
+            ImGuiClickGui.onScreenMouseClicked(buttonInfo.button());
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.screen != null) {
+            return;
+        }
+        if (MacroManager.isRecording()) {
             if (action == 1) {
-                com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.recordMouse(buttonInfo.button(), true, windowHandle);
+                MacroManager.recordMouse(buttonInfo.button(), true, windowHandle);
             } else if (action == 0) {
-                com.eclipseware.imnotcheatingyouare.client.macro.MacroManager.recordMouse(buttonInfo.button(), false, windowHandle);
+                MacroManager.recordMouse(buttonInfo.button(), false, windowHandle);
             }
         }
     }
 
     @Redirect(method = "turnPlayer", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;turn(DD)V"))
-    private void onTurnPlayer(net.minecraft.client.player.LocalPlayer player, double yaw, double pitch) {
-        if (com.eclipseware.imnotcheatingyouare.client.module.impl.Freecam.isActive()) {
-            com.eclipseware.imnotcheatingyouare.client.module.impl.Freecam.INSTANCE.turn(yaw, pitch);
+    private void onTurnPlayer(LocalPlayer player, double yaw, double pitch) {
+        if (Freecam.isActive()) {
+            Freecam freecam = Freecam.INSTANCE;
+            freecam.turn(yaw, pitch);
         } else {
             player.turn(yaw, pitch);
         }
