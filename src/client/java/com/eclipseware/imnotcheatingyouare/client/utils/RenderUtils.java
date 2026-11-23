@@ -1,8 +1,14 @@
 package com.eclipseware.imnotcheatingyouare.client.utils;
 
 import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
+import com.eclipseware.imnotcheatingyouare.client.glassui.theme.UiTheme;
+import com.eclipseware.imnotcheatingyouare.client.glassui.theme.UiThemeContext;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
+import com.eclipseware.imnotcheatingyouare.client.module.ModuleManager;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
+import com.eclipseware.imnotcheatingyouare.client.setting.SettingsManager;
+import imgui.ImGui;
+import imgui.ImGuiIO;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -63,8 +69,9 @@ public class RenderUtils {
         if (transformVec.w <= 0.001f) return false;
         transformVec.div(transformVec.w);
 
-        float displayWidth = imgui.ImGui.getIO().getDisplaySizeX();
-        float displayHeight = imgui.ImGui.getIO().getDisplaySizeY();
+        ImGuiIO io = ImGui.getIO();
+        float displayWidth = io.getDisplaySizeX();
+        float displayHeight = io.getDisplaySizeY();
 
         double screenX = (displayWidth / 2.0f) * (transformVec.x + 1.0f);
         double screenY = (displayHeight / 2.0f) * (1.0f - transformVec.y);
@@ -123,39 +130,34 @@ public class RenderUtils {
     }
 
     public static Color getThemeAccentColor() {
-        Module menu = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Menu");
-        if (menu != null) {
-            Setting rM = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(menu, "Primary R");
-            Setting gM = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(menu, "Primary G");
-            Setting bM = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(menu, "Primary B");
-            if (rM != null && gM != null && bM != null) {
-                return new Color((int) rM.getValDouble(), (int) gM.getValDouble(), (int) bM.getValDouble());
+        UiTheme uiTheme = UiThemeContext.current();
+        if (uiTheme != null) {
+            int acc = uiTheme.accentColor();
+            return new Color((acc >> 16) & 0xFF, (acc >> 8) & 0xFF, acc & 0xFF);
+        }
+        ImnotcheatingyouareClient client = ImnotcheatingyouareClient.INSTANCE;
+        if (client != null && client.moduleManager != null && client.settingsManager != null) {
+            ModuleManager mm = client.moduleManager;
+            SettingsManager sm = client.settingsManager;
+            Module theme = mm.getModule("Theme");
+            if (theme != null) {
+                Setting accSet = sm.getSettingByName(theme, "Accent Color");
+                if (accSet != null && accSet.isColor()) {
+                    int c = accSet.getValColor();
+                    return new Color((c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF);
+                }
             }
         }
-        
-        Module theme = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Theme");
-        if (theme != null) {
-            Setting rS = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(theme, "Accent R");
-            Setting gS = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(theme, "Accent G");
-            Setting bS = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(theme, "Accent B");
-            if (rS != null && gS != null && bS != null) {
-                return new Color((int) rS.getValDouble(), (int) gS.getValDouble(), (int) bS.getValDouble());
-            }
-        }
-        return new Color(178, 128, 255);
+        return new Color(42, 168, 255);
     }
-    
+
     public static Color getThemeSecondaryColor() {
-        Module menu = ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("Menu");
-        if (menu != null) {
-            Setting rS = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(menu, "Secondary R");
-            Setting gS = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(menu, "Secondary G");
-            Setting bS = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(menu, "Secondary B");
-            if (rS != null && gS != null && bS != null) {
-                return new Color((int) rS.getValDouble(), (int) gS.getValDouble(), (int) bS.getValDouble());
-            }
+        UiTheme uiTheme = UiThemeContext.current();
+        if (uiTheme != null) {
+            int sec = uiTheme.secondaryAccentColor();
+            return new Color((sec >> 16) & 0xFF, (sec >> 8) & 0xFF, sec & 0xFF);
         }
-        return new Color(20, 20, 20);
+        return new Color(16, 20, 30);
     }
 
     public static void draw3DBox(GuiGraphicsExtractor guiGraphics, double minX, double minY, double minZ, double maxX, double maxY, double maxZ, Color faceColor, Color outlineColor, float partialTick) {

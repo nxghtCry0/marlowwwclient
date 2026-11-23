@@ -2,7 +2,6 @@
 "required": true,
 "minVersion": "0.8",
 "package": "com.eclipseware.imnotcheatingyouare.mixin.client",
-"refmap": "imnotcheatingyouare-refmap.json",
 "compatibilityLevel": "JAVA_21",
 "client": [
 "NoJumpDelayMixin",
@@ -34,7 +33,6 @@
 "MouseMixin",
 "MouseScrollMixin",
 "MinecraftMixin",
-"MouseButtonEventMixin",
 "KeyboardHandlerMixin",
 "MouseHandlerAccessor",
 "KeyboardHandlerAccessor",

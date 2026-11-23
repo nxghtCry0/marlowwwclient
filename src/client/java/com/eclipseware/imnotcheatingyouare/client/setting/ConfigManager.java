@@ -1,8 +1,8 @@
 package com.eclipseware.imnotcheatingyouare.client.setting;
 
 import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
-import com.eclipseware.imnotcheatingyouare.client.clickgui.MarlowGUI;
-import com.eclipseware.imnotcheatingyouare.client.module.Category;
+import com.eclipseware.imnotcheatingyouare.client.glassui.bridge.ClientGuiRegistry;
+import com.eclipseware.imnotcheatingyouare.client.glassui.bridge.ClientNotificationService;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.module.ModuleManager;
 import com.eclipseware.imnotcheatingyouare.client.utils.CryptoUtils;
@@ -17,9 +17,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.Map;
 import net.minecraft.client.Minecraft;
-import org.joml.Vector2f;
 
 public class ConfigManager {
     private static final File DIR = new File(Minecraft.getInstance().gameDirectory, "config/imnotcheatingyouare");
@@ -43,6 +41,7 @@ public class ConfigManager {
     }
 
     public static void importString(String encrypted) {
+        ClientNotificationService.setSuppressModuleHook(true);
         try {
             String rawJson = CryptoUtils.decrypt(encrypted);
             if (rawJson == null) {
@@ -58,6 +57,8 @@ public class ConfigManager {
             }
         } catch (Exception e) {
             System.err.println("[EclipseWare] Failed to import config string: " + e.getMessage());
+        } finally {
+            ClientNotificationService.setSuppressModuleHook(false);
         }
     }
 
@@ -75,34 +76,19 @@ public class ConfigManager {
         json.add("Modules", modulesArray);
         json.addProperty("ConfigVersion", CONFIG_VERSION);
 
-        JsonArray panelsArray = new JsonArray();
-        try {
-            Map<Category, MarlowGUI.Panel> panels = MarlowGUI.panels;
-            for (Map.Entry<Category, MarlowGUI.Panel> entry : panels.entrySet()) {
-                JsonObject panelJson = new JsonObject();
-                Category key = entry.getKey();
-                MarlowGUI.Panel val = entry.getValue();
-                Vector2f pos = val.getPosition();
-                panelJson.addProperty("Category", key.name());
-                panelJson.addProperty("X", pos.x());
-                panelJson.addProperty("Y", pos.y());
-                panelJson.addProperty("IsOpen", val.isOpen());
-                panelsArray.add(panelJson);
-            }
-        } catch (Exception ignored) {
-        }
-        json.add("Panels", panelsArray);
-
         try {
             String rawJson = GSON.toJson(json);
             String encrypted = CryptoUtils.encrypt(rawJson);
             if (encrypted != null) {
-                FileWriter writer = new FileWriter(CONFIG_FILE);
-                writer.write(encrypted);
-                writer.close();
+                try (FileWriter writer = new FileWriter(CONFIG_FILE)) {
+                    writer.write(encrypted);
+                }
             }
         } catch (Exception e) {
             System.err.println("[EclipseWare] Failed to save config to disk: " + e.getMessage());
+        }
+        if (ClientGuiRegistry.isInitialized()) {
+            ClientGuiRegistry.saveGuiPrefs();
         }
     }
 
@@ -110,6 +96,7 @@ public class ConfigManager {
         if (!CONFIG_FILE.exists()) {
             return;
         }
+        ClientNotificationService.setSuppressModuleHook(true);
         try {
             byte[] bytes = Files.readAllBytes(CONFIG_FILE.toPath());
             String encrypted = new String(bytes);
@@ -130,16 +117,14 @@ public class ConfigManager {
                 JsonArray modulesArray = json.getAsJsonArray("Modules");
                 applyModulesArray(modulesArray, keybindsAreCurrent);
             }
-            if (json.has("Panels")) {
-                JsonArray panelsArray = json.getAsJsonArray("Panels");
-                applyPanelsArray(panelsArray);
-            }
 
             if (!keybindsAreCurrent) {
                 save();
             }
         } catch (Exception e) {
             System.err.println("[EclipseWare] Failed to load config from disk: " + e.getMessage());
+        } finally {
+            ClientNotificationService.setSuppressModuleHook(false);
         }
     }
 
@@ -300,43 +285,15 @@ public class ConfigManager {
                 s.setValText(v1.getAsString());
             } else if (s.isColor() && v1.isJsonPrimitive() && v1.getAsJsonPrimitive().isNumber()) {
                 int loadedColor = v1.getAsInt();
-                if ((loadedColor & 0xFFFFFF) == 0xEF8EAC) {
-                    loadedColor = (loadedColor & 0xFF000000) | 0xFF761A;
+                int rgb24 = loadedColor & 0xFFFFFF;
+                int oldOrange = (255 << 16) | (118 << 8) | 26;
+                int oldDark = (18 << 16) | (9 << 8) | 28;
+                if (rgb24 == oldOrange) {
+                    loadedColor = (loadedColor & 0xFF000000) | 0x2AA8FF;
+                } else if (rgb24 == oldDark) {
+                    loadedColor = (loadedColor & 0xFF000000) | 0x10141E;
                 }
                 s.setValColor(loadedColor);
-            }
-        }
-    }
-
-    private static void applyPanelsArray(JsonArray panelsArray) {
-        ImnotcheatingyouareClient client = ImnotcheatingyouareClient.INSTANCE;
-        if (client == null || client.moduleManager == null) {
-            return;
-        }
-        ModuleManager mm = client.moduleManager;
-        Map<Category, MarlowGUI.Panel> panels = MarlowGUI.panels;
-        for (JsonElement elem : panelsArray) {
-            JsonObject panelJson = elem.getAsJsonObject();
-            JsonElement catElem = panelJson.get("Category");
-            String catName = catElem.getAsString();
-            try {
-                Category cat = Category.valueOf(catName);
-                float x = panelJson.get("X").getAsFloat();
-                float y = panelJson.get("Y").getAsFloat();
-                boolean isOpen = panelJson.get("IsOpen").getAsBoolean();
-
-                List<Module> modules = mm.getModules(cat);
-                MarlowGUI.Panel panel = panels.get(cat);
-                if (panel == null) {
-                    panel = new MarlowGUI.Panel(cat, isOpen, new Vector2f(x, y));
-                    panel.setModules(modules);
-                    panels.put(cat, panel);
-                } else {
-                    panel.setPosition(new Vector2f(x, y));
-                    panel.setOpen(isOpen);
-                    panel.setModules(modules);
-                }
-            } catch (Exception ignored) {
             }
         }
     }

@@ -1,0 +1,42 @@
+{
+  "ui_click": {
+    "sounds": [
+      { "name": "imnotcheatingyouare:ui_click" }
+    ]
+  },
+  "ui_tick": {
+    "sounds": [
+      { "name": "imnotcheatingyouare:ui_tick" }
+    ]
+  },
+  "ui_type": {
+    "sounds": [
+      { "name": "imnotcheatingyouare:ui_type" }
+    ]
+  },
+  "module_on": {
+    "sounds": [
+      { "name": "imnotcheatingyouare:module_on" }
+    ]
+  },
+  "module_off": {
+    "sounds": [
+      { "name": "imnotcheatingyouare:module_off" }
+    ]
+  },
+  "notify_pop": {
+    "sounds": [
+      { "name": "imnotcheatingyouare:notify_pop" }
+    ]
+  },
+  "gui_open": {
+    "sounds": [
+      { "name": "imnotcheatingyouare:gui_open" }
+    ]
+  },
+  "gui_close": {
+    "sounds": [
+      { "name": "imnotcheatingyouare:gui_close" }
+    ]
+  }
+}

@@ -1,14 +1,16 @@
 package com.eclipseware.imnotcheatingyouare.mixin.client;
 
-import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
-import com.eclipseware.imnotcheatingyouare.client.module.Module;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoTotem;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Freecam;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.SprintResetController;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.KeyboardInput;
+import net.minecraft.world.entity.player.Input;
+import net.minecraft.world.phys.Vec2;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import net.minecraft.client.Minecraft;
-import org.joml.Vector2f;
 
 @Mixin(KeyboardInput.class)
 public class KeyboardInputMixin {
@@ -16,29 +18,35 @@ public class KeyboardInputMixin {
     @Inject(method = "tick", at = @At("HEAD"))
     private void onTickHead(CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && com.eclipseware.imnotcheatingyouare.client.module.impl.AutoTotem.shouldPauseInputs()) {
+        if (mc.player != null && AutoTotem.shouldPauseInputs()) {
             if (mc.options != null) {
-                mc.options.keyUp.setDown(false);
-                mc.options.keyDown.setDown(false);
-                mc.options.keyLeft.setDown(false);
-                mc.options.keyRight.setDown(false);
-                mc.options.keyJump.setDown(false);
-                mc.options.keyShift.setDown(false);
-                mc.options.keySprint.setDown(false);
+                var opts = mc.options;
+                opts.keyUp.setDown(false);
+                opts.keyDown.setDown(false);
+                opts.keyLeft.setDown(false);
+                opts.keyRight.setDown(false);
+                opts.keyJump.setDown(false);
+                opts.keyShift.setDown(false);
+                opts.keySprint.setDown(false);
             }
+            return;
         }
+        SprintResetController.applyPreInputOverrides(mc);
     }
 
     @Inject(method = "tick", at = @At("RETURN"))
     private void onTickReturn(CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
-        if (com.eclipseware.imnotcheatingyouare.client.module.impl.Freecam.isActive()) {
-            ((KeyboardInput) (Object) this).keyPresses = new net.minecraft.world.entity.player.Input(false, false, false, false, false, false, false);
-            ((ClientInputAccessor) this).setMoveVector(net.minecraft.world.phys.Vec2.ZERO);
+        if (Freecam.isActive()) {
+            KeyboardInput self = (KeyboardInput) (Object) this;
+            self.keyPresses = new Input(false, false, false, false, false, false, false);
+            ClientInputAccessor accessor = (ClientInputAccessor) this;
+            accessor.setMoveVector(Vec2.ZERO);
             return;
         }
-        if (mc.player != null && com.eclipseware.imnotcheatingyouare.client.module.impl.AutoTotem.shouldPauseInputs()) {
-            ((KeyboardInput) (Object) this).keyPresses = new net.minecraft.world.entity.player.Input(false, false, false, false, false, false, false);
+        if (mc.player != null && AutoTotem.shouldPauseInputs()) {
+            KeyboardInput self = (KeyboardInput) (Object) this;
+            self.keyPresses = new Input(false, false, false, false, false, false, false);
             mc.player.setSprinting(false);
         }
     }

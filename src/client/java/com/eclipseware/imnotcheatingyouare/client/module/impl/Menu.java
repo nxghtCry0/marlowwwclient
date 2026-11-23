@@ -8,35 +8,38 @@ import com.eclipseware.imnotcheatingyouare.client.module.ModuleManager;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.setting.SettingsManager;
 import java.awt.Color;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 
 public class Menu extends Module {
 
     public Menu() {
-        super("Menu", Category.Client, "Customizes the custom main menu. Turn off to revert to normal Minecraft.");
+        super("CustomMenu", Category.Client, "Keeps the custom main menu active. Turn off for the normal Minecraft menu.");
         this.setToggled(true);
     }
 
     @Override
     public void onEnable() {
-        if (mc == null) {
+        if (mc == null || mc.gui == null) {
             return;
         }
-        Screen current = mc.gui.screen();
+        Gui gui = mc.gui;
+        Screen current = gui.screen();
         if (current != null && current.getClass() == TitleScreen.class) {
-            mc.gui.setScreen(new MarlowTitleScreen());
+            gui.setScreen(new MarlowTitleScreen());
         }
     }
 
     @Override
     public void onDisable() {
-        if (mc == null) {
+        if (mc == null || mc.gui == null) {
             return;
         }
-        Screen current = mc.gui.screen();
+        Gui gui = mc.gui;
+        Screen current = gui.screen();
         if (current instanceof MarlowTitleScreen) {
-            mc.gui.setScreen(new TitleScreen());
+            gui.setScreen(new TitleScreen());
         }
     }
 
@@ -48,6 +51,10 @@ public class Menu extends Module {
         ModuleManager mm = client.moduleManager;
         if (mm == null) {
             return null;
+        }
+        Module custom = mm.getModule("CustomMenu");
+        if (custom != null) {
+            return custom;
         }
         return mm.getModule("Menu");
     }
@@ -149,7 +156,7 @@ public class Menu extends Module {
             int rgb = s.getValColor();
             return new Color((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
         }
-        return new Color(255, 118, 26);
+        return new Color(42, 168, 255);
     }
 
     public static Color getSecondaryColor() {
@@ -158,7 +165,7 @@ public class Menu extends Module {
             int rgb = s.getValColor();
             return new Color((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
         }
-        return new Color(18, 9, 28);
+        return new Color(16, 20, 30);
     }
 
     private static Setting getSetting(String name) {

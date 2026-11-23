@@ -1,18 +1,132 @@
 package com.eclipseware.imnotcheatingyouare.client;
 
-import com.eclipseware.imnotcheatingyouare.client.clickgui.Clickgui;
-import com.eclipseware.imnotcheatingyouare.client.clickgui.ConfigGui;
-import com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui;
+import com.eclipseware.imnotcheatingyouare.client.glassui.bind.UiInputBind;
+import com.eclipseware.imnotcheatingyouare.client.glassui.bridge.ClientGuiRegistry;
+import com.eclipseware.imnotcheatingyouare.client.glassui.bridge.ClientGuiScreen;
+import com.eclipseware.imnotcheatingyouare.client.glassui.bridge.ClientKeybindBridge;
+import com.eclipseware.imnotcheatingyouare.client.glassui.bridge.ClientNotificationService;
+import com.eclipseware.imnotcheatingyouare.client.glassui.bridge.ClientUiSounds;
+import com.eclipseware.imnotcheatingyouare.client.glassui.render.StreamproofOverlay;
+import com.eclipseware.imnotcheatingyouare.client.glassui.screen.GlassUiScreen;
 import com.eclipseware.imnotcheatingyouare.client.macro.MacroManager;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.module.ModuleManager;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AimAssist;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Anchor;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AntiAFK;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AntiBot;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AntiTranslationKey;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.ArmorHUD;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.ArrayListMod;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AttributeSwap;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoClicker;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoDHand;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoDrain;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoFish;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoHitCrystal;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoMLG;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoMace;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoMaceCounter;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoPlaceCrystal;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoShieldBreaker;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoSign;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoTotem;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoTrade;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoWalk;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoWeb;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoWindcharge;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Automine;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.BlinkModule;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.BlockESP;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.BoatFly;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.BreachSwap;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.BridgeAssist;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Bypass;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.CartRefill;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Chams;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.ClientSpoof;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Configurator;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.CrystalAura;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.CrystalHelper;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.DetectionAlert;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.ESP;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.ElytraBoost;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.ElytraBounce;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.ElytraSwapMacro;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.FakeLag;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.FastPlace;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.FastThrowables;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Flight;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Freecam;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.FriendProtector;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Fullbright;
 import com.eclipseware.imnotcheatingyouare.client.module.impl.GUI;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.GUIMove;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.GhostBlockMacro;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.HUDEditor;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.HandView;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.HitSelect;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.HitSwap;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Hitboxes;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.InstaCart;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.InventoryClean;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.InventoryFill;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.JumpReset;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.KeybindLava;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.KeybindList;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.KeybindWater;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.KeybindWeb;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.KillAura;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.KillSounds;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.KnockbackDisplacement;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Loot;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.LowFire;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.LungeAssist;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.MaceDTap;
 import com.eclipseware.imnotcheatingyouare.client.module.impl.Menu;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.NPC;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.NameProtect;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Nametags;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.NoFall;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.NoParticles;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.NoTotemPop;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.PacketAuditor;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.PearlBind;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.PearlCatch;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.PearlGrapple;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Reach;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.RecommendedConfigs;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.RenderOptimizer;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.STap;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Scaffold;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.SelfShader;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.ShieldDrain;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.SilentAim;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.SpawnerFinder;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.SpearMaceDTap;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.SprintResetController;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.StorageESP;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Surround;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.SuspiciousChunks;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.TargetHUD;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Teams;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Tracers;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Trajectories;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Triggerbot;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.VapeMacro;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.WTap;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.WeakDevice;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Weapons;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.WebStun;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.XbowCart;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Xray;
 import com.eclipseware.imnotcheatingyouare.client.setting.ConfigManager;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
 import com.eclipseware.imnotcheatingyouare.client.setting.SettingsManager;
 import com.eclipseware.imnotcheatingyouare.client.utils.FriendManager;
+import com.eclipseware.imnotcheatingyouare.client.utils.InputUtil;
 import com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils;
 import com.eclipseware.imnotcheatingyouare.client.utils.RotationManager;
 import com.eclipseware.imnotcheatingyouare.client.utils.SpoofManager;
@@ -28,22 +142,49 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import xyz.breadloaf.imguimc.imgui.ImguiLoader;
 
 public class ImnotcheatingyouareClient implements ClientModInitializer {
     public static ImnotcheatingyouareClient INSTANCE;
 
     public ModuleManager moduleManager;
     public SettingsManager settingsManager;
-    public Clickgui clickGui;
 
-    private KeyMapping guiBind;
+    private boolean prevNotificationsBindDown = false;
+    private boolean prevStreamproofBindDown = false;
 
     private void addColorSettings(SettingsManager sm, Module module, String colorName, int r, int g, int b) {
         sm.rSetting(new Setting(colorName, module, new Color(r, g, b)));
+    }
+
+    private void tickSystemKeybinds(Minecraft client) {
+        if (client == null || client.player == null || client.gui == null || client.gui.screen() != null) {
+            prevNotificationsBindDown = false;
+            prevStreamproofBindDown = false;
+            return;
+        }
+        ClientKeybindBridge bridge = ClientKeybindBridge.INSTANCE;
+
+        UiInputBind notifBind = bridge.getBind("notifications");
+        boolean notifDown = notifBind.isBound() && InputUtil.isDown(notifBind.toModuleKeyBind());
+        if (notifDown && !prevNotificationsBindDown) {
+            boolean next = !ClientGuiRegistry.isFeatureEnabled("notifications");
+            ClientGuiRegistry.setFeatureEnabled("notifications", next, true);
+        }
+        prevNotificationsBindDown = notifDown;
+
+        UiInputBind spBind = bridge.getBind("streamproof_menu");
+        boolean spDown = spBind.isBound() && InputUtil.isDown(spBind.toModuleKeyBind());
+        if (spDown && !prevStreamproofBindDown) {
+            boolean next = !ClientGuiRegistry.isFeatureEnabled("streamproof_menu");
+            ClientGuiRegistry.setFeatureEnabled("streamproof_menu", next, true);
+            if (!next) {
+                StreamproofOverlay.hide();
+            }
+        }
+        prevStreamproofBindDown = spDown;
     }
 
     @Override
@@ -56,73 +197,73 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
 
         Module autoSprint = new Module("AutoSprint", Category.Movement);
         Module noJumpDelay = new Module("NoJumpDelay", Category.Movement);
-        Module aimAssist = new com.eclipseware.imnotcheatingyouare.client.module.impl.AimAssist();
-        Module triggerbot = new com.eclipseware.imnotcheatingyouare.client.module.impl.Triggerbot();
-        Module autoWeb = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoWeb();
-        Module shieldDrain = new com.eclipseware.imnotcheatingyouare.client.module.impl.ShieldDrain();
-        Module attributeSwap = new com.eclipseware.imnotcheatingyouare.client.module.impl.AttributeSwap();
-        Module autoMaceCounter = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoMaceCounter();
-        Module autoDrain = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoDrain();
-        Module wTap = new com.eclipseware.imnotcheatingyouare.client.module.impl.WTap();
-        Module hitSelect = new com.eclipseware.imnotcheatingyouare.client.module.impl.HitSelect();
-        Module autoShieldBreaker = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoShieldBreaker();
-        Module kbDisplacement = new com.eclipseware.imnotcheatingyouare.client.module.impl.KnockbackDisplacement();
-        Module arrayListMod = new com.eclipseware.imnotcheatingyouare.client.module.impl.ArrayListMod();
-        Module nameProtect = new com.eclipseware.imnotcheatingyouare.client.module.impl.NameProtect();
-        Module breachSwap = new com.eclipseware.imnotcheatingyouare.client.module.impl.BreachSwap();
+        Module aimAssist = new AimAssist();
+        Module triggerbot = new Triggerbot();
+        Module autoWeb = new AutoWeb();
+        Module shieldDrain = new ShieldDrain();
+        Module attributeSwap = new AttributeSwap();
+        Module autoMaceCounter = new AutoMaceCounter();
+        Module autoDrain = new AutoDrain();
+        Module wTap = new WTap();
+        Module hitSelect = new HitSelect();
+        Module autoShieldBreaker = new AutoShieldBreaker();
+        Module kbDisplacement = new KnockbackDisplacement();
+        Module arrayListMod = new ArrayListMod();
+        Module nameProtect = new NameProtect();
+        Module breachSwap = new BreachSwap();
 
-        Module lungeAssist = new com.eclipseware.imnotcheatingyouare.client.module.impl.LungeAssist();
-        Module webStun = new com.eclipseware.imnotcheatingyouare.client.module.impl.WebStun();
-        Module autoMace = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoMace();
-        Module elytraSwapMacro = new com.eclipseware.imnotcheatingyouare.client.module.impl.ElytraSwapMacro();
-        Module elytraBounce = new com.eclipseware.imnotcheatingyouare.client.module.impl.ElytraBounce();
-        Module pearlCatch = new com.eclipseware.imnotcheatingyouare.client.module.impl.PearlCatch();
-        Module jumpReset = new com.eclipseware.imnotcheatingyouare.client.module.impl.JumpReset();
-        Module pearlGrapple = new com.eclipseware.imnotcheatingyouare.client.module.impl.PearlGrapple();
+        Module lungeAssist = new LungeAssist();
+        Module webStun = new WebStun();
+        Module autoMace = new AutoMace();
+        Module elytraSwapMacro = new ElytraSwapMacro();
+        Module elytraBounce = new ElytraBounce();
+        Module pearlCatch = new PearlCatch();
+        Module jumpReset = new JumpReset();
+        Module pearlGrapple = new PearlGrapple();
 
-        Module autoClicker = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoClicker();
-        Module fastPlace = new com.eclipseware.imnotcheatingyouare.client.module.impl.FastPlace();
-        Module bridgeAssist = new com.eclipseware.imnotcheatingyouare.client.module.impl.BridgeAssist();
-        Module scaffold = new com.eclipseware.imnotcheatingyouare.client.module.impl.Scaffold();
+        Module autoClicker = new AutoClicker();
+        Module fastPlace = new FastPlace();
+        Module bridgeAssist = new BridgeAssist();
+        Module scaffold = new Scaffold();
 
-        Module xray = new com.eclipseware.imnotcheatingyouare.client.module.impl.Xray();
-        Module elytraBoost = new com.eclipseware.imnotcheatingyouare.client.module.impl.ElytraBoost();
+        Module xray = new Xray();
+        Module elytraBoost = new ElytraBoost();
 
-        Module configurator = new com.eclipseware.imnotcheatingyouare.client.module.impl.Configurator();
-        Module fullbright = new com.eclipseware.imnotcheatingyouare.client.module.impl.Fullbright();
-        Module reach = new com.eclipseware.imnotcheatingyouare.client.module.impl.Reach();
-        Module handView = new com.eclipseware.imnotcheatingyouare.client.module.impl.HandView();
-        Module esp = new com.eclipseware.imnotcheatingyouare.client.module.impl.ESP();
-        Module noParticles = new com.eclipseware.imnotcheatingyouare.client.module.impl.NoParticles();
-        Module lowFire = new com.eclipseware.imnotcheatingyouare.client.module.impl.LowFire();
-        Module noTotemPop = new com.eclipseware.imnotcheatingyouare.client.module.impl.NoTotemPop();
-        Module tracers = new com.eclipseware.imnotcheatingyouare.client.module.impl.Tracers();
-        Module nametags = new com.eclipseware.imnotcheatingyouare.client.module.impl.Nametags();
-        Module silentAim = new com.eclipseware.imnotcheatingyouare.client.module.impl.SilentAim();
-        Module storageESP = new com.eclipseware.imnotcheatingyouare.client.module.impl.StorageESP();
-        Module blockESP = new com.eclipseware.imnotcheatingyouare.client.module.impl.BlockESP();
-        Module spawnerFinder = new com.eclipseware.imnotcheatingyouare.client.module.impl.SpawnerFinder();
-        Module suspiciousChunks = new com.eclipseware.imnotcheatingyouare.client.module.impl.SuspiciousChunks();
-        Module killAura = new com.eclipseware.imnotcheatingyouare.client.module.impl.KillAura();
-        Module detectionAlert = new com.eclipseware.imnotcheatingyouare.client.module.impl.DetectionAlert();
-        Module backtrack = new com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack();
-        Module pearlBind = new com.eclipseware.imnotcheatingyouare.client.module.impl.PearlBind();
-        Module autoTotem = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoTotem();
-        Module anchor = new com.eclipseware.imnotcheatingyouare.client.module.impl.Anchor();
-        Module crystalAura = new com.eclipseware.imnotcheatingyouare.client.module.impl.CrystalAura();
-        Module crystalHelper = new com.eclipseware.imnotcheatingyouare.client.module.impl.CrystalHelper();
-        Module antibot = new com.eclipseware.imnotcheatingyouare.client.module.impl.AntiBot();
-        Module teams = new com.eclipseware.imnotcheatingyouare.client.module.impl.Teams();
-        Module blink = new com.eclipseware.imnotcheatingyouare.client.module.impl.BlinkModule();
-        Module fakeLag = new com.eclipseware.imnotcheatingyouare.client.module.impl.FakeLag();
-        Module packetAuditor = new com.eclipseware.imnotcheatingyouare.client.module.impl.PacketAuditor();
-        Module autoHitCrystal = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoHitCrystal();
-        Module autoPlaceCrystal = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoPlaceCrystal();
-        Module fastThrowables = new com.eclipseware.imnotcheatingyouare.client.module.impl.FastThrowables();
-        Module sTap = new com.eclipseware.imnotcheatingyouare.client.module.impl.STap();
-        Module chams = new com.eclipseware.imnotcheatingyouare.client.module.impl.Chams();
-        Module trajectories = new com.eclipseware.imnotcheatingyouare.client.module.impl.Trajectories();
-        Module surround = new com.eclipseware.imnotcheatingyouare.client.module.impl.Surround();
+        Module configurator = new Configurator();
+        Module fullbright = new Fullbright();
+        Module reach = new Reach();
+        Module handView = new HandView();
+        Module esp = new ESP();
+        Module noParticles = new NoParticles();
+        Module lowFire = new LowFire();
+        Module noTotemPop = new NoTotemPop();
+        Module tracers = new Tracers();
+        Module nametags = new Nametags();
+        Module silentAim = new SilentAim();
+        Module storageESP = new StorageESP();
+        Module blockESP = new BlockESP();
+        Module spawnerFinder = new SpawnerFinder();
+        Module suspiciousChunks = new SuspiciousChunks();
+        Module killAura = new KillAura();
+        Module detectionAlert = new DetectionAlert();
+        Module backtrack = new Backtrack();
+        Module pearlBind = new PearlBind();
+        Module autoTotem = new AutoTotem();
+        Module anchor = new Anchor();
+        Module crystalAura = new CrystalAura();
+        Module crystalHelper = new CrystalHelper();
+        Module antibot = new AntiBot();
+        Module teams = new Teams();
+        Module blink = new BlinkModule();
+        Module fakeLag = new FakeLag();
+        Module packetAuditor = new PacketAuditor();
+        Module autoHitCrystal = new AutoHitCrystal();
+        Module autoPlaceCrystal = new AutoPlaceCrystal();
+        Module fastThrowables = new FastThrowables();
+        Module sTap = new STap();
+        Module chams = new Chams();
+        Module trajectories = new Trajectories();
+        Module surround = new Surround();
 
         moduleManager.modules.add(autoSprint);
         moduleManager.modules.add(noJumpDelay);
@@ -145,11 +286,15 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
         moduleManager.modules.add(lungeAssist);
         moduleManager.modules.add(webStun);
         moduleManager.modules.add(autoMace);
+        moduleManager.modules.add(new SpearMaceDTap());
+        moduleManager.modules.add(new MaceDTap());
         moduleManager.modules.add(elytraSwapMacro);
         moduleManager.modules.add(elytraBounce);
         moduleManager.modules.add(pearlCatch);
         moduleManager.modules.add(jumpReset);
         moduleManager.modules.add(pearlGrapple);
+        moduleManager.modules.add(new Hitboxes());
+        moduleManager.modules.add(new KillSounds());
 
         moduleManager.modules.add(autoClicker);
         moduleManager.modules.add(fastPlace);
@@ -190,19 +335,19 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
         moduleManager.modules.add(packetAuditor);
         moduleManager.modules.add(trajectories);
         moduleManager.modules.add(surround);
-        Module hitSwap = new com.eclipseware.imnotcheatingyouare.client.module.impl.HitSwap();
+        Module hitSwap = new HitSwap();
         moduleManager.modules.add(hitSwap);
         moduleManager.modules.add(antibot);
         moduleManager.modules.add(teams);
-        Module renderOptimizer = new com.eclipseware.imnotcheatingyouare.client.module.impl.RenderOptimizer();
+        Module renderOptimizer = new RenderOptimizer();
         moduleManager.modules.add(renderOptimizer);
-        Module automine = new com.eclipseware.imnotcheatingyouare.client.module.impl.Automine();
-        Module autowalk = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoWalk();
-        Module antiAfk = new com.eclipseware.imnotcheatingyouare.client.module.impl.AntiAFK();
-        Module guimove = new com.eclipseware.imnotcheatingyouare.client.module.impl.GUIMove();
-        Module autosign = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoSign();
-        Module freecam = new com.eclipseware.imnotcheatingyouare.client.module.impl.Freecam();
-        Module friendProtector = new com.eclipseware.imnotcheatingyouare.client.module.impl.FriendProtector();
+        Module automine = new Automine();
+        Module autowalk = new AutoWalk();
+        Module antiAfk = new AntiAFK();
+        Module guimove = new GUIMove();
+        Module autosign = new AutoSign();
+        Module freecam = new Freecam();
+        Module friendProtector = new FriendProtector();
         moduleManager.modules.add(automine);
         moduleManager.modules.add(autowalk);
         moduleManager.modules.add(antiAfk);
@@ -210,19 +355,19 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
         moduleManager.modules.add(autosign);
         moduleManager.modules.add(freecam);
         moduleManager.modules.add(friendProtector);
-        moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.AntiTranslationKey());
+        moduleManager.modules.add(new AntiTranslationKey());
 
-        Module autoDHand = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoDHand();
-        Module autoWindcharge = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoWindcharge();
-        Module boatFly = new com.eclipseware.imnotcheatingyouare.client.module.impl.BoatFly();
-        Module flight = new com.eclipseware.imnotcheatingyouare.client.module.impl.Flight();
-        Module weapons = new com.eclipseware.imnotcheatingyouare.client.module.impl.Weapons();
-        Module bypassModule = new com.eclipseware.imnotcheatingyouare.client.module.impl.Bypass();
-        Module npcModule = new com.eclipseware.imnotcheatingyouare.client.module.impl.NPC();
-        Module weakDevice = new com.eclipseware.imnotcheatingyouare.client.module.impl.WeakDevice();
+        Module autoDHand = new AutoDHand();
+        Module autoWindcharge = new AutoWindcharge();
+        Module boatFly = new BoatFly();
+        Module flight = new Flight();
+        Module weapons = new Weapons();
+        Module bypassModule = new Bypass();
+        Module npcModule = new NPC();
+        Module weakDevice = new WeakDevice();
         moduleManager.modules.add(weakDevice);
 
-        Module autoMLG = new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoMLG();
+        Module autoMLG = new AutoMLG();
         moduleManager.modules.add(autoMLG);
         moduleManager.modules.add(autoDHand);
         moduleManager.modules.add(autoWindcharge);
@@ -231,16 +376,16 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
         moduleManager.modules.add(weapons);
         moduleManager.modules.add(bypassModule);
         moduleManager.modules.add(npcModule);
-        Module recommendedConfigs = new com.eclipseware.imnotcheatingyouare.client.module.impl.RecommendedConfigs();
+        Module recommendedConfigs = new RecommendedConfigs();
         moduleManager.modules.add(recommendedConfigs);
 
-        Module keybindWater = new com.eclipseware.imnotcheatingyouare.client.module.impl.KeybindWater();
-        Module noFall = new com.eclipseware.imnotcheatingyouare.client.module.impl.NoFall();
+        Module keybindWater = new KeybindWater();
+        Module noFall = new NoFall();
         moduleManager.modules.add(noFall);
-        Module keybindLava = new com.eclipseware.imnotcheatingyouare.client.module.impl.KeybindLava();
-        Module keybindWeb = new com.eclipseware.imnotcheatingyouare.client.module.impl.KeybindWeb();
-        Module vapeMacro = new com.eclipseware.imnotcheatingyouare.client.module.impl.VapeMacro();
-        Module keybindList = new com.eclipseware.imnotcheatingyouare.client.module.impl.KeybindList();
+        Module keybindLava = new KeybindLava();
+        Module keybindWeb = new KeybindWeb();
+        Module vapeMacro = new VapeMacro();
+        Module keybindList = new KeybindList();
 
         moduleManager.modules.add(keybindWater);
         moduleManager.modules.add(keybindLava);
@@ -251,30 +396,30 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
         settingsManager.rSetting(new Setting("Scale", keybindList, 0.75, 0.3, 1.5, false));
         settingsManager.rSetting(new Setting("Only Enabled", keybindList, false));
 
-        Module loot = new com.eclipseware.imnotcheatingyouare.client.module.impl.Loot();
+        Module loot = new Loot();
         moduleManager.modules.add(loot);
 
-        Module instaCart = new com.eclipseware.imnotcheatingyouare.client.module.impl.InstaCart();
-        Module cartRefill = new com.eclipseware.imnotcheatingyouare.client.module.impl.CartRefill();
-        Module xbowCart = new com.eclipseware.imnotcheatingyouare.client.module.impl.XbowCart();
+        Module instaCart = new InstaCart();
+        Module cartRefill = new CartRefill();
+        Module xbowCart = new XbowCart();
         moduleManager.modules.add(instaCart);
         moduleManager.modules.add(cartRefill);
         moduleManager.modules.add(xbowCart);
 
-        Module targetHUD = new com.eclipseware.imnotcheatingyouare.client.module.impl.TargetHUD();
-        Module armorHUD = new com.eclipseware.imnotcheatingyouare.client.module.impl.ArmorHUD();
-        Module hudEditor = new com.eclipseware.imnotcheatingyouare.client.module.impl.HUDEditor();
-        Module ghostBlockMacro = new com.eclipseware.imnotcheatingyouare.client.module.impl.GhostBlockMacro();
+        Module targetHUD = new TargetHUD();
+        Module armorHUD = new ArmorHUD();
+        Module hudEditor = new HUDEditor();
+        Module ghostBlockMacro = new GhostBlockMacro();
         moduleManager.modules.add(targetHUD);
         moduleManager.modules.add(armorHUD);
         moduleManager.modules.add(hudEditor);
         moduleManager.modules.add(ghostBlockMacro);
-        moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoFish());
-        moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.AutoTrade());
-        moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.InventoryClean());
-        moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.InventoryFill());
+        moduleManager.modules.add(new AutoFish());
+        moduleManager.modules.add(new AutoTrade());
+        moduleManager.modules.add(new InventoryClean());
+        moduleManager.modules.add(new InventoryFill());
 
-        Module clientSpoof = new com.eclipseware.imnotcheatingyouare.client.module.impl.ClientSpoof();
+        Module clientSpoof = new ClientSpoof();
         moduleManager.modules.add(clientSpoof);
         ArrayList<String> csModes = new ArrayList<>();
         csModes.add("Lunar");
@@ -286,7 +431,7 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
 
         Module theme = new Module("Theme", Category.Render, "Customizes the client's UI colors and animations.");
         moduleManager.modules.add(theme);
-        settingsManager.rSetting(new Setting("Accent Color", theme, new Color(255, 118, 26)));
+        settingsManager.rSetting(new Setting("Accent Color", theme, new Color(42, 168, 255)));
         settingsManager.rSetting(new Setting("Background Alpha", theme, 240.0, 0.0, 255.0, true));
         settingsManager.rSetting(new Setting("Anim Speed", theme, 5.0, 1.0, 10.0, false));
 
@@ -318,17 +463,18 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
         fbModes.add("Gamma");
         settingsManager.rSetting(new Setting("Mode", fullbright, "Night Vision", fbModes));
 
-        settingsManager.rSetting(new Setting("Wait Delay (ms)", wTap, 0.0, 0.0, 500.0, true));
-        settingsManager.rSetting(new Setting("Action Delay (ms)", wTap, 100.0, 10.0, 500.0, true));
-
         ArrayList<String> wtapModes = new ArrayList<>();
-        wtapModes.add("Auto");
-        wtapModes.add("Silent");
         wtapModes.add("Normal");
-        settingsManager.rSetting(new Setting("WTap Mode", wTap, "Auto", wtapModes));
+        wtapModes.add("Silent");
+        wtapModes.add("Auto");
+        settingsManager.rSetting(new Setting("WTap Mode", wTap, "Normal", wtapModes));
         settingsManager.rSetting(new Setting("Chance (%)", wTap, 100.0, 0.0, 100.0, true));
+        settingsManager.rSetting(new Setting("Wait Delay (ms)", wTap, 0.0, 0.0, 300.0, true));
+        settingsManager.rSetting(new Setting("Action Delay (ms)", wTap, 85.0, 20.0, 350.0, true));
+        settingsManager.rSetting(new Setting("Jitter (ms)", wTap, 15.0, 0.0, 150.0, true));
+        settingsManager.rSetting(new Setting("Fresh Hits Only", wTap, true));
         settingsManager.rSetting(new Setting("Only Players", wTap, true));
-        settingsManager.rSetting(new Setting("Jitter (ms)", wTap, 20.0, 0.0, 200.0, true));
+        settingsManager.rSetting(new Setting("Sprint Only", wTap, true));
 
         ArrayList<String> hsModes = new ArrayList<>();
         hsModes.add("Pause");
@@ -368,7 +514,7 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
         alAlignments.add("Right");
         settingsManager.rSetting(new Setting("Alignment", arrayListMod, "Left", alAlignments));
         settingsManager.rSetting(new Setting("Sync Theme", arrayListMod, true));
-        settingsManager.rSetting(new Setting("Text Color", arrayListMod, new Color(255, 118, 26)));
+        settingsManager.rSetting(new Setting("Text Color", arrayListMod, new Color(42, 168, 255)));
         settingsManager.rSetting(new Setting("Y Offset", arrayListMod, 5.0, 0.0, 100.0, true));
         settingsManager.rSetting(new Setting("Scale", arrayListMod, 1.0, 0.5, 1.5, false));
 
@@ -412,7 +558,6 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
         afkActions.add("Sneak");
         settingsManager.rSetting(new Setting("Action", antiAfk, "Cycle", afkActions));
         settingsManager.rSetting(new Setting("Interval (s)", antiAfk, 5.0, 1.0, 300.0, true));
-        settingsManager.rSetting(new Setting("Delay (Ticks)", pearlCatch, 4.0, 0.0, 20.0, true));
 
         settingsManager.rSetting(new Setting("Distance", reach, 0.5, 0.0, 1.0, false));
 
@@ -517,12 +662,6 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
         addColorSettings(settingsManager, storageESP, "Dropper Color", 169, 169, 169);
         addColorSettings(settingsManager, storageESP, "Furnace Color", 160, 160, 160);
 
-        settingsManager.rSetting(new Setting("Range", blockESP, 32.0, 8.0, 64.0, true));
-        settingsManager.rSetting(new Setting("FPS", blockESP, 144.0, 1.0, 1000.0, true));
-        settingsManager.rSetting(new Setting("Tracers", blockESP, true));
-        settingsManager.rSetting(new Setting("Fill", blockESP, true));
-        settingsManager.rSetting(new Setting("Outline", blockESP, true));
-
         ArrayList<String> combatSystems = new ArrayList<>();
         combatSystems.add("Modern (1.9+)");
         combatSystems.add("1.8.9");
@@ -543,7 +682,7 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
         settingsManager.rSetting(new Setting("1.8.9 Min CPS", killAura, 8.0, 1.0, 20.0, true));
         settingsManager.rSetting(new Setting("1.8.9 Max CPS", killAura, 12.0, 1.0, 20.0, true));
 
-        moduleManager.modules.add(new com.eclipseware.imnotcheatingyouare.client.module.impl.SelfShader());
+        moduleManager.modules.add(new SelfShader());
 
         Module menu = new Menu();
         moduleManager.modules.add(menu);
@@ -558,8 +697,8 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
         settingsManager.rSetting(new Setting("Show Watermark", menu, true));
         settingsManager.rSetting(new Setting("Button Width", menu, 200.0, 140.0, 280.0, true));
         settingsManager.rSetting(new Setting("Panel Alpha", menu, 165.0, 0.0, 255.0, true));
-        addColorSettings(settingsManager, menu, "Primary", 255, 118, 26);
-        addColorSettings(settingsManager, menu, "Secondary", 18, 9, 28);
+        addColorSettings(settingsManager, menu, "Primary", 42, 168, 255);
+        addColorSettings(settingsManager, menu, "Secondary", 16, 20, 30);
         settingsManager.rSetting(new Setting("Use Verdana Font", menu, true));
         settingsManager.rSetting(new Setting("Background Alpha", menu, 240.0, 0.0, 255.0, true));
         settingsManager.rSetting(new Setting("Corner Radius", menu, 12.0, 0.0, 30.0, true));
@@ -580,8 +719,6 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
         settingsManager.rSetting(new Setting("Glass Opacity", guiModule, 70.0, 20.0, 100.0, true));
         settingsManager.rSetting(new Setting("Glow", guiModule, true));
 
-        Module legacyUI = new com.eclipseware.imnotcheatingyouare.client.module.impl.LegacyUI();
-        moduleManager.modules.add(legacyUI);
         settingsManager.rSetting(new Setting("On Crystal", crystalHelper, true));
         settingsManager.rSetting(new Setting("On Obsidian", crystalHelper, true));
         settingsManager.rSetting(new Setting("Exclude Bedrock", crystalHelper, false));
@@ -601,8 +738,13 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
             ModuleUtils.onClientTickStart();
             SpoofManager.onTick();
             ModuleUtils.tickSilentRevert();
-            if (ImguiLoader.isUsable()) {
-                ImGuiClickGui.tick();
+            SprintResetController.onClientTick(client);
+            PearlGrapple.onWorldTick(client);
+            tickSystemKeybinds(client);
+
+            Screen activeScreen = (client != null && client.gui != null) ? client.gui.screen() : null;
+            if (!(activeScreen instanceof GlassUiScreen) && !ClientNotificationService.hasActiveNotifications()) {
+                StreamproofOverlay.hide();
             }
 
             for (Module m : moduleManager.modules) {
@@ -624,20 +766,26 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
 
         ConfigManager.load();
         MacroManager.load();
-
         FriendManager.load();
         TargetFilterManager.load();
 
-        Thread saveHook = new Thread(ConfigManager::save, "ConfigSaveHook");
+        ClientUiSounds.init();
+        ClientGuiRegistry.init();
+
+        Thread saveHook = new Thread(() -> {
+            ConfigManager.save();
+            ClientGuiRegistry.saveGuiPrefs();
+        }, "ConfigSaveHook");
         saveHook.setDaemon(true);
-        Runtime.getRuntime().addShutdownHook(saveHook);
+        Runtime runtime = Runtime.getRuntime();
+        runtime.addShutdownHook(saveHook);
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             LiteralArgumentBuilder<FabricClientCommandSource> configRoot = ClientCommands.literal("config");
             LiteralArgumentBuilder<FabricClientCommandSource> configGui = ClientCommands.literal("gui");
             configGui.executes(context -> {
                 Minecraft mc = Minecraft.getInstance();
-                mc.execute(() -> mc.setScreenAndShow(new ConfigGui()));
+                mc.execute(ClientGuiScreen::openConfigCenter);
                 return 1;
             });
             LiteralArgumentBuilder<FabricClientCommandSource> configExport = ClientCommands.literal("export");
@@ -716,7 +864,7 @@ public class ImnotcheatingyouareClient implements ClientModInitializer {
                 FabricClientCommandSource src = context.getSource();
                 if (mod != null) {
                     Minecraft mc = Minecraft.getInstance();
-                    mc.execute(() -> mc.setScreenAndShow(new ConfigGui()));
+                    mc.execute(() -> ClientGuiScreen.openModuleDetail(mod));
                 } else {
                     src.sendFeedback(Component.literal("§d[EclipseWare] §cModule not found!"));
                 }

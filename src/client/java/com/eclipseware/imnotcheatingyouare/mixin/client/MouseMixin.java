@@ -1,12 +1,12 @@
 package com.eclipseware.imnotcheatingyouare.mixin.client;
 
-import com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui;
+import com.eclipseware.imnotcheatingyouare.client.glassui.screen.GlassUiScreen;
 import com.eclipseware.imnotcheatingyouare.client.macro.MacroManager;
 import com.eclipseware.imnotcheatingyouare.client.module.impl.Freecam;
-import com.eclipseware.imnotcheatingyouare.client.utils.InputUtil;
 import com.eclipseware.imnotcheatingyouare.client.utils.MouseAimHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.client.player.LocalPlayer;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,8 +19,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(MouseHandler.class)
 public abstract class MouseMixin {
 
-    @Shadow private double accumulatedDX;
-    @Shadow private double accumulatedDY;
+    @Shadow
+    private double accumulatedDX;
+
+    @Shadow
+    private double accumulatedDY;
 
     @Inject(method = "turnPlayer", at = @At("HEAD"))
     private void velaris$applyAimDelta(double timeDelta, CallbackInfo ci) {
@@ -40,15 +43,17 @@ public abstract class MouseMixin {
         this.accumulatedDY += dy;
     }
 
-    @Inject(method = "onButton", at = @At("HEAD"))
+    @Inject(method = "onButton", at = @At("HEAD"), cancellable = true)
     private void onMousePress(long windowHandle, MouseButtonInfo buttonInfo, int action, CallbackInfo ci) {
-        int legacyButton = InputUtil.toLegacyOrdinal(buttonInfo.button());
-        if (action == 1 && ImGuiClickGui.isOpen() && ImGuiClickGui.isBinding()) {
-            ImGuiClickGui.onScreenMouseClicked(legacyButton);
-            return;
-        }
         Minecraft mc = Minecraft.getInstance();
-        if (mc.gui.screen() != null) {
+        Screen current = mc.gui.screen();
+        if (action == 1 && current instanceof GlassUiScreen gs) {
+            if (gs.onRawMouseButtonForBind(buttonInfo.button())) {
+                ci.cancel();
+                return;
+            }
+        }
+        if (current != null) {
             return;
         }
         if (MacroManager.isRecording()) {

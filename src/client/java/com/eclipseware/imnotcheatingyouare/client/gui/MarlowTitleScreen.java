@@ -1,8 +1,13 @@
 package com.eclipseware.imnotcheatingyouare.client.gui;
 
+import com.eclipseware.imnotcheatingyouare.client.glassui.bridge.ClientUiSounds;
+import com.eclipseware.imnotcheatingyouare.client.glassui.render.SatoshiFont;
+import com.eclipseware.imnotcheatingyouare.client.glassui.render.SatoshiWeight;
+import com.eclipseware.imnotcheatingyouare.client.glassui.render.TextGradient;
+import com.eclipseware.imnotcheatingyouare.client.glassui.render.UiRenderPrimitives;
+import com.eclipseware.imnotcheatingyouare.client.glassui.theme.UiTheme;
+import com.eclipseware.imnotcheatingyouare.client.glassui.theme.UiThemeContext;
 import com.eclipseware.imnotcheatingyouare.client.module.impl.Menu;
-import com.eclipseware.imnotcheatingyouare.client.utils.FontUtils;
-import com.eclipseware.imnotcheatingyouare.client.utils.remnant.Render2DEngine;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,12 +29,7 @@ public class MarlowTitleScreen extends TitleScreen {
     private static final Identifier LOGO_ID = Identifier.parse("imnotcheatingyouare:textures/logo.png");
     private static final int LOGO_NATIVE_WIDTH = 916;
     private static final int LOGO_NATIVE_HEIGHT = 272;
-
-    private static final Color BUTTON = new Color(26, 12, 38, 170);
-    private static final Color BUTTON_HOVER = new Color(255, 118, 26, 115);
-    private static final Color BUTTON_BORDER = new Color(255, 136, 42, 95);
-    private static final Color SPOOKY_VIOLET = new Color(162, 68, 255, 140);
-    private static final int BUTTON_HEIGHT = 22;
+    private static final int BUTTON_HEIGHT = 24;
     private static final int BUTTON_GAP = 6;
 
     private final List<MenuButton> buttons = new ArrayList<>();
@@ -43,67 +43,75 @@ public class MarlowTitleScreen extends TitleScreen {
 
     private float ease() {
         float speed = Menu.getAnimationSpeed();
-        float duration = Math.max(120f, 3000f / Math.max(1f, speed));
+        float duration = Math.max(120f, 1800f / Math.max(1f, speed));
         float fade = Math.min(1f, (System.currentTimeMillis() - openedAt) / duration);
-        return 1f - (1f - fade) * (1f - fade);
+        return UiRenderPrimitives.easeOutCubic(fade);
     }
 
     private class MenuButton extends AbstractButton {
+        private final String labelText;
         private final Runnable action;
-        private final boolean secondary;
+        private final boolean danger;
         private float hover;
 
-        MenuButton(int x, int y, int w, String label, boolean secondary, Runnable action) {
+        MenuButton(int x, int y, int w, String label, boolean danger, Runnable action) {
             super(x, y, w, BUTTON_HEIGHT, Component.literal(label));
+            this.labelText = label;
             this.action = action;
-            this.secondary = secondary;
+            this.danger = danger;
         }
 
         @Override
         public void onPress(InputWithModifiers input) {
+            ClientUiSounds.INSTANCE.playClick(1.06f);
             action.run();
         }
 
         @Override
         protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
             float ease = ease();
-            hover += ((isHoveredOrFocused() ? 1f : 0f) - hover) * 0.25f;
-            Render2DEngine.activeContext = graphics;
-            Color primary = Menu.getPrimaryColor();
-            float glowFactor = Menu.getHoverGlow();
-            float rad = Math.max(2f, Math.min(11f, Menu.getCornerRadius() * 0.6f));
-            Color borderTarget = lerp(BUTTON_BORDER, withAlpha(primary, 0.85f), hover);
-            Color fillTarget = lerp(BUTTON_HOVER, withAlpha(primary, 0.35f + glowFactor * 0.45f), glowFactor);
-            Color fillCol = lerp(BUTTON, fillTarget, hover);
-            Render2DEngine.drawRoundedRect(
-                graphics.pose(),
-                getX() - 1f,
-                getY() - 1f,
-                width + 2f,
-                height + 2f,
-                rad + 1f,
-                withAlpha(borderTarget, ease * (0.6f + hover * 0.4f))
-            );
-            Render2DEngine.drawRoundedRect(
-                graphics.pose(),
-                getX(),
-                getY(),
-                width,
-                height,
-                rad,
-                withAlpha(fillCol, ease)
-            );
-            int textAlpha = (int) (255 * ease);
-            int textColor = (textAlpha << 24) | (secondary ? 0xE8DDFB : 0xFFFFFF);
-            Component msg = getMessage();
-            String rawLabel = msg.getString();
-            Component styled = FontUtils.useVerdana() ? FontUtils.verdana(rawLabel) : Component.literal(rawLabel);
-            graphics.centeredText(
-                minecraft.font,
-                styled,
-                getX() + width / 2,
-                getY() + (height - 8) / 2,
-                textColor
+            hover += ((isHoveredOrFocused() ? 1f : 0f) - hover) * 0.24f;
+            UiTheme theme = UiThemeContext.current();
+            int accent = theme.accentColor();
+            float rad = Math.max(4f, Math.min(11f, Menu.getCornerRadius() * 0.65f));
+
+            if (danger) {
+                int dangerCol = 0xFFFF6470;
+                int topCol = UiRenderPrimitives.lerpColor(
+                    UiRenderPrimitives.argb(Math.round(34f * ease), 255, 110, 120),
+                    UiRenderPrimitives.multiplyAlpha(dangerCol, 0.42f * ease),
+                    hover
+                );
+                int botCol = UiRenderPrimitives.argb(Math.round((20f + 16f * hover) * ease), 180, 50, 60);
+                int rimCol = UiRenderPrimitives.multiplyAlpha(dangerCol, (0.55f + 0.35f * hover) * ease);
+                UiRenderPrimitives.drawGlassCard(graphics, getX(), getY(), width, height, rad, topCol, botCol, rimCol, botCol);
+            } else {
+                UiRenderPrimitives.drawThemedGlassCard(
+                    graphics,
+                    getX(),
+                    getY(),
+                    width,
+                    height,
+                    rad,
+                    34f + 24f * hover,
+                    20f + 14f * hover,
+                    56f + 34f * hover,
+                    24f + 16f * hover,
+                    ease,
+                    hover * 0.65f,
+                    hover,
+                    theme
+                );
+            }
+
+            SatoshiFont.drawCentered(
+                graphics,
+                labelText,
+                getX() + width * 0.5f,
+                getY() + (height - 6.6f) * 0.5f,
+                6.6f,
+                TextGradient.pearl(ease, danger ? 0xFFFF6470 : accent, 0.28f + 0.20f * hover, theme),
+                SatoshiWeight.SEMIBOLD
             );
         }
 
@@ -119,7 +127,7 @@ public class MarlowTitleScreen extends TitleScreen {
     }
 
     private int firstButtonY() {
-        return height / 2 - 10;
+        return height / 2 - 12;
     }
 
     @Override
@@ -140,10 +148,10 @@ public class MarlowTitleScreen extends TitleScreen {
         y += BUTTON_HEIGHT + BUTTON_GAP;
         buttons.add(new MenuButton(x, y, w, "Multiplayer", false, () -> minecraft.setScreenAndShow(new JoinMultiplayerScreen(this))));
         y += BUTTON_HEIGHT + BUTTON_GAP;
-        buttons.add(new MenuButton(x, y, w, "Settings", false, () -> minecraft.setScreenAndShow(new OptionsScreen(this, minecraft.options))));
+        buttons.add(new MenuButton(x, y, w, "Options", false, () -> minecraft.setScreenAndShow(new OptionsScreen(this, minecraft.options))));
         if (showCfg) {
             y += BUTTON_HEIGHT + BUTTON_GAP;
-            buttons.add(new MenuButton(x, y, w, "Config", false, () -> minecraft.setScreenAndShow(new MenuConfigScreen(this))));
+            buttons.add(new MenuButton(x, y, w, "Marlow Menu", false, () -> minecraft.setScreenAndShow(new MenuConfigScreen(this))));
         }
         y += BUTTON_HEIGHT + BUTTON_GAP + 8;
         buttons.add(new MenuButton(width / 2 - w / 4, y, w / 2, "Quit", true, () -> minecraft.stop()));
@@ -160,14 +168,6 @@ public class MarlowTitleScreen extends TitleScreen {
     }
 
     @Override
-    public void added() {
-    }
-
-    @Override
-    public void removed() {
-    }
-
-    @Override
     public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         String bgMode = Menu.getBackgroundMode();
         if ("Vanilla Panorama".equalsIgnoreCase(bgMode)) {
@@ -180,9 +180,7 @@ public class MarlowTitleScreen extends TitleScreen {
         }
         Color top = Menu.getPrimaryColor();
         Color bot = Menu.getSecondaryColor();
-        int topArgb = (0xFF << 24) | ((top.getRed() & 0xFF) << 16) | ((top.getGreen() & 0xFF) << 8) | (top.getBlue() & 0xFF);
-        int botArgb = (0xFF << 24) | ((bot.getRed() & 0xFF) << 16) | ((bot.getGreen() & 0xFF) << 8) | (bot.getBlue() & 0xFF);
-        graphics.fillGradient(0, 0, width, height, topArgb, botArgb);
+        graphics.fillGradient(0, 0, width, height, top.getRGB(), bot.getRGB());
     }
 
     @Override
@@ -197,13 +195,14 @@ public class MarlowTitleScreen extends TitleScreen {
             rebuildMenuButtons();
         }
         extractBackground(graphics, mouseX, mouseY, partialTick);
-        Render2DEngine.activeContext = graphics;
+        UiTheme theme = UiThemeContext.current();
+        int accent = theme.accentColor();
         float ease = ease();
 
         if (Menu.shouldShowLogo()) {
             float scale = Menu.getLogoScale();
             float logoW = Math.min(width * 0.55f, 300f) * scale;
-            float logoH = logoW * LOGO_NATIVE_HEIGHT / (float) LOGO_NATIVE_WIDTH;
+            float logoH = logoW * LOGO_NATIVE_HEIGHT / LOGO_NATIVE_WIDTH;
             int logoX = (int) (width / 2f - logoW / 2f);
             int logoY = (int) (Math.max(12f, firstButtonY() - logoH - 28f) - (1f - ease) * 12f);
             graphics.blit(LOGO_ID, logoX, logoY, logoX + (int) logoW, logoY + (int) logoH, 0.0f, 1.0f, 0.0f, 1.0f);
@@ -215,31 +214,22 @@ public class MarlowTitleScreen extends TitleScreen {
             MenuButton last = buttons.get(buttons.size() - 1);
             float panelX = width / 2f - w / 2f - pad;
             float panelY = firstButtonY() - pad;
-            float panelW = w + pad * 2;
-            float panelH = last.getY() + BUTTON_HEIGHT - firstButtonY() + pad * 2;
-            Color sec = Menu.getSecondaryColor();
-            Color pri = Menu.getPrimaryColor();
-            Color panelCol = new Color(sec.getRed(), sec.getGreen(), sec.getBlue(), Menu.getPanelAlpha());
-            float cornerRad = Menu.getCornerRadius();
-            float pulse = 0.5f + 0.5f * (float) Math.sin((System.currentTimeMillis() - openedAt) * 0.0032);
-            Color outerGlow = lerp(SPOOKY_VIOLET, withAlpha(pri, 0.55f), pulse);
-            Render2DEngine.drawRoundedRect(
-                graphics.pose(),
-                panelX - 2f,
-                panelY - 2f,
-                panelW + 4f,
-                panelH + 4f,
-                cornerRad + 2f,
-                withAlpha(outerGlow, ease * 0.65f)
-            );
-            Render2DEngine.drawRoundedRect(
-                graphics.pose(),
+            float panelW = w + pad * 2f;
+            float panelH = last.getY() + BUTTON_HEIGHT - firstButtonY() + pad * 2f;
+            float cornerRad = Math.max(6f, Menu.getCornerRadius());
+
+            UiRenderPrimitives.drawRoundedShadow(graphics, panelX, panelY + 2f, panelW, panelH, cornerRad, 14f, UiRenderPrimitives.argb(Math.round(105f * ease), 0, 0, 0));
+            UiRenderPrimitives.drawGlassCard(
+                graphics,
                 panelX,
                 panelY,
                 panelW,
                 panelH,
                 cornerRad,
-                withAlpha(panelCol, ease)
+                theme.windowTopColor(Math.round(218f * ease)),
+                theme.windowBottomColor(Math.round(234f * ease)),
+                UiRenderPrimitives.argb(Math.round(72f * ease), 255, 255, 255),
+                UiRenderPrimitives.argb(Math.round(26f * ease), 255, 255, 255)
             );
         }
 
@@ -248,15 +238,12 @@ public class MarlowTitleScreen extends TitleScreen {
         }
 
         if (Menu.shouldShowWatermark()) {
-            boolean useVerd = FontUtils.useVerdana();
-            String brandStr = "Marlowww V5.5 · Spooky Edition";
-            Component brand = useVerd ? FontUtils.verdana(brandStr) : Component.literal(brandStr);
-            graphics.text(minecraft.font, brand, 6, height - 12, 0xFFFF8C2E, false);
+            String brandStr = "Marlow Client • Glass UI";
+            SatoshiFont.draw(graphics, brandStr, 8f, height - 13f, 5.8f, TextGradient.pearl(ease, accent, 0.35f, theme), SatoshiWeight.SEMIBOLD);
             WorldVersion wv = SharedConstants.getCurrentVersion();
             String version = "Minecraft " + wv.name();
-            Component verComp = useVerd ? FontUtils.verdana(version) : Component.literal(version);
-            int verW = useVerd ? FontUtils.verdanaWidth(version) : minecraft.font.width(verComp);
-            graphics.text(minecraft.font, verComp, width - 6 - verW, height - 12, 0xFFE6C8FF, false);
+            float verW = SatoshiFont.width(version, 5.6f, SatoshiWeight.MEDIUM);
+            SatoshiFont.draw(graphics, version, width - 8f - verW, height - 13f, 5.6f, TextGradient.mist(0.85f * ease, theme), SatoshiWeight.MEDIUM);
         }
     }
 
@@ -269,23 +256,5 @@ public class MarlowTitleScreen extends TitleScreen {
             }
         }
         return false;
-    }
-
-    private static Color withAlpha(Color color, float factor) {
-        int a = Math.max(0, Math.min(255, (int) (color.getAlpha() * factor)));
-        return new Color(color.getRed(), color.getGreen(), color.getBlue(), a);
-    }
-
-    private static Color lerp(Color a, Color b, float t) {
-        int r = (int) (a.getRed() + (b.getRed() - a.getRed()) * t);
-        int g = (int) (a.getGreen() + (b.getGreen() - a.getGreen()) * t);
-        int bl = (int) (a.getBlue() + (b.getBlue() - a.getBlue()) * t);
-        int al = (int) (a.getAlpha() + (b.getAlpha() - a.getAlpha()) * t);
-        return new Color(
-            Math.max(0, Math.min(255, r)),
-            Math.max(0, Math.min(255, g)),
-            Math.max(0, Math.min(255, bl)),
-            Math.max(0, Math.min(255, al))
-        );
     }
 }

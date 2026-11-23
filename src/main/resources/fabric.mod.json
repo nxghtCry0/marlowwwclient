@@ -3,10 +3,10 @@
   "id": "imnotcheatingyouare",
   "version": "${version}",
   "name": "Marlowwww Client",
-  "description": "Open Source Ghost Client that still uses Mods not injection yay",
+  "description": "Ghost Client that still uses Mods not injection yay",
   "authors": [],
   "contact": {},
-  "license": "GPL-3.0",
+  "license": "NPSL-1.0",
   "icon": "assets/imnotcheatingyouare/icon.png",
   "environment": "client",
   "entrypoints": {

@@ -3,151 +3,196 @@ package com.eclipseware.imnotcheatingyouare.client.module.impl;
 import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
+import com.eclipseware.imnotcheatingyouare.client.module.ModuleManager;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
-import com.eclipseware.imnotcheatingyouare.client.utils.cheat.AntiCheatProfile;
+import com.eclipseware.imnotcheatingyouare.client.setting.SettingsManager;
+import java.util.concurrent.ThreadLocalRandom;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 
 public class WTap extends Module {
-
-    private int phase = 0;
-    private long lastPhaseTimeMs = 0L;
-    private long targetDelayMs = 0L;
+    private final SprintResetController.WTapEngine engine = new SprintResetController.WTapEngine();
 
     public WTap() {
-        super("WTap", Category.Combat, "Releases forward key on hit to reset sprint knockback.");
+        super("WTap", Category.Combat, "Releases forward input on hit and pulses re-sprint for maximum knockback.");
     }
 
-    private boolean isSilent() {
-        Setting modeSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "WTap Mode");
-        String mode = modeSetting != null ? modeSetting.getValString() : "Auto";
-        if (mode.equalsIgnoreCase("Silent")) return true;
-        if (mode.equalsIgnoreCase("Normal")) return false;
-        return AntiCheatProfile.wtapSilentMode();
+    private Setting setting(String name) {
+        ImnotcheatingyouareClient client = ImnotcheatingyouareClient.INSTANCE;
+        if (client == null || client.settingsManager == null) {
+            return null;
+        }
+        SettingsManager sm = client.settingsManager;
+        return sm.getSettingByName(this, name);
     }
 
-    public void onAttackLanded(net.minecraft.world.entity.Entity target) {
-        if (!isToggled() || mc.player == null || mc.options == null) return;
-        if (phase != 0) return;
-        if (!mc.options.keyUp.isDown()) return;
+    private boolean bool(String name, boolean fallback) {
+        Setting s = setting(name);
+        return s != null ? s.getValBoolean() : fallback;
+    }
 
-        Setting chanceSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Chance (%)");
-        double chance = chanceSetting != null ? chanceSetting.getValDouble() : 100.0;
-        if (Math.random() * 100.0 > chance) return;
+    private double num(String name, double fallback) {
+        Setting s = setting(name);
+        return s != null ? s.getValDouble() : fallback;
+    }
 
-        Setting onlyPlayersSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Only Players");
-        boolean onlyPlayers = onlyPlayersSetting != null && onlyPlayersSetting.getValBoolean();
-        if (onlyPlayers && !(target instanceof net.minecraft.world.entity.player.Player)) return;
+    private boolean isSilentMode() {
+        Setting modeSetting = setting("WTap Mode");
+        String mode = modeSetting != null ? modeSetting.getValString() : "Normal";
+        return "Silent".equalsIgnoreCase(mode);
+    }
 
-        Setting waitSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Wait Delay (ms)");
-        long baseWait = waitSetting != null ? (long) waitSetting.getValDouble() : 0L;
+    public boolean isActive() {
+        return engine.phase() != SprintResetController.TapPhase.IDLE;
+    }
 
-        Setting jitterSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Jitter (ms)");
-        long jitter = jitterSetting != null ? (long) jitterSetting.getValDouble() : 20L;
+    public boolean isNormalReleaseActive() {
+        return engine.isNormalReleaseActive();
+    }
 
-        long waitMs = baseWait + (long) (Math.random() * (jitter + 1));
+    public boolean isSuppressingSprint() {
+        return engine.isSuppressingSprint();
+    }
 
-        lastPhaseTimeMs = System.currentTimeMillis();
-        if (waitMs <= 0) {
-            phase = 2;
-            if (isSilent()) {
-                mc.player.setSprinting(false);
-            } else {
-                mc.options.keyUp.setDown(false);
+    public void onAttackLanded(Entity target) {
+        boolean sprinting = mc != null && mc.player != null && mc.player.isSprinting();
+        float strength = mc != null && mc.player != null ? mc.player.getAttackStrengthScale(0.5f) : 1.0f;
+        tryTriggerOnAttack(target, sprinting, strength);
+    }
+
+    public boolean tryTriggerOnAttack(Entity target, boolean preAttackSprinting, float preAttackStrength) {
+        if (!isToggled() || mc == null || mc.player == null || mc.options == null) {
+            return false;
+        }
+        if (mc.gui.screen() != null || isActive()) {
+            return false;
+        }
+        var opts = mc.options;
+        boolean holdingForward = SprintResetController.isPhysicalKeyDown(opts.keyUp) || opts.keyUp.isDown();
+        if (!holdingForward) {
+            return false;
+        }
+        if (bool("Only Players", true) && !(target instanceof Player)) {
+            return false;
+        }
+        boolean sprintingNow = preAttackSprinting || mc.player.isSprinting();
+        if (bool("Sprint Only", true) && !sprintingNow) {
+            return false;
+        }
+        if (bool("Fresh Hits Only", true)) {
+            if (preAttackStrength < 0.70f) {
+                return false;
             }
-            Setting actionSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Action Delay (ms)");
-            long baseAction = actionSetting != null ? (long) actionSetting.getValDouble() : 100L;
-            targetDelayMs = baseAction + (long) (Math.random() * (jitter + 1));
+            if (target instanceof LivingEntity le && le.hurtTime > 4) {
+                return false;
+            }
+        }
+
+        double chance = num("Chance (%)", 100.0);
+        ThreadLocalRandom rng = ThreadLocalRandom.current();
+        if (chance < 99.9 && (chance <= 0.0 || rng.nextDouble(100.0) > chance)) {
+            return false;
+        }
+
+        long baseWait = Math.max(0L, Math.round(num("Wait Delay (ms)", 0.0)));
+        long baseAction = Math.max(20L, Math.round(num("Action Delay (ms)", 85.0)));
+        long jitter = Math.max(0L, Math.round(num("Jitter (ms)", 15.0)));
+        long waitJitter = (baseWait > 0L && jitter > 0L) ? rng.nextLong(jitter + 1L) : 0L;
+        long holdJitter = jitter > 0L ? rng.nextLong(jitter + 1L) : 0L;
+
+        boolean silent = isSilentMode();
+        long now = System.currentTimeMillis();
+        boolean started = engine.trigger(now, baseWait + waitJitter, baseAction + holdJitter, silent, sprintingNow);
+        if (started && engine.phase() == SprintResetController.TapPhase.ACTIVE) {
+            applyActiveState(silent);
+        }
+        return started;
+    }
+
+    private void applyActiveState(boolean silent) {
+        if (mc == null || mc.options == null || mc.player == null) {
+            return;
+        }
+        if (silent) {
+            mc.player.setSprinting(false);
         } else {
-            phase = 1;
-            targetDelayMs = waitMs;
+            var opts = mc.options;
+            opts.keyUp.setDown(false);
+            SprintResetController.releaseSprintKeySafely(mc);
         }
     }
 
     @Override
     public void onTick() {
-        if (mc.player == null || mc.options == null || phase == 0 || AutoTotem.shouldPauseInputs()) return;
+        if (!isActive()) {
+            return;
+        }
+        if (mc == null || mc.player == null || mc.options == null || mc.gui.screen() != null || AutoTotem.shouldPauseInputs()) {
+            abortAndRestore();
+            return;
+        }
 
+        boolean wasWaiting = engine.phase() == SprintResetController.TapPhase.WAITING;
+        boolean wasSilent = engine.isSilentActive();
+        boolean physicalForward = SprintResetController.isPhysicalKeyDown(mc.options.keyUp);
         long now = System.currentTimeMillis();
-        switch (phase) {
-            case 1 -> {
-                if (!mc.options.keyUp.isDown()) { phase = 0; return; }
-                if (now - lastPhaseTimeMs >= targetDelayMs) {
-                    if (isSilent()) {
-                        mc.player.setSprinting(false);
-                    } else {
-                        mc.options.keyUp.setDown(false);
-                    }
-                    phase = 2;
-                    lastPhaseTimeMs = now;
-                    Setting actionSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Action Delay (ms)");
-                    long baseAction = actionSetting != null ? (long) actionSetting.getValDouble() : 100L;
-                    Setting jitterSetting = ImnotcheatingyouareClient.INSTANCE.settingsManager.getSettingByName(this, "Jitter (ms)");
-                    long jitter = jitterSetting != null ? (long) jitterSetting.getValDouble() : 20L;
-                    targetDelayMs = baseAction + (long) (Math.random() * (jitter + 1));
+
+        boolean shouldReSprint = engine.stepTick(now, physicalForward);
+        if (engine.phase() == SprintResetController.TapPhase.ACTIVE) {
+            if (wasWaiting) {
+                applyActiveState(engine.isSilentActive());
+            } else if (!engine.isSilentActive()) {
+                var opts = mc.options;
+                opts.keyUp.setDown(false);
+                SprintResetController.releaseSprintKeySafely(mc);
+            } else {
+                mc.player.setSprinting(false);
+            }
+            return;
+        }
+
+        if (engine.phase() == SprintResetController.TapPhase.IDLE) {
+            if (wasSilent) {
+                if (physicalForward && !mc.player.isShiftKeyDown()) {
+                    mc.player.setSprinting(true);
+                }
+            } else {
+                var opts = mc.options;
+                SprintResetController.restorePhysicalKey(opts.keyUp);
+                if (opts.keyUp.isDown() && (shouldReSprint || SprintResetController.isAutoSprintEnabled())) {
+                    SprintResetController.requestReSprintPulse(mc);
                 }
             }
-            case 2 -> {
-                if (now - lastPhaseTimeMs >= targetDelayMs) {
-                    if (isSilent()) {
-                        mc.player.setSprinting(true);
-                    } else if (isPhysicallyHoldingW()) {
-                        mc.options.keyUp.setDown(true);
-                    }
-                    phase = 0;
-                }
-            }
+        }
+    }
+
+    public void abortAndRestore() {
+        boolean wasSilent = engine.isSilentActive();
+        boolean wasNormal = engine.isNormalReleaseActive();
+        engine.reset();
+        if (mc == null || mc.options == null) {
+            return;
+        }
+        if (wasNormal) {
+            SprintResetController.restorePhysicalKey(mc.options.keyUp);
+        } else if (wasSilent && mc.player != null && SprintResetController.isPhysicalKeyDown(mc.options.keyUp)) {
+            mc.player.setSprinting(true);
         }
     }
 
     public static boolean shouldSilentStopSprint() {
-        if (ImnotcheatingyouareClient.INSTANCE == null || ImnotcheatingyouareClient.INSTANCE.moduleManager == null) return false;
-        WTap wTap = (WTap) ImnotcheatingyouareClient.INSTANCE.moduleManager.getModule("WTap");
-        if (wTap == null || !wTap.isToggled()) return false;
-        if (wTap.phase != 2) return false;
-        return wTap.isSilent();
-    }
-
-    private boolean isPhysicallyHoldingW() {
-        return com.eclipseware.imnotcheatingyouare.client.utils.InputUtil.isDown(getKeyCode(mc.options.keyUp));
-    }
-
-    private int getKeyCode(net.minecraft.client.KeyMapping mapping) {
-        try {
-            for (java.lang.reflect.Method m : mapping.getClass().getMethods()) {
-                if (m.getParameterCount() == 0 && m.getReturnType().getName().contains("InputConstants$Key")) {
-                    Object keyObj = m.invoke(mapping);
-                    java.lang.reflect.Method getValue = keyObj.getClass().getMethod("getValue");
-                    return (int) getValue.invoke(keyObj);
-                }
-            }
-        } catch (Exception ignored) {}
-        return mapping.getDefaultKey().getValue();
-    }
-
-    private long getWindowHandle() {
-        try {
-            for (java.lang.reflect.Field f : mc.getWindow().getClass().getDeclaredFields()) {
-                if (f.getType() == long.class) {
-                    f.setAccessible(true);
-                    return f.getLong(mc.getWindow());
-                }
-            }
-        } catch (Exception ignored) {}
-        return 0;
+        ImnotcheatingyouareClient client = ImnotcheatingyouareClient.INSTANCE;
+        if (client == null || client.moduleManager == null) {
+            return false;
+        }
+        ModuleManager mm = client.moduleManager;
+        Module mod = mm.getModule("WTap");
+        return mod instanceof WTap wTap && wTap.isToggled() && wTap.engine.isSilentActive();
     }
 
     @Override
     public void onDisable() {
-        if (phase == 2 && mc.options != null) {
-            if (isSilent()) {
-                if (mc.player != null) {
-                    mc.player.setSprinting(true);
-                }
-            } else if (isPhysicallyHoldingW()) {
-                mc.options.keyUp.setDown(true);
-            }
-        }
-        phase = 0;
-        lastPhaseTimeMs = 0L;
-        targetDelayMs = 0L;
+        abortAndRestore();
     }
 }

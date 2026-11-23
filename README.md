@@ -9,7 +9,7 @@ We also have a GitLab!
 
 # Marlow Client V4
 
-Marlow Client is an open-source Fabric client focused on combat automation, movement utilities, rendering tools, and quality-of-life systems for PvP-oriented gameplay. The click GUI, ESP, nametags, and HUD overlays are rendered natively with Dear ImGui rather than vanilla widgets. Newly rewritten and rearchitected for Minecraft 26.3.
+Marlow Client is a Fabric client focused on combat automation, movement utilities, rendering tools, and quality-of-life systems for PvP-oriented gameplay. The click GUI, ESP, nametags, and HUD overlays are rendered natively with Dear ImGui rather than vanilla widgets. Newly rewritten and rearchitected for Minecraft 26.3.
 
 <a href="https://www.star-history.com/?repos=nxghtCry0%2Fmarlowwwclient&type=date&legend=top-left">
  <picture>
@@ -162,4 +162,6 @@ Build artifacts are generated in `build/libs/`. Use the main jar artifact, not t
 
 ## License
 
-This repository currently includes both `LICENSE.txt` and `GNU-LICENSE.md`, and `fabric.mod.json` declares `GPL-3.0`. Review licensing files and metadata together before redistribution.
+Copyright (c) 2026 Nxght (nxghtCry0). All Rights Reserved.
+
+Licensed under the **Night Public Software License (NPSL) Version 1.0**, an adapted All Rights Reserved software license. See [LICENSE.md](LICENSE.md) for the full license text, permitted uses, attribution requirements, and restrictions.

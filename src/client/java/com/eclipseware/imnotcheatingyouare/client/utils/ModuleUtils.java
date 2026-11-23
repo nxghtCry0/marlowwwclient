@@ -1,71 +1,107 @@
 package com.eclipseware.imnotcheatingyouare.client.utils;
 
+import com.eclipseware.imnotcheatingyouare.mixin.client.InventoryAccessor;
+import com.eclipseware.imnotcheatingyouare.mixin.client.MultiPlayerGameModeAccessor;
+import java.lang.reflect.Method;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.prediction.BlockStatePredictionHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
-import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
 import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
-import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 public class ModuleUtils {
     public static final Minecraft mc = Minecraft.getInstance();
 
+    private static int lastSentSlot = -1;
+    private static int silentRevertSlot = -1;
+    public static boolean isSpoofing = false;
+    private static Method getHandlerMethod = null;
+    public static int spoofState = 0;
+    private static PendingPlacement pendingPlacement = null;
+    public static int revertSlot = -1;
+
     public static int findItemInHotbar(Item item) {
-        if (mc.player == null) return -1;
+        if (mc.player == null) {
+            return -1;
+        }
+        Inventory inv = mc.player.getInventory();
         for (int i = 0; i < 9; i++) {
-            ItemStack stack = mc.player.getInventory().getItem(i);
-            if (stack.is(item)) return i;
+            ItemStack stack = inv.getItem(i);
+            if (stack.is(item)) {
+                return i;
+            }
         }
         return -1;
     }
 
     public static int getSelectedSlot() {
-        if (mc.player == null) return 0;
-        return ((com.eclipseware.imnotcheatingyouare.mixin.client.InventoryAccessor) mc.player.getInventory()).getSelected();
+        if (mc.player == null) {
+            return 0;
+        }
+        InventoryAccessor inv = (InventoryAccessor) mc.player.getInventory();
+        return inv.getSelected();
     }
 
     public static void setClientSlot(int slot) {
-        if (mc.player == null) return;
-        ((com.eclipseware.imnotcheatingyouare.mixin.client.InventoryAccessor) mc.player.getInventory()).setSelected(slot);
+        if (mc.player == null) {
+            return;
+        }
+        InventoryAccessor inv = (InventoryAccessor) mc.player.getInventory();
+        inv.setSelected(slot);
     }
 
     public static void switchToSlot(int slot) {
-        if (mc.player == null) return;
-        ((com.eclipseware.imnotcheatingyouare.mixin.client.InventoryAccessor) mc.player.getInventory()).setSelected(slot);
+        if (mc.player == null) {
+            return;
+        }
+        setClientSlot(slot);
         setServerSlot(slot);
     }
-    
-    private static int lastSentSlot = -1;
 
     public static void setServerSlot(int slot) {
-        if (mc.player == null || mc.getConnection() == null) return;
+        ClientPacketListener conn = mc.getConnection();
+        if (mc.player == null || conn == null) {
+            return;
+        }
         if (mc.gameMode != null) {
-            com.eclipseware.imnotcheatingyouare.mixin.client.MultiPlayerGameModeAccessor gm =
-                    (com.eclipseware.imnotcheatingyouare.mixin.client.MultiPlayerGameModeAccessor) mc.gameMode;
+            MultiPlayerGameModeAccessor gm = (MultiPlayerGameModeAccessor) mc.gameMode;
             if (gm.getCarriedIndex() == slot) {
                 lastSentSlot = slot;
                 return;
             }
-            mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
+            conn.send(new ServerboundSetCarriedItemPacket(slot));
             gm.setCarriedIndex(slot);
             lastSentSlot = slot;
             return;
         }
-        if (lastSentSlot == slot) return;
-        mc.getConnection().send(new ServerboundSetCarriedItemPacket(slot));
+        if (lastSentSlot == slot) {
+            return;
+        }
+        conn.send(new ServerboundSetCarriedItemPacket(slot));
         lastSentSlot = slot;
     }
-    
+
+    public static void swingHand(Player player, InteractionHand hand) {
+        if (player == null || hand == null) {
+            return;
+        }
+        player.swing(hand, SwingAnimation.DEFAULT, false);
+    }
+
     public static void attackSwing() {
-        if (mc.player == null || mc.player.connection == null) return;
-        mc.player.swing(net.minecraft.world.InteractionHand.MAIN_HAND, mc.player.getMainHandItem().getAttackAnimation(), false);
-        mc.player.connection.send(net.minecraft.network.protocol.game.ServerboundPunchPacket.INSTANCE);
+        swingHand(mc.player, InteractionHand.MAIN_HAND);
     }
 
     public static void resetServerSlot() {
@@ -77,73 +113,76 @@ public class ModuleUtils {
         double diffY = to.y - from.y;
         double diffZ = to.z - from.z;
         double distXZ = Math.sqrt(diffX * diffX + diffZ * diffZ);
-        
-        float yaw = (float) Math.toDegrees(Math.atan2(diffZ, diffX)) - 90f;
+
+        float yaw = (float) Math.toDegrees(Math.atan2(diffZ, diffX)) - 90.0f;
         float pitch = (float) -Math.toDegrees(Math.atan2(diffY, distXZ));
-        return new float[] { yaw, pitch };
+        return new float[]{yaw, pitch};
     }
 
     public static void placeBlockPacket(BlockPos pos, Direction face) {
-        if (mc.player == null || mc.getConnection() == null) return;
-        BlockHitResult hitResult = new BlockHitResult(
-            Vec3.atCenterOf(pos), face, pos, false
-        );
-
-        net.minecraft.client.multiplayer.prediction.BlockStatePredictionHandler handler = getPredictionHandler();
-        if (handler != null) {
-            handler.startPredicting();
+        if (mc.player == null || mc.gameMode == null || mc.getConnection() == null) {
+            return;
         }
-
-        mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+        BlockHitResult hitResult = new BlockHitResult(Vec3.atCenterOf(pos), face, pos, false);
         mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
+        swingHand(mc.player, InteractionHand.MAIN_HAND);
     }
 
     public static void useItemPacket() {
+        if (mc.player == null) {
+            return;
+        }
         useItemPacket(mc.player.getYRot(), mc.player.getXRot());
     }
 
     public static void useItemPacket(float yaw, float pitch) {
-        if (mc.player == null || mc.getConnection() == null) return;
-        ServerboundUseItemPacket packet = new ServerboundUseItemPacket(
-            InteractionHand.MAIN_HAND, 0, yaw, pitch
-        );
-        mc.getConnection().send(packet);
-        mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+        ClientPacketListener conn = mc.getConnection();
+        if (mc.player == null || conn == null) {
+            return;
+        }
+        ServerboundUseItemPacket packet = new ServerboundUseItemPacket(InteractionHand.MAIN_HAND, 0, yaw, pitch);
+        conn.send(packet);
+        swingHand(mc.player, InteractionHand.MAIN_HAND);
     }
 
     public static void spoofSlot(int fakeSlot) {
-        if (mc.getConnection() == null || mc.player == null) return;
-        mc.getConnection().send(new ServerboundSetCarriedItemPacket(fakeSlot));
+        ClientPacketListener conn = mc.getConnection();
+        if (conn == null || mc.player == null) {
+            return;
+        }
+        conn.send(new ServerboundSetCarriedItemPacket(fakeSlot));
     }
 
     public static void spoofRestore() {
-        if (mc.getConnection() == null || mc.player == null) return;
+        ClientPacketListener conn = mc.getConnection();
+        if (conn == null || mc.player == null) {
+            return;
+        }
         int cur = getSelectedSlot();
-        mc.getConnection().send(new ServerboundSetCarriedItemPacket(cur));
+        conn.send(new ServerboundSetCarriedItemPacket(cur));
     }
 
     public static void spoofPlaceBlockPacket(BlockPos pos, Direction face) {
-        if (mc.player == null || mc.getConnection() == null) return;
-        BlockHitResult hitResult = new BlockHitResult(
-            Vec3.atCenterOf(pos), face, pos, false
-        );
-        mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
-        mc.getConnection().send(new ServerboundUseItemOnPacket(
-            InteractionHand.MAIN_HAND, hitResult, 0
-        ));
+        if (mc.player == null || mc.gameMode == null || mc.getConnection() == null) {
+            return;
+        }
+        BlockHitResult hitResult = new BlockHitResult(Vec3.atCenterOf(pos), face, pos, false);
+        mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
+        swingHand(mc.player, InteractionHand.MAIN_HAND);
     }
 
-    private static int silentRevertSlot = -1;
-
     public static void runSilentSwap(int targetSlot, Runnable action) {
-        if (mc.player == null || mc.getConnection() == null) return;
+        ClientPacketListener conn = mc.getConnection();
+        if (mc.player == null || conn == null) {
+            return;
+        }
         int originalSlot = getSelectedSlot();
         if (originalSlot == targetSlot) {
             action.run();
             return;
         }
 
-        mc.getConnection().send(new ServerboundSetCarriedItemPacket(targetSlot));
+        conn.send(new ServerboundSetCarriedItemPacket(targetSlot));
         setClientSlot(targetSlot);
         try {
             action.run();
@@ -154,24 +193,23 @@ public class ModuleUtils {
     }
 
     public static void tickSilentRevert() {
-        if (silentRevertSlot != -1 && mc.player != null && mc.getConnection() != null) {
-            mc.getConnection().send(new ServerboundSetCarriedItemPacket(silentRevertSlot));
+        ClientPacketListener conn = mc.getConnection();
+        if (silentRevertSlot != -1 && mc.player != null && conn != null) {
+            conn.send(new ServerboundSetCarriedItemPacket(silentRevertSlot));
             silentRevertSlot = -1;
         }
     }
 
-    public static boolean isSpoofing = false;
-
-    private static java.lang.reflect.Method getHandlerMethod = null;
-    
-    private static net.minecraft.client.multiplayer.prediction.BlockStatePredictionHandler getPredictionHandler() {
-        if (mc.level == null) return null;
+    private static BlockStatePredictionHandler getPredictionHandler() {
+        if (mc.level == null) {
+            return null;
+        }
         try {
             if (getHandlerMethod == null) {
-                getHandlerMethod = net.minecraft.client.multiplayer.ClientLevel.class.getDeclaredMethod("getBlockStatePredictionHandler");
+                getHandlerMethod = ClientLevel.class.getDeclaredMethod("getBlockStatePredictionHandler");
                 getHandlerMethod.setAccessible(true);
             }
-            return (net.minecraft.client.multiplayer.prediction.BlockStatePredictionHandler) getHandlerMethod.invoke(mc.level);
+            return (BlockStatePredictionHandler) getHandlerMethod.invoke(mc.level);
         } catch (Exception e) {
             return null;
         }
@@ -201,49 +239,46 @@ public class ModuleUtils {
         }
     }
 
-    public static int spoofState = 0; 
-    private static PendingPlacement pendingPlacement = null;
-    public static int revertSlot = -1;
-
     public static boolean hasPendingPlacement() {
         return spoofState == 1 || spoofState == 2;
     }
 
     public static void placeBlockSilent(BlockPos pos, Direction face, int targetSlot) {
-        if (spoofState != 0 || mc.player == null || mc.getConnection() == null) return;
-        
+        if (spoofState != 0 || mc.player == null || mc.getConnection() == null) {
+            return;
+        }
         int originalSlot = getSelectedSlot();
         pendingPlacement = new PendingPlacement(pos, face, targetSlot, originalSlot);
-        
         spoofState = 1;
         revertSlot = originalSlot;
     }
 
     public static void placeBlockSilent(BlockHitResult hitResult, int targetSlot) {
-        if (spoofState != 0 || mc.player == null || mc.getConnection() == null) return;
-        
+        if (spoofState != 0 || mc.player == null || mc.getConnection() == null) {
+            return;
+        }
         int originalSlot = getSelectedSlot();
         pendingPlacement = new PendingPlacement(hitResult, targetSlot, originalSlot);
-        
         spoofState = 1;
         revertSlot = originalSlot;
     }
 
     public static void processPostMovement() {
-        if (spoofState != 2 || pendingPlacement == null || mc.player == null || mc.getConnection() == null) return;
-        
+        if (spoofState != 2 || pendingPlacement == null || mc.player == null || mc.gameMode == null || mc.getConnection() == null) {
+            return;
+        }
+
         PendingPlacement placement = pendingPlacement;
-        pendingPlacement = null; 
-        
+        pendingPlacement = null;
+
         int curSlot = getSelectedSlot();
-        boolean slotChanged = curSlot != placement.targetSlot;
-        if (slotChanged) {
+        if (curSlot != placement.targetSlot) {
             setServerSlot(placement.targetSlot);
             setClientSlot(placement.targetSlot);
         }
 
-        mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
         mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, placement.hitResult);
+        swingHand(mc.player, InteractionHand.MAIN_HAND);
 
         if (revertSlot != -1 && revertSlot != placement.targetSlot) {
             setClientSlot(revertSlot);
@@ -253,7 +288,8 @@ public class ModuleUtils {
     }
 
     public static void onClientTickStart() {
-        if (mc.player == null || mc.getConnection() == null) {
+        ClientPacketListener conn = mc.getConnection();
+        if (mc.player == null || conn == null) {
             spoofState = 0;
             pendingPlacement = null;
             revertSlot = -1;
@@ -266,7 +302,7 @@ public class ModuleUtils {
             if (revertSlot != -1) {
                 int current = getSelectedSlot();
                 if (current != revertSlot) {
-                    mc.getConnection().send(new ServerboundSetCarriedItemPacket(revertSlot));
+                    conn.send(new ServerboundSetCarriedItemPacket(revertSlot));
                     setClientSlot(revertSlot);
                 }
                 revertSlot = -1;
@@ -284,22 +320,28 @@ public class ModuleUtils {
     }
 
     public static int getCrystalSlot() {
-        return findItemInHotbar(net.minecraft.world.item.Items.END_CRYSTAL);
+        return findItemInHotbar(Items.END_CRYSTAL);
     }
 
     public static int getObsidianSlot() {
-        return findItemInHotbar(net.minecraft.world.item.Items.OBSIDIAN);
+        return findItemInHotbar(Items.OBSIDIAN);
     }
 
     public static boolean isHoldingWeapon(ItemStack stack) {
-        if (stack == null || stack.isEmpty()) return false;
-        String id = stack.getItem().getDescriptionId().toLowerCase();
+        if (stack == null || stack.isEmpty()) {
+            return false;
+        }
+        Item item = stack.getItem();
+        String id = item.getDescriptionId().toLowerCase();
         return id.contains("sword") || id.contains("axe") || id.contains("mace");
     }
 
-    public static boolean isHoldingCrystal(net.minecraft.world.entity.player.Player player) {
-        if (player == null) return false;
-        return player.getMainHandItem().is(net.minecraft.world.item.Items.END_CRYSTAL) ||
-               player.getOffhandItem().is(net.minecraft.world.item.Items.END_CRYSTAL);
+    public static boolean isHoldingCrystal(Player player) {
+        if (player == null) {
+            return false;
+        }
+        ItemStack main = player.getMainHandItem();
+        ItemStack off = player.getOffhandItem();
+        return main.is(Items.END_CRYSTAL) || off.is(Items.END_CRYSTAL);
     }
 }

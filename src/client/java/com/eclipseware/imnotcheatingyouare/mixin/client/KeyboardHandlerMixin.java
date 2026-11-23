@@ -1,7 +1,7 @@
 package com.eclipseware.imnotcheatingyouare.mixin.client;
 
 import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
-import com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui;
+import com.eclipseware.imnotcheatingyouare.client.glassui.screen.GlassUiScreen;
 import com.eclipseware.imnotcheatingyouare.client.gui.MenuConfigScreen;
 import com.eclipseware.imnotcheatingyouare.client.macro.MacroManager;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
@@ -28,9 +28,15 @@ public class KeyboardHandlerMixin {
     private void onKeyPress(long window, int action, KeyEvent event, CallbackInfo ci) {
         Minecraft mc = Minecraft.getInstance();
         Screen current = mc.gui.screen();
+        if (action == 1 && current instanceof GlassUiScreen gs && gs.isListeningForBind()) {
+            if (gs.onRawKeyForBind(event.key())) {
+                ci.cancel();
+                return;
+            }
+        }
         if (action == 1) {
             int guiKey = resolveGuiKeybind();
-            if (event.input() == guiKey) {
+            if (event.key() == guiKey) {
                 if (current instanceof TitleScreen) {
                     mc.setScreenAndShow(new MenuConfigScreen(current));
                     ci.cancel();
@@ -57,7 +63,10 @@ public class KeyboardHandlerMixin {
 
     @Inject(method = "charTyped", at = @At("HEAD"))
     private void onCharTyped(long window, CharacterEvent event, CallbackInfo ci) {
-        if (ImguiLoader.wantsTextInput() && !ImGuiClickGui.isBinding()) {
+        Minecraft mc = Minecraft.getInstance();
+        Screen current = mc.gui.screen();
+        boolean binding = current instanceof GlassUiScreen gs && gs.isListeningForBind();
+        if (ImguiLoader.wantsTextInput() && !binding) {
             SdlImGuiPlatform.feedChar(event.codepoint());
         }
     }

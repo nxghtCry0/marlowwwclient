@@ -1,14 +1,12 @@
 package com.eclipseware.imnotcheatingyouare.client.module.impl;
 
 import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
-import com.eclipseware.imnotcheatingyouare.client.clickgui.Clickgui;
-import com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui;
+import com.eclipseware.imnotcheatingyouare.client.glassui.bridge.ClientGuiScreen;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.module.ModuleManager;
 import com.eclipseware.imnotcheatingyouare.client.utils.InputUtil;
 import com.mojang.blaze3d.platform.InputConstants;
-import xyz.breadloaf.imguimc.imgui.ImguiLoader;
 
 public class GUI extends Module {
     private static boolean suppressUntilRelease = false;
@@ -17,7 +15,7 @@ public class GUI extends Module {
     private long lastPressTime = 0L;
 
     public GUI() {
-        super("GUI", Category.Client, "Opens and customizes the ClickGUI layout, scale, glass, and glow.");
+        super("GUI", Category.Client, "Opens and customizes the Glass UI menu, scale, surface, and streamproof mode.");
         this.setKeyBind(InputConstants.KEY_RSHIFT);
     }
 
@@ -105,24 +103,11 @@ public class GUI extends Module {
             return;
         }
         ModuleManager mm = client.moduleManager;
-
         Module weakDevice = mm.getModule("WeakDevice");
         if (weakDevice != null && weakDevice.isToggled() && weakDevice instanceof WeakDevice wd) {
             wd.toggleGui();
             return;
         }
-
-        Module legacyUI = mm.getModule("LegacyUI");
-        boolean useLegacy = (legacyUI != null && legacyUI.isToggled()) || !ImguiLoader.isUsable();
-        if (useLegacy) {
-            if (client.clickGui == null) {
-                client.clickGui = new Clickgui();
-            }
-            if (!(mc.gui.screen() instanceof Clickgui)) {
-                mc.setScreenAndShow(client.clickGui);
-            }
-        } else {
-            ImGuiClickGui.setOpen(true);
-        }
+        ClientGuiScreen.open();
     }
 }

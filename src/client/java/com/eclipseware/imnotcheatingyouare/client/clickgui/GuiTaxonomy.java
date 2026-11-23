@@ -271,6 +271,8 @@ public final class GuiTaxonomy {
         }
         return "gui".equals(name)
             || "menu".equals(name)
+            || "custommenu".equals(name)
+            || "custom menu".equals(name)
             || "legacy ui".equals(name)
             || "legacyui".equals(name)
             || "clientspoof".equals(name)
@@ -292,7 +294,7 @@ public final class GuiTaxonomy {
         if ("breachswap".equals(name) || "autowindcharge".equals(name) || "auto windcharge".equals(name)) {
             return true;
         }
-        if ("killaura".equals(name) || "kill aura".equals(name) || "silentaim".equals(name) || "silent aim".equals(name) || "backtrack".equals(name)) {
+        if ("hitboxes".equals(name) || "killaura".equals(name) || "kill aura".equals(name) || "silentaim".equals(name) || "silent aim".equals(name) || "backtrack".equals(name)) {
             return true;
         }
         return "shielddrain".equals(name)
@@ -404,7 +406,7 @@ public final class GuiTaxonomy {
         if (name.contains("macro") || name.contains("keybind") || name.contains("inventory")) {
             return "Inventory & Macros";
         }
-        if (name.contains("totem") || name.contains("dhand") || name.contains("mlg") || name.contains("pearl") || name.contains("throwable")) {
+        if (name.contains("totem") || name.contains("dhand") || name.contains("mlg") || name.contains("pearl") || name.contains("throwable") || name.contains("killsound")) {
             return "Player & Totem";
         }
         if (cat == Category.UHC) {

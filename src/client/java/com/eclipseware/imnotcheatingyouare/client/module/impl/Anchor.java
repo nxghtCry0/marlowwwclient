@@ -4,24 +4,37 @@ import com.eclipseware.imnotcheatingyouare.client.ImnotcheatingyouareClient;
 import com.eclipseware.imnotcheatingyouare.client.module.Category;
 import com.eclipseware.imnotcheatingyouare.client.module.Module;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
+import com.eclipseware.imnotcheatingyouare.client.setting.SettingsManager;
 import com.eclipseware.imnotcheatingyouare.client.utils.InputUtil;
 import com.eclipseware.imnotcheatingyouare.client.utils.ModuleUtils;
+import com.eclipseware.imnotcheatingyouare.client.utils.RotationManager;
+import com.eclipseware.imnotcheatingyouare.client.utils.TargetFilterManager;
 import com.eclipseware.imnotcheatingyouare.mixin.client.MinecraftAccessor;
 import com.mojang.blaze3d.platform.InputConstants;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Options;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ShieldItem;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
-
-import java.util.ArrayList;
-import java.util.List;
+import net.minecraft.world.phys.Vec3;
 
 public class Anchor extends Module {
 
@@ -44,6 +57,15 @@ public class Anchor extends Module {
     private final Setting pauseOnKill;
     private final Setting pauseTime;
 
+    private final Setting anchorAura;
+    private final Setting auraAutoExplode;
+    private final Setting auraRange;
+    private final Setting auraTurnSpeed;
+    private final Setting auraCurve;
+    private final Setting auraArc;
+    private final Setting auraJitter;
+
+    private final Random random = new Random();
     private int switchCounter;
     private int glowstoneCounter;
     private int explodeCounter;
@@ -64,8 +86,24 @@ public class Anchor extends Module {
     private int noAimTicks;
     private final List<Player> deadPlayers = new ArrayList<>();
 
+    private BlockPos auraLockedPos = null;
+    private boolean auraWasRotating = false;
+    private int auraSavedSlot = -1;
+    private int auraAimTicks = 0;
+    private int auraActionCooldown = 0;
+    private double auraInitialAngDist = 22.0;
+    private double auraBaseSpeed = 40.0;
+    private double auraStartMult = 0.44;
+    private double auraMidMult = 1.12;
+    private double auraEndMult = 0.54;
+    private float auraArcSign = 1.0f;
+    private double auraFaceOffsetU = 0.0;
+    private double auraFaceOffsetV = 0.0;
+    private float auraJitterYaw = 0.0f;
+    private float auraJitterPitch = 0.0f;
+
     public Anchor() {
-        super("Anchor", Category.Combat, "Automatically places and blows up respawn anchors");
+        super("Anchor", Category.Combat, "Automatically places and blows up respawn anchors, including humanized silent-aim Anchor Aura.");
 
         activation = new Setting("Activation", this, "HOLD", new ArrayList<>(List.of("HOLD", "CLICK")));
         activateKey = new Setting("Activate Key", this, "MOUSE RIGHT", true);
@@ -86,7 +124,19 @@ public class Anchor extends Module {
         pauseOnKill = new Setting("Pause On Kill", this, true);
         pauseTime = new Setting("Pause Time", this, 2.0, 0.5, 10.0, false);
 
-        var sm = ImnotcheatingyouareClient.INSTANCE.settingsManager;
+        anchorAura = new Setting("Anchor Aura", this, false);
+        auraAutoExplode = new Setting("Aura Auto Explode", this, true).visibleWhen(anchorAura::getValBoolean);
+        auraRange = new Setting("Aura Range", this, 4.5, 1.5, 6.0, false).visibleWhen(anchorAura::getValBoolean);
+        auraTurnSpeed = new Setting("Aura Turn Speed", this, 32.0, 54.0, 5.0, 140.0, false).visibleWhen(anchorAura::getValBoolean);
+        auraCurve = new Setting("Aura Speed Curve", this, 0.25, 0.10, 0.25, 1.00).visibleWhen(anchorAura::getValBoolean);
+        auraArc = new Setting("Aura Arc (%)", this, 55.0, 0.0, 100.0, true).visibleWhen(anchorAura::getValBoolean);
+        auraJitter = new Setting("Aura Jitter", this, 1.15, 0.0, 4.0, false).visibleWhen(anchorAura::getValBoolean);
+
+        ImnotcheatingyouareClient client = ImnotcheatingyouareClient.INSTANCE;
+        if (client == null || client.settingsManager == null) {
+            return;
+        }
+        SettingsManager sm = client.settingsManager;
         sm.rSetting(activation);
         sm.rSetting(activateKey);
         sm.rSetting(placeKey);
@@ -103,6 +153,13 @@ public class Anchor extends Module {
         sm.rSetting(switchBackDelay);
         sm.rSetting(pauseOnKill);
         sm.rSetting(pauseTime);
+        sm.rSetting(anchorAura);
+        sm.rSetting(auraAutoExplode);
+        sm.rSetting(auraRange);
+        sm.rSetting(auraTurnSpeed);
+        sm.rSetting(auraCurve);
+        sm.rSetting(auraArc);
+        sm.rSetting(auraJitter);
     }
 
     @Override
@@ -112,6 +169,7 @@ public class Anchor extends Module {
 
     @Override
     public void onDisable() {
+        releaseAuraAim();
         resetState();
     }
 
@@ -134,26 +192,49 @@ public class Anchor extends Module {
         fireBreakTicks = 0;
         placeTimeout = 0;
         noAimTicks = 0;
+        auraLockedPos = null;
+        auraAimTicks = 0;
+        auraActionCooldown = 0;
+        auraSavedSlot = -1;
         deadPlayers.clear();
     }
 
-    private boolean shouldDoubleAnchor() {
-        if (!doubleAnchor.getValBoolean()) return false;
+    private void releaseAuraAim() {
+        if (auraWasRotating) {
+            auraWasRotating = false;
+            auraLockedPos = null;
+            if (RotationManager.isActive()) {
+                RotationManager.requestReturn();
+            }
+        }
+    }
 
+    private boolean shouldDoubleAnchor() {
+        if (!doubleAnchor.getValBoolean()) {
+            return false;
+        }
         String cond = doubleAnchorCondition.getValString();
         if ("ALWAYS".equals(cond)) {
             return true;
-        } else if ("HOLD_SLOT".equals(cond)) {
+        }
+        if ("HOLD_SLOT".equals(cond)) {
             int anchorSlot = -1;
+            Inventory inv = mc.player.getInventory();
             for (int i = 0; i < 9; i++) {
-                if (mc.player.getInventory().getItem(i).is(Items.RESPAWN_ANCHOR)) {
+                ItemStack st = inv.getItem(i);
+                if (st.is(Items.RESPAWN_ANCHOR)) {
                     anchorSlot = i;
                     break;
                 }
             }
-            return anchorSlot != -1 && anchorSlot < mc.options.keyHotbarSlots.length
-                    && mc.options.keyHotbarSlots[anchorSlot].isDown();
-        } else if ("KEY_BIND".equals(cond)) {
+            Options opts = mc.options;
+            if (anchorSlot != -1 && opts != null && anchorSlot < opts.keyHotbarSlots.length) {
+                KeyMapping hotbarKey = opts.keyHotbarSlots[anchorSlot];
+                return hotbarKey.isDown();
+            }
+            return false;
+        }
+        if ("KEY_BIND".equals(cond)) {
             return InputUtil.isDown(parseKeyCode(doubleAnchorKey.getValText()));
         }
         return false;
@@ -161,19 +242,32 @@ public class Anchor extends Module {
 
     @Override
     public void onTick() {
-        if (mc.player == null || mc.level == null || mc.gui.screen() != null || mc.gameMode == null) return;
+        Gui gui = mc != null ? mc.gui : null;
+        if (mc == null || mc.player == null || mc.level == null || gui == null || gui.screen() != null || mc.gameMode == null) {
+            releaseAuraAim();
+            return;
+        }
+
+        if (auraActionCooldown > 0) {
+            auraActionCooldown--;
+        }
 
         if (pauseCounter > 0) {
             pauseCounter--;
+            releaseAuraAim();
             return;
         }
 
         if (pauseOnKill.getValBoolean() && checkDeadPlayers()) {
             pauseCounter = (int) (pauseTime.getValDouble() * 20);
+            releaseAuraAim();
             return;
         }
 
-        if (isEatingOrBlocking()) return;
+        if (isEatingOrBlocking()) {
+            releaseAuraAim();
+            return;
+        }
 
         if (needsSwitchBack && switchBack.getValBoolean()) {
             if (switchBackCounter < (int) switchBackDelay.getValDouble()) {
@@ -181,7 +275,12 @@ public class Anchor extends Module {
                 return;
             }
             switchBackCounter = 0;
-            swapTo(Items.RESPAWN_ANCHOR);
+            if (auraSavedSlot >= 0 && auraSavedSlot < 9) {
+                ModuleUtils.switchToSlot(auraSavedSlot);
+                auraSavedSlot = -1;
+            } else {
+                swapTo(Items.RESPAWN_ANCHOR);
+            }
             needsSwitchBack = false;
             return;
         }
@@ -203,6 +302,14 @@ public class Anchor extends Module {
         }
         activateWasDown = activateKeyDown;
 
+        if (anchorAura.getValBoolean() && (auraAutoExplode.getValBoolean() || activateHeld)) {
+            if (tickAnchorAura()) {
+                return;
+            }
+        } else {
+            releaseAuraAim();
+        }
+
         if (!activateHeld && !placeHeld) {
             activateLatched = false;
             latchWaitTicks = 0;
@@ -216,6 +323,7 @@ public class Anchor extends Module {
         }
 
         BlockPos targetPos = null;
+        KeyMapping keyUse = mc.options.keyUse;
 
         if (placeHeld && !activateHeld) {
             if (placedAnchorPos != null && exploded && currentDoubleAnchorCount == 0) {
@@ -226,16 +334,20 @@ public class Anchor extends Module {
             }
 
             if (placedAnchorPos == null) {
-                if (!(mc.hitResult instanceof BlockHitResult hit)) return;
+                if (!(mc.hitResult instanceof BlockHitResult hit)) {
+                    return;
+                }
                 BlockPos hitPos = hit.getBlockPos();
+                BlockState hitState = mc.level.getBlockState(hitPos);
 
-                if (mc.level.getBlockState(hitPos).is(Blocks.RESPAWN_ANCHOR)) {
+                if (hitState.is(Blocks.RESPAWN_ANCHOR)) {
                     placedAnchorPos = hitPos;
                     placeTimeout = 0;
                 } else {
-                    mc.options.keyUse.setDown(false);
-                    mc.options.keyUse.consumeClick();
-                    if (!mc.player.getMainHandItem().is(Items.RESPAWN_ANCHOR)) {
+                    keyUse.setDown(false);
+                    keyUse.consumeClick();
+                    ItemStack mainItem = mc.player.getMainHandItem();
+                    if (!mainItem.is(Items.RESPAWN_ANCHOR)) {
                         if (switchCounter < (int) switchDelay.getValDouble()) {
                             switchCounter++;
                             return;
@@ -243,8 +355,10 @@ public class Anchor extends Module {
                         switchCounter = 0;
                         swapTo(Items.RESPAWN_ANCHOR);
                     }
-                    BlockPos expectedPos = mc.level.getBlockState(hitPos).canBeReplaced() ? hitPos : hitPos.relative(hit.getDirection());
-                    if (waitForFireClear(expectedPos)) return;
+                    BlockPos expectedPos = hitState.canBeReplaced() ? hitPos : hitPos.relative(hit.getDirection());
+                    if (waitForFireClear(expectedPos)) {
+                        return;
+                    }
                     startUseItem();
                     placedAnchorPos = expectedPos;
                     placeTimeout = 0;
@@ -253,7 +367,8 @@ public class Anchor extends Module {
                     return;
                 }
             } else {
-                if (!mc.level.getBlockState(placedAnchorPos).is(Blocks.RESPAWN_ANCHOR)) {
+                BlockState placedState = mc.level.getBlockState(placedAnchorPos);
+                if (!placedState.is(Blocks.RESPAWN_ANCHOR)) {
                     placeTimeout++;
                     if (placeTimeout > 10) {
                         placedAnchorPos = null;
@@ -264,16 +379,20 @@ public class Anchor extends Module {
             }
             targetPos = placedAnchorPos;
         } else {
+            BlockPos aimed = null;
+            if (mc.hitResult instanceof BlockHitResult h) {
+                BlockPos hp = h.getBlockPos();
+                BlockState hs = mc.level.getBlockState(hp);
+                if (hs.is(Blocks.RESPAWN_ANCHOR)) {
+                    aimed = hp;
+                }
+            }
 
-            BlockPos aimed = mc.hitResult instanceof BlockHitResult h
-                    && mc.level.getBlockState(h.getBlockPos()).is(Blocks.RESPAWN_ANCHOR)
-                    ? h.getBlockPos() : null;
             if (aimed != null) {
                 placedAnchorPos = aimed;
                 targetPos = aimed;
                 latchWaitTicks = 0;
-            } else if (placedAnchorPos != null
-                    && mc.level.getBlockState(placedAnchorPos).is(Blocks.RESPAWN_ANCHOR)) {
+            } else if (placedAnchorPos != null && isAnchorAt(placedAnchorPos)) {
                 targetPos = placedAnchorPos;
             } else if (exploded && placedAnchorPos != null) {
                 if ("CLICK".equals(activation.getValString())) {
@@ -286,11 +405,9 @@ public class Anchor extends Module {
                 return;
             } else {
                 if (placedAnchorPos != null) {
-                    if (!exploded) {
-                        if (++placeTimeout > 10) {
-                            placedAnchorPos = null;
-                            placeTimeout = 0;
-                        }
+                    if (!exploded && ++placeTimeout > 10) {
+                        placedAnchorPos = null;
+                        placeTimeout = 0;
                     }
                     return;
                 }
@@ -300,14 +417,22 @@ public class Anchor extends Module {
                     latchWaitTicks = 0;
                 }
 
-                if (keyUseIsActivateKey(activateCode)) return;
-                if (!(mc.hitResult instanceof BlockHitResult hit)) return;
+                if (keyUseIsActivateKey(activateCode)) {
+                    return;
+                }
+                if (!(mc.hitResult instanceof BlockHitResult hit)) {
+                    return;
+                }
                 BlockPos hitPos = hit.getBlockPos();
-                if (mc.level.getBlockState(hitPos).is(Blocks.RESPAWN_ANCHOR)) return;
+                BlockState hitState = mc.level.getBlockState(hitPos);
+                if (hitState.is(Blocks.RESPAWN_ANCHOR)) {
+                    return;
+                }
 
-                mc.options.keyUse.setDown(false);
-                mc.options.keyUse.consumeClick();
-                if (!mc.player.getMainHandItem().is(Items.RESPAWN_ANCHOR)) {
+                keyUse.setDown(false);
+                keyUse.consumeClick();
+                ItemStack mainItem = mc.player.getMainHandItem();
+                if (!mainItem.is(Items.RESPAWN_ANCHOR)) {
                     if (switchCounter < (int) switchDelay.getValDouble()) {
                         switchCounter++;
                         return;
@@ -315,8 +440,10 @@ public class Anchor extends Module {
                     switchCounter = 0;
                     swapTo(Items.RESPAWN_ANCHOR);
                 }
-                BlockPos expectedPos = mc.level.getBlockState(hitPos).canBeReplaced() ? hitPos : hitPos.relative(hit.getDirection());
-                if (waitForFireClear(expectedPos)) return;
+                BlockPos expectedPos = hitState.canBeReplaced() ? hitPos : hitPos.relative(hit.getDirection());
+                if (waitForFireClear(expectedPos)) {
+                    return;
+                }
                 startUseItem();
                 placedAnchorPos = expectedPos;
                 placeTimeout = 0;
@@ -327,10 +454,12 @@ public class Anchor extends Module {
             }
         }
 
-        if (targetPos == null || !mc.level.getBlockState(targetPos).is(Blocks.RESPAWN_ANCHOR)) return;
+        if (targetPos == null || !isAnchorAt(targetPos)) {
+            return;
+        }
 
-        mc.options.keyUse.setDown(false);
-        mc.options.keyUse.consumeClick();
+        keyUse.setDown(false);
+        keyUse.consumeClick();
 
         if ("CLICK".equals(activation.getValString())) {
             if (aimOnTarget(targetPos)) {
@@ -345,19 +474,22 @@ public class Anchor extends Module {
                 placedAnchorPos = null;
                 placeTimeout = 0;
                 noAimTicks = 0;
-                if (!mc.player.getMainHandItem().is(Items.RESPAWN_ANCHOR)) {
+                ItemStack mainItem = mc.player.getMainHandItem();
+                if (!mainItem.is(Items.RESPAWN_ANCHOR)) {
                     swapTo(Items.RESPAWN_ANCHOR);
                 }
                 return;
             }
         }
 
-        int charges = mc.level.getBlockState(targetPos).getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES);
+        BlockState anchorState = mc.level.getBlockState(targetPos);
+        int charges = anchorState.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES);
 
         if (charges == 0) {
             exploded = false;
             if (!chargedGlowstone) {
-                if (!mc.player.getMainHandItem().is(Items.GLOWSTONE)) {
+                ItemStack mainItem = mc.player.getMainHandItem();
+                if (!mainItem.is(Items.GLOWSTONE)) {
                     if (switchCounter < (int) switchDelay.getValDouble()) {
                         switchCounter++;
                         return;
@@ -380,7 +512,7 @@ public class Anchor extends Module {
                 chargedGlowstone = false;
                 chargeTimeout = 0;
             }
-        } else if (charges > 0 && !exploded) {
+        } else if (!exploded) {
             chargedGlowstone = false;
             chargeTimeout = 0;
             if (shouldDoubleAnchor()) {
@@ -388,7 +520,8 @@ public class Anchor extends Module {
                 int nextCount = currentDoubleAnchorCount + 1;
 
                 if (nextCount < targetMax) {
-                    if (!mc.player.getMainHandItem().is(Items.RESPAWN_ANCHOR)) {
+                    ItemStack mainItem = mc.player.getMainHandItem();
+                    if (!mainItem.is(Items.RESPAWN_ANCHOR)) {
                         if (switchCounter < (int) switchDelay.getValDouble()) {
                             switchCounter++;
                             return;
@@ -408,7 +541,7 @@ public class Anchor extends Module {
                     currentDoubleAnchorCount = nextCount;
                     exploded = true;
                 } else {
-                    int slot = (int) totemSlot.getValDouble() - 1;
+                    int slot = resolveSafeDetonateSlot();
                     if (ModuleUtils.getSelectedSlot() != slot) {
                         if (switchCounter < (int) switchDelay.getValDouble()) {
                             switchCounter++;
@@ -433,7 +566,7 @@ public class Anchor extends Module {
                     }
                 }
             } else {
-                int slot = (int) totemSlot.getValDouble() - 1;
+                int slot = resolveSafeDetonateSlot();
                 if (ModuleUtils.getSelectedSlot() != slot) {
                     if (switchCounter < (int) switchDelay.getValDouble()) {
                         switchCounter++;
@@ -459,6 +592,308 @@ public class Anchor extends Module {
         }
     }
 
+    private boolean tickAnchorAura() {
+        double range = auraRange.getValDouble();
+        BlockPos bestPos = findBestNearbyAnchor(range);
+        if (bestPos == null) {
+            releaseAuraAim();
+            return false;
+        }
+
+        BlockState state = mc.level.getBlockState(bestPos);
+        int charges = state.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES);
+        if (charges == 0 && !hasGlowstoneAvailable()) {
+            releaseAuraAim();
+            return false;
+        }
+
+        Vec3 eyePos = mc.player.getEyePosition();
+        Direction face = pickVisibleFace(bestPos, eyePos);
+
+        if (!bestPos.equals(auraLockedPos)) {
+            auraLockedPos = bestPos;
+            initAuraFlickProfile(bestPos, face, eyePos);
+        }
+
+        updateAuraJitter();
+        Vec3 hitVec = computeHumanizedFacePoint(bestPos, face);
+        float[] exactRot = ModuleUtils.getRotations(eyePos, hitVec);
+        float goalYaw = Mth.wrapDegrees(exactRot[0] + auraJitterYaw);
+        float goalPitch = Mth.clamp(exactRot[1] + auraJitterPitch, -90.0f, 90.0f);
+
+        stepAuraSilentRotation(goalYaw, goalPitch);
+        auraWasRotating = true;
+
+        if (auraActionCooldown > 0 || !isServerAimOnAnchor(bestPos, eyePos, range)) {
+            return true;
+        }
+
+        BlockHitResult hitResult = new BlockHitResult(hitVec, face, bestPos, false);
+
+        if (charges == 0) {
+            ItemStack offhand = mc.player.getOffhandItem();
+            boolean useOffhand = offhand.is(Items.GLOWSTONE);
+            if (!useOffhand) {
+                ItemStack held = mc.player.getMainHandItem();
+                if (!held.is(Items.GLOWSTONE)) {
+                    if (switchCounter < (int) switchDelay.getValDouble()) {
+                        switchCounter++;
+                        return true;
+                    }
+                    switchCounter = 0;
+                    if (auraSavedSlot == -1) {
+                        auraSavedSlot = ModuleUtils.getSelectedSlot();
+                    }
+                    swapTo(Items.GLOWSTONE);
+                }
+            }
+            if (glowstoneCounter < (int) glowstoneDelay.getValDouble()) {
+                glowstoneCounter++;
+                return true;
+            }
+            glowstoneCounter = 0;
+            InteractionHand hand = useOffhand ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+            mc.gameMode.useItemOn(mc.player, hand, hitResult);
+            ModuleUtils.swingHand(mc.player, hand);
+            auraActionCooldown = fastMode.getValBoolean() ? 0 : 1;
+            return true;
+        }
+
+        int detSlot = resolveSafeDetonateSlot();
+        if (ModuleUtils.getSelectedSlot() != detSlot) {
+            if (switchCounter < (int) switchDelay.getValDouble()) {
+                switchCounter++;
+                return true;
+            }
+            switchCounter = 0;
+            if (auraSavedSlot == -1) {
+                auraSavedSlot = ModuleUtils.getSelectedSlot();
+            }
+            ModuleUtils.switchToSlot(detSlot);
+        }
+        if (explodeCounter < (int) explodeDelay.getValDouble()) {
+            explodeCounter++;
+            return true;
+        }
+        explodeCounter = 0;
+
+        mc.gameMode.useItemOn(mc.player, InteractionHand.MAIN_HAND, hitResult);
+        ModuleUtils.swingHand(mc.player, InteractionHand.MAIN_HAND);
+        auraActionCooldown = 2;
+        releaseAuraAim();
+        if (switchBack.getValBoolean()) {
+            needsSwitchBack = true;
+            switchBackCounter = 0;
+        } else {
+            auraSavedSlot = -1;
+        }
+        return true;
+    }
+
+    private BlockPos findBestNearbyAnchor(double range) {
+        Vec3 eyePos = mc.player.getEyePosition();
+        double rangeSq = range * range;
+        int rCeil = (int) Math.ceil(range);
+        BlockPos center = BlockPos.containing(eyePos);
+
+        BlockPos best = null;
+        double bestScore = Double.MAX_VALUE;
+
+        for (int dx = -rCeil; dx <= rCeil; dx++) {
+            for (int dy = -rCeil; dy <= rCeil; dy++) {
+                for (int dz = -rCeil; dz <= rCeil; dz++) {
+                    BlockPos pos = center.offset(dx, dy, dz);
+                    Vec3 blockCenter = Vec3.atCenterOf(pos);
+                    double distSq = eyePos.distanceToSqr(blockCenter);
+                    if (distSq > rangeSq) {
+                        continue;
+                    }
+                    BlockState state = mc.level.getBlockState(pos);
+                    if (!state.is(Blocks.RESPAWN_ANCHOR)) {
+                        continue;
+                    }
+                    int charges = state.getValue(BlockStateProperties.RESPAWN_ANCHOR_CHARGES);
+                    if (charges == 0 && !hasGlowstoneAvailable()) {
+                        continue;
+                    }
+                    double enemyDistBonus = nearestEnemyDistance(blockCenter) * 0.65;
+                    double chargePriority = charges > 0 ? -4.0 : 0.0;
+                    double score = Math.sqrt(distSq) + enemyDistBonus + chargePriority;
+                    if (score < bestScore) {
+                        bestScore = score;
+                        best = pos.immutable();
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+    private double nearestEnemyDistance(Vec3 anchorCenter) {
+        double closest = 12.0;
+        for (Player p : mc.level.players()) {
+            if (p == mc.player || !p.isAlive() || AntiBot.isBot(p) || Teams.isTeam(p) || TargetFilterManager.isFiltered(p)) {
+                continue;
+            }
+            Vec3 pPos = p.position();
+            double d = pPos.distanceTo(anchorCenter);
+            if (d < closest) {
+                closest = d;
+            }
+        }
+        return closest;
+    }
+
+    private void initAuraFlickProfile(BlockPos pos, Direction face, Vec3 eyePos) {
+        auraFaceOffsetU = (random.nextDouble() - 0.5) * 0.22;
+        auraFaceOffsetV = (random.nextDouble() - 0.5) * 0.22;
+        Vec3 hitPoint = computeHumanizedFacePoint(pos, face);
+        float[] rot = ModuleUtils.getRotations(eyePos, hitPoint);
+        float curYaw = RotationManager.isActive() ? RotationManager.getServerYaw() : mc.player.getYRot();
+        float curPitch = RotationManager.isActive() ? RotationManager.getServerPitch() : mc.player.getXRot();
+        auraInitialAngDist = Math.max(8.0, Math.hypot(Mth.wrapDegrees(rot[0] - curYaw), rot[1] - curPitch));
+        auraAimTicks = 0;
+
+        double low = auraTurnSpeed.getRangeLow();
+        double high = auraTurnSpeed.getRangeHigh();
+        double sample = (random.nextDouble() + random.nextDouble()) * 0.5;
+        auraBaseSpeed = low + (high - low) * sample;
+        auraStartMult = 0.38 + random.nextDouble() * 0.24;
+        auraMidMult = 0.98 + random.nextDouble() * 0.34;
+        auraEndMult = 0.46 + random.nextDouble() * 0.24;
+        auraArcSign = random.nextBoolean() ? 1.0f : -1.0f;
+    }
+
+    private void updateAuraJitter() {
+        double jitterDeg = auraJitter.getValDouble();
+        if (jitterDeg <= 0.001) {
+            auraJitterYaw = 0.0f;
+            auraJitterPitch = 0.0f;
+            return;
+        }
+        float targetJYaw = (float) ((random.nextDouble() - 0.5) * 2.0 * jitterDeg);
+        float targetJPitch = (float) ((random.nextDouble() - 0.5) * 1.6 * jitterDeg);
+        auraJitterYaw = auraJitterYaw * 0.52f + targetJYaw * 0.48f;
+        auraJitterPitch = auraJitterPitch * 0.52f + targetJPitch * 0.48f;
+        auraFaceOffsetU = Mth.clamp(auraFaceOffsetU + (random.nextDouble() - 0.5) * 0.05, -0.18, 0.18);
+        auraFaceOffsetV = Mth.clamp(auraFaceOffsetV + (random.nextDouble() - 0.5) * 0.05, -0.18, 0.18);
+    }
+
+    private void stepAuraSilentRotation(float goalYaw, float goalPitch) {
+        auraAimTicks++;
+        float curYaw = RotationManager.isActive() ? RotationManager.getServerYaw() : mc.player.getYRot();
+        float curPitch = RotationManager.isActive() ? RotationManager.getServerPitch() : mc.player.getXRot();
+        double angDist = Math.hypot(Mth.wrapDegrees(goalYaw - curYaw), goalPitch - curPitch);
+
+        double distProgress = 1.0 - Mth.clamp(angDist / Math.max(8.0, auraInitialAngDist), 0.0, 1.0);
+        double timeProgress = Math.min(auraAimTicks / 14.0, 1.0);
+        double flickProgress = Mth.clamp(distProgress * 0.72 + timeProgress * 0.28, 0.0, 1.0);
+
+        double[] speedCurve = auraCurve.getCurve();
+        double arcPct = auraArc.getValDouble() / 100.0;
+        float arcPeak = (float) (Mth.clamp(auraInitialAngDist * 0.16, 1.2, 11.0) * arcPct);
+        double tickJitter = 0.90 + random.nextDouble() * 0.20;
+
+        float humanizedStep = PearlGrapplePhysics.computeHumanizedTurnSpeed(
+            auraBaseSpeed,
+            angDist,
+            55.0,
+            speedCurve,
+            flickProgress,
+            auraStartMult,
+            auraMidMult,
+            auraEndMult,
+            tickJitter
+        );
+
+        float[] waypoint = PearlGrapplePhysics.computeCurvedWaypoint(
+            curYaw,
+            curPitch,
+            goalYaw,
+            goalPitch,
+            flickProgress,
+            arcPeak,
+            auraArcSign
+        );
+
+        RotationManager.keepRotated(waypoint[0], waypoint[1], humanizedStep, true);
+    }
+
+    private boolean isServerAimOnAnchor(BlockPos pos, Vec3 eyePos, double range) {
+        float srvYaw = RotationManager.isActive() ? RotationManager.getServerYaw() : mc.player.getYRot();
+        float srvPitch = RotationManager.isActive() ? RotationManager.getServerPitch() : mc.player.getXRot();
+        Vec3 dir = PearlGrapplePhysics.directionFromRotation(srvYaw, srvPitch);
+        Vec3 rayEnd = eyePos.add(dir.scale(range + 1.0));
+        AABB box = new AABB(pos).inflate(0.02);
+        Optional<Vec3> clip = box.clip(eyePos, rayEnd);
+        return clip.isPresent();
+    }
+
+    private static Direction pickVisibleFace(BlockPos pos, Vec3 eyePos) {
+        Vec3 center = Vec3.atCenterOf(pos);
+        Vec3 delta = eyePos.subtract(center);
+        Direction best = Direction.UP;
+        double bestDot = -Double.MAX_VALUE;
+        Direction[] dirs = Direction.values();
+        for (int i = 0; i < dirs.length; i++) {
+            Direction d = dirs[i];
+            Vec3i normal = d.getUnitVec3i();
+            double dot = delta.x * normal.getX() + delta.y * normal.getY() + delta.z * normal.getZ();
+            if (dot > bestDot) {
+                bestDot = dot;
+                best = d;
+            }
+        }
+        return best;
+    }
+
+    private Vec3 computeHumanizedFacePoint(BlockPos pos, Direction face) {
+        Vec3i n = face.getUnitVec3i();
+        double cx = pos.getX() + 0.5 + n.getX() * 0.5;
+        double cy = pos.getY() + 0.5 + n.getY() * 0.5;
+        double cz = pos.getZ() + 0.5 + n.getZ() * 0.5;
+        if (n.getY() != 0) {
+            cx += auraFaceOffsetU;
+            cz += auraFaceOffsetV;
+        } else if (n.getX() != 0) {
+            cy += auraFaceOffsetU;
+            cz += auraFaceOffsetV;
+        } else {
+            cx += auraFaceOffsetU;
+            cy += auraFaceOffsetV;
+        }
+        return new Vec3(cx, cy, cz);
+    }
+
+    private boolean hasGlowstoneAvailable() {
+        ItemStack offhand = mc.player.getOffhandItem();
+        return offhand.is(Items.GLOWSTONE) || ModuleUtils.findItemInHotbar(Items.GLOWSTONE) != -1;
+    }
+
+    private int resolveSafeDetonateSlot() {
+        Inventory inv = mc.player.getInventory();
+        int preferred = Mth.clamp((int) totemSlot.getValDouble() - 1, 0, 8);
+        ItemStack prefStack = inv.getItem(preferred);
+        if (!prefStack.is(Items.GLOWSTONE)) {
+            return preferred;
+        }
+        for (int i = 0; i < 9; i++) {
+            ItemStack st = inv.getItem(i);
+            if (!st.is(Items.GLOWSTONE)) {
+                return i;
+            }
+        }
+        return preferred;
+    }
+
+    private boolean isAnchorAt(BlockPos pos) {
+        if (pos == null || mc.level == null) {
+            return false;
+        }
+        BlockState state = mc.level.getBlockState(pos);
+        return state.is(Blocks.RESPAWN_ANCHOR);
+    }
+
     private boolean checkDeadPlayers() {
         for (Player p : mc.level.players()) {
             if (p != mc.player && (p.isDeadOrDying() || p.getHealth() <= 0) && !deadPlayers.contains(p)) {
@@ -471,16 +906,20 @@ public class Anchor extends Module {
     }
 
     private boolean isEatingOrBlocking() {
-        boolean shield = mc.player.getMainHandItem().getItem() instanceof ShieldItem
-                || mc.player.getOffhandItem().getItem() instanceof ShieldItem;
+        ItemStack main = mc.player.getMainHandItem();
+        ItemStack off = mc.player.getOffhandItem();
+        boolean shield = main.getItem() instanceof ShieldItem || off.getItem() instanceof ShieldItem;
         boolean keyHeld = InputUtil.isDown(parseKeyCode(activateKey.getValText()))
-                || activateLatched
-                || InputUtil.isDown(parseKeyCode(placeKey.getValText()));
+            || activateLatched
+            || InputUtil.isDown(parseKeyCode(placeKey.getValText()));
         return shield && keyHeld;
     }
 
     private boolean keyUseIsActivateKey(int activateCode) {
-        if (activateCode == 0 || mc.options == null || mc.options.keyUse == null) return false;
+        Options opts = mc.options;
+        if (activateCode == 0 || opts == null || opts.keyUse == null) {
+            return false;
+        }
         String bindSave;
         if (InputUtil.isMouseBind(activateCode)) {
             int ordinal = -activateCode - 1;
@@ -492,21 +931,30 @@ public class Anchor extends Module {
                 case 4 -> 5;
                 default -> -1;
             };
-            if (sdl < 0) return false;
-            bindSave = InputConstants.Type.MOUSE.getOrCreate(sdl).getName();
+            if (sdl < 0) {
+                return false;
+            }
+            InputConstants.Type mouseType = InputConstants.Type.MOUSE;
+            InputConstants.Key keyObj = mouseType.getOrCreate(sdl);
+            bindSave = keyObj.getName();
         } else {
-            bindSave = InputConstants.Type.KEYBOARD.getOrCreate(activateCode).getName();
+            InputConstants.Type kbType = InputConstants.Type.KEYBOARD;
+            InputConstants.Key keyObj = kbType.getOrCreate(activateCode);
+            bindSave = keyObj.getName();
         }
         try {
-            return mc.options.keyUse.saveString().equals(bindSave);
+            KeyMapping keyUse = opts.keyUse;
+            return keyUse.saveString().equals(bindSave);
         } catch (Exception e) {
             return false;
         }
     }
 
     private void swapTo(Item item) {
+        Inventory inv = mc.player.getInventory();
         for (int i = 0; i < 9; i++) {
-            if (mc.player.getInventory().getItem(i).is(item)) {
+            ItemStack st = inv.getItem(i);
+            if (st.is(item)) {
                 ModuleUtils.switchToSlot(i);
                 return;
             }
@@ -514,11 +962,14 @@ public class Anchor extends Module {
     }
 
     private void startUseItem() {
-        ((MinecraftAccessor) mc).invokeStartUseItem();
+        MinecraftAccessor acc = (MinecraftAccessor) mc;
+        acc.invokeStartUseItem();
     }
 
     private boolean waitForFireClear(BlockPos pos) {
-        if (mc.level == null || pos == null) return false;
+        if (mc.level == null || pos == null) {
+            return false;
+        }
         BlockState state = mc.level.getBlockState(pos);
         if (!state.is(Blocks.FIRE) && !state.is(Blocks.SOUL_FIRE)) {
             fireBreakPending = null;
@@ -529,10 +980,12 @@ public class Anchor extends Module {
             fireBreakPending = pos;
             fireBreakTicks = 0;
         }
-        if (fireBreakTicks > 8) fireBreakTicks = 0;
+        if (fireBreakTicks > 8) {
+            fireBreakTicks = 0;
+        }
         if (fireBreakTicks == 0) {
             mc.gameMode.startDestroyBlock(pos, Direction.UP);
-            mc.player.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
+            ModuleUtils.swingHand(mc.player, InteractionHand.MAIN_HAND);
         } else {
             mc.gameMode.continueDestroyBlock(pos, Direction.UP);
         }
@@ -541,15 +994,20 @@ public class Anchor extends Module {
     }
 
     private boolean aimOnTarget(BlockPos pos) {
-        if (mc.level == null || pos == null) return false;
-        if (!mc.level.getBlockState(pos).is(Blocks.RESPAWN_ANCHOR)) return false;
+        if (!isAnchorAt(pos)) {
+            return false;
+        }
         return mc.hitResult instanceof BlockHitResult h && h.getBlockPos().equals(pos);
     }
 
     private static int parseKeyCode(String keyName) {
-        if (keyName == null) return 0;
+        if (keyName == null) {
+            return 0;
+        }
         String n = keyName.trim().toUpperCase();
-        if (n.isEmpty() || n.equals("NONE") || n.equals("UNKNOWN")) return 0;
+        if (n.isEmpty() || n.equals("NONE") || n.equals("UNKNOWN")) {
+            return 0;
+        }
 
         switch (n) {
             case "MOUSE LEFT":
@@ -584,7 +1042,9 @@ public class Anchor extends Module {
 
         if (n.length() == 1) {
             char c = n.charAt(0);
-            if (c >= 'A' && c <= 'Z') return InputConstants.KEY_A + (c - 'A');
+            if (c >= 'A' && c <= 'Z') {
+                return InputConstants.KEY_A + (c - 'A');
+            }
             switch (c) {
                 case '0': return InputConstants.KEY_0;
                 case '1': return InputConstants.KEY_1;

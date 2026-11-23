@@ -218,7 +218,7 @@ public class LungeAssist extends Module {
         MultiPlayerGameMode gm = mc.gameMode;
         if (piercing != null && gm != null) {
             gm.piercingAttack(SwingAnimation.DEFAULT, piercing);
-            mc.player.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, true);
+            ModuleUtils.swingHand(mc.player, InteractionHand.MAIN_HAND);
             return;
         }
         if (minecraft instanceof MinecraftAccessor accessor) {

@@ -1,20 +1,17 @@
 package xyz.breadloaf.imguimc.imgui;
 
+import com.eclipseware.imnotcheatingyouare.client.glassui.screen.GlassUiScreen;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 import imgui.ImGui;
 import imgui.ImGuiIO;
 import imgui.flag.ImGuiKey;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
+import net.minecraft.client.gui.screens.Screen;
 import org.lwjgl.sdl.SDLMouse;
 
-/**
- * Minimal replacement for imgui-java's {@code ImGuiImplGlfw}, since Minecraft 26.3 replaced its
- * GLFW window with an SDL one and imgui-java only ships a GLFW platform backend. This polls
- * Minecraft's own SDL-backed input state each frame instead of hooking native SDL events, which
- * is enough to drive mouse/keyboard interaction with ImGui widgets (checkboxes, buttons, sliders)
- * but does not support IME/text composition.
- */
 public final class SdlImGuiPlatform {
     private long lastFrameNanos = 0L;
     private static volatile float pendingScrollY = 0f;
@@ -23,11 +20,19 @@ public final class SdlImGuiPlatform {
     private final boolean[] holdReleaseOneFrame = new boolean[5];
     private final boolean[] suppressedMouseDown = new boolean[5];
 
-    private static final java.util.concurrent.ConcurrentLinkedQueue<Integer> pendingChars = new java.util.concurrent.ConcurrentLinkedQueue<>();
+    private static final ConcurrentLinkedQueue<Integer> pendingChars = new ConcurrentLinkedQueue<>();
+
+    private static final int[] TRACKED_KEYS = {
+        InputConstants.KEY_TAB, InputConstants.KEY_LEFT, InputConstants.KEY_RIGHT, InputConstants.KEY_UP,
+        InputConstants.KEY_DOWN, InputConstants.KEY_PAGEUP, InputConstants.KEY_PAGEDOWN, InputConstants.KEY_HOME,
+        InputConstants.KEY_END, InputConstants.KEY_INSERT, InputConstants.KEY_DELETE, InputConstants.KEY_BACKSPACE,
+        InputConstants.KEY_SPACE, InputConstants.KEY_RETURN, InputConstants.KEY_ESCAPE, InputConstants.KEY_NUMPADENTER,
+        InputConstants.KEY_A, InputConstants.KEY_C, InputConstants.KEY_V, InputConstants.KEY_X, InputConstants.KEY_Y,
+        InputConstants.KEY_Z
+    };
 
     public void init(long windowHandle) {
         ImGuiIO io = ImGui.getIO();
-
         io.setKeyMap(ImGuiKey.Tab, InputConstants.KEY_TAB);
         io.setKeyMap(ImGuiKey.LeftArrow, InputConstants.KEY_LEFT);
         io.setKeyMap(ImGuiKey.RightArrow, InputConstants.KEY_RIGHT);
@@ -68,17 +73,21 @@ public final class SdlImGuiPlatform {
         lastFrameNanos = now;
 
         double guiScale = window.getGuiScale();
-        io.setMousePos((float) (mc.mouseHandler.getScaledXPos(window) * guiScale / uiScale), (float) (mc.mouseHandler.getScaledYPos(window) * guiScale / uiScale));
+        MouseHandler mh = mc.mouseHandler;
+        io.setMousePos((float) (mh.getScaledXPos(window) * guiScale / uiScale), (float) (mh.getScaledYPos(window) * guiScale / uiScale));
 
         int mask = SDLMouse.SDL_GetMouseState(null, null);
         boolean[] rawMouseDown = {
-                (mask & (1 << (SDLMouse.SDL_BUTTON_LEFT - 1))) != 0,
-                (mask & (1 << (SDLMouse.SDL_BUTTON_RIGHT - 1))) != 0,
-                (mask & (1 << (SDLMouse.SDL_BUTTON_MIDDLE - 1))) != 0,
-                (mask & (1 << (SDLMouse.SDL_BUTTON_X1 - 1))) != 0,
-                (mask & (1 << (SDLMouse.SDL_BUTTON_X2 - 1))) != 0,
+            (mask & (1 << (SDLMouse.SDL_BUTTON_LEFT - 1))) != 0,
+            (mask & (1 << (SDLMouse.SDL_BUTTON_RIGHT - 1))) != 0,
+            (mask & (1 << (SDLMouse.SDL_BUTTON_MIDDLE - 1))) != 0,
+            (mask & (1 << (SDLMouse.SDL_BUTTON_X1 - 1))) != 0,
+            (mask & (1 << (SDLMouse.SDL_BUTTON_X2 - 1))) != 0
         };
-        boolean capturingBind = com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui.isCapturingMouseBind();
+
+        Screen screen = mc.gui.screen();
+        boolean binding = screen instanceof GlassUiScreen gs && gs.isListeningForBind();
+
         for (int i = 0; i < rawMouseDown.length; i++) {
             if (rawMouseDown[i]) {
                 confirmedMouseDown[i] = true;
@@ -88,8 +97,11 @@ public final class SdlImGuiPlatform {
             } else {
                 confirmedMouseDown[i] = false;
             }
-            if (!confirmedMouseDown[i]) suppressedMouseDown[i] = false;
-            else if (capturingBind) suppressedMouseDown[i] = true;
+            if (!confirmedMouseDown[i]) {
+                suppressedMouseDown[i] = false;
+            } else if (binding) {
+                suppressedMouseDown[i] = true;
+            }
             io.setMouseDown(i, confirmedMouseDown[i] && !suppressedMouseDown[i]);
         }
 
@@ -98,7 +110,6 @@ public final class SdlImGuiPlatform {
         io.setKeyAlt(InputConstants.isKeyDown(InputConstants.KEY_LALT) || InputConstants.isKeyDown(InputConstants.KEY_RALT));
         io.setKeySuper(InputConstants.isKeyDown(InputConstants.KEY_LGUI) || InputConstants.isKeyDown(InputConstants.KEY_RGUI));
 
-        boolean binding = com.eclipseware.imnotcheatingyouare.client.clickgui.ImGuiClickGui.isBinding();
         for (int key : TRACKED_KEYS) {
             io.setKeysDown(key, !binding && InputConstants.isKeyDown(key));
         }
@@ -107,25 +118,16 @@ public final class SdlImGuiPlatform {
 
         Integer codepoint;
         while ((codepoint = pendingChars.poll()) != null) {
-            if (!binding) io.addInputCharacter(codepoint);
+            if (!binding) {
+                io.addInputCharacter(codepoint);
+            }
         }
     }
 
-    private static final int[] TRACKED_KEYS = {
-            InputConstants.KEY_TAB, InputConstants.KEY_LEFT, InputConstants.KEY_RIGHT, InputConstants.KEY_UP,
-            InputConstants.KEY_DOWN, InputConstants.KEY_PAGEUP, InputConstants.KEY_PAGEDOWN, InputConstants.KEY_HOME,
-            InputConstants.KEY_END, InputConstants.KEY_INSERT, InputConstants.KEY_DELETE, InputConstants.KEY_BACKSPACE,
-            InputConstants.KEY_SPACE, InputConstants.KEY_RETURN, InputConstants.KEY_ESCAPE, InputConstants.KEY_NUMPADENTER,
-            InputConstants.KEY_A, InputConstants.KEY_C, InputConstants.KEY_V, InputConstants.KEY_X, InputConstants.KEY_Y,
-            InputConstants.KEY_Z,
-    };
-
-    /** Called from a mixin on {@code MouseHandler.onScroll} since SDL's wheel state is delta-only, not polled. */
     public static void feedScroll(double verticalAmount) {
         pendingScrollY += (float) verticalAmount;
     }
 
-    /** Called from a mixin on {@code KeyboardHandler.charTyped} since typed characters are event-based, not polled. */
     public static void feedChar(int codepoint) {
         pendingChars.add(codepoint);
     }

@@ -7,6 +7,7 @@ import com.eclipseware.imnotcheatingyouare.client.module.impl.AutoSign;
 import com.eclipseware.imnotcheatingyouare.client.module.impl.Backtrack;
 import com.eclipseware.imnotcheatingyouare.client.module.impl.BlinkModule;
 import com.eclipseware.imnotcheatingyouare.client.module.impl.FakeLag;
+import com.eclipseware.imnotcheatingyouare.client.module.impl.Hitboxes;
 import com.eclipseware.imnotcheatingyouare.client.module.impl.PacketAuditor;
 import com.eclipseware.imnotcheatingyouare.client.module.impl.Triggerbot;
 import com.eclipseware.imnotcheatingyouare.client.setting.Setting;
@@ -26,10 +27,13 @@ import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
 import net.minecraft.network.protocol.game.ServerboundCommandSuggestionPacket;
+import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundSignUpdatePacket;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.entity.SignTextSlot;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -77,6 +81,29 @@ public class ConnectionMixin {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) {
             return;
+        }
+
+        if (packet instanceof ServerboundInteractPacket interactPacket && !ModuleUtils.isSpoofing) {
+            Hitboxes hb = Hitboxes.INSTANCE;
+            if (hb != null && hb.isToggled() && mc.level != null) {
+                Entity ent = mc.level.getEntity(interactPacket.entityId());
+                Vec3 rawLoc = interactPacket.location();
+                Vec3 clamped = Hitboxes.clampInteractLocation(ent, rawLoc);
+                if (clamped != null && rawLoc != null && clamped.distanceToSqr(rawLoc) > 1.0e-7) {
+                    ServerboundInteractPacket fixed = new ServerboundInteractPacket(
+                        interactPacket.entityId(),
+                        interactPacket.hand(),
+                        clamped,
+                        interactPacket.usingSecondaryAction()
+                    );
+                    ModuleUtils.isSpoofing = true;
+                    ci.cancel();
+                    Connection self = (Connection) (Object) this;
+                    self.send(fixed);
+                    ModuleUtils.isSpoofing = false;
+                    return;
+                }
+            }
         }
 
         if (packet instanceof ServerboundMovePlayerPacket movePacket && !ModuleUtils.isSpoofing) {
